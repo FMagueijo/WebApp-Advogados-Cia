@@ -18,8 +18,8 @@ export default function Login() {
                 {/* Form container, stretched to full width on small devices */}
                 <form action="" className="w-full">
                     <X.Container className="w-full">
-                        <X.Field required type="email" placeholder="Email" name="Email" />
-                        <X.Field required type="password" placeholder="Password" name="Password" showHideToggle />
+                        <X.Field required type="email" placeholder="Email" name="Email" pattern={/\S+@(ipcb\.pt|ipcbcampus\.pt)$/}  />
+                        <X.Field required type="password" placeholder="Password" name="Password" showHideToggle/>
                         <X.Submit>Login</X.Submit>
                     </X.Container>
                 </form>

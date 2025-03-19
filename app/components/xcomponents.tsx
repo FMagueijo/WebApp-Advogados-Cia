@@ -10,38 +10,24 @@ interface ChildProps extends BaseProps {
 
 interface ContainerProps extends ChildProps {
     direction?: 'vertical' | 'horizontal'; // New property to select direction
+    overflow?: boolean; // New boolean property to control overflow
 }
-const Container: React.FC<ContainerProps> = ({ children, className = "", direction = 'vertical' }) => {
-    const baseStyles = "p-8 rounded-[10px] border-2 border-[var(--secondary-color)] grid gap-[32px]";
+
+const Container: React.FC<ContainerProps> = ({ children, className = "", direction = 'vertical', overflow = false }) => {
+    const baseStyles = `p-8 rounded-[10px] border-2 border-[var(--secondary-color)] grid gap-[32px]`;
 
     // Determine the grid direction based on the direction prop
     const directionStyle = direction === 'horizontal' ? 'grid-flow-col' : 'grid-flow-row';
 
+    // Overflow style based on the overflow prop
+    const overflowStyle = overflow ? 'overflow-auto' : 'overflow-hidden';
+
     return (
-        <div className={`${className} ${baseStyles} ${directionStyle}`}>
+        <div className={`${className} ${baseStyles} ${overflowStyle} ${directionStyle}`}>
             {children}
         </div>
     );
 };
-interface FieldProps extends BaseProps {
-    type?: string;
-    name?: string;
-    placeholder?: string;
-    required?: boolean;
-    value?: string;
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    errorMessage?: string;
-}
-interface FieldProps extends BaseProps {
-    type?: string;
-    name?: string;
-    placeholder?: string;
-    required?: boolean;
-    value?: string;
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    errorMessage?: string;
-    showHideToggle?: boolean;  // To conditionally show hide button for password fields
-}
 
 interface ToggleBoxProps {
     label: string;
@@ -65,8 +51,18 @@ const ToggleBox: React.FC<ToggleBoxProps> = ({ label, checked, onChange }) => {
         </div>
     );
 };
-
-
+interface FieldProps extends BaseProps {
+    type?: string;
+    name?: string;
+    placeholder?: string;
+    required?: boolean;
+    value?: string;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    errorMessage?: string;  // Custom error message from outside
+    showHideToggle?: boolean;  // Toggle for password visibility
+    validationType?: "email" | "text" | "password"; // Type of validation needed
+    pattern?: RegExp; // Custom validation pattern
+}
 
 const Field: React.FC<FieldProps> = ({
     className = "",
@@ -76,50 +72,133 @@ const Field: React.FC<FieldProps> = ({
     required = false,
     value = "",  // Value for controlled components
     onChange,    // External onChange for controlled input
-    errorMessage,
+    errorMessage,  // Custom external error message
     showHideToggle = false,  // Toggle for password visibility
+    pattern,  // Custom validation pattern
 }) => {
-    // If no external `onChange` is passed, handle it internally (uncontrolled component)
     const [internalValue, setInternalValue] = useState<string>(value);
-    const [hovered, setHovered] = useState(false);
     const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
-    
-    
+    const [error, setError] = useState<string | null>(null); // Error state
+
     const togglePasswordVisibility = () => {
         setPasswordVisible(!passwordVisible);
     };
 
+    // Validate input based on required fields, email, custom patterns, etc.
+    const validateInput = (value: string) => {
+        let e_msg = "";
+
+        // Internal validation: Required field
+        if (required && value.trim() === "") {
+            e_msg += `${name} é obrigatório.\n`; // Required field validation
+        }
+
+        // Email validation (if type is "email")
+        if (type === "email" && value.trim() !== "" && !/\S+@\S+\.\S+/.test(value)) {
+            e_msg += "Please enter a valid email address.\n"; // Basic email validation
+        }
+
+        // Pattern validation (if pattern is provided)
+        if (pattern && !pattern.test(value)) {
+            e_msg += `Invalid ${name}.\n`; // Pattern validation
+        }
+
+        return e_msg; // Return the accumulated error message
+    };
+
+    // Handle input change and validate
     const handleInternalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
         setInternalValue(newValue);
+
 
         // Call external onChange if it's provided
         if (onChange) {
             onChange(e);
         }
+
+        // Perform internal validation
+        const validationError = validateInput(newValue);
+        setError(validationError); // Set internal validation errors
+
+        // If there's an external error message passed as a prop, combine it with the internal validation errors
+        if (errorMessage) {
+            setError(prev => (prev ? prev + "\n" + errorMessage : errorMessage)); // Combine external error with internal errors
+        }
+
     };
 
-    const inputValue = onChange ? value : internalValue;  // Use external value if provided, otherwise internal state
+    const inputValue = onChange ? value : internalValue;
+
+    // Split error messages by line to render them individually
+    const errorMessages = error ? error.split("\n").filter(Boolean) : [];
 
     return (
         <div className="bg-(--secondary-color) w-full p-4 rounded-[10px] font-light h-auto flex flex-col gap-3">
-            <p className="font-semibold text-xs">{name}</p>
+            <p className="font-semibold text-xs">{required ? "{*} " : ""}{name}</p>
             <input
-                type={showHideToggle && passwordVisible ? "text" : type} 
+                type={showHideToggle && passwordVisible ? "text" : type}
                 name={name}
                 required={required}
                 placeholder={placeholder}
                 value={inputValue}  // Controlled value if passed from parent or internal state
-                onChange={handleInternalChange}  // Uses internal change handler if not controlled
-                className={`text-l w-full select-none focus:ring-0 focus:outline-none focus:ring-0 focus:border-transparent ${className}`}
+                onChange={handleInternalChange}  // Internal change handler
+                className={`text-lg w-full select-none focus:ring-0 focus:outline-none focus:ring-0 focus:border-transparent ${className}`}
             />
             {showHideToggle && (
                 <ToggleBox onChange={togglePasswordVisibility} label="Mostrar Password" checked={passwordVisible}></ToggleBox>
             )}
-            {errorMessage && <p className="text-(--error-color) font-semibold text-xs">{errorMessage}</p>}
+
+            {/* Render error messages */}
+            {errorMessages.length > 0 && (
+                <div className="text-(--error-color) font-semibold text-xs">
+                    {errorMessages.map((msg, idx) => (
+                        <p key={idx}>- {msg}</p> // Render each error message in its own <p> element
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
+
+
+interface ErrorBoxProps extends ChildProps {
+    direction?: 'vertical' | 'horizontal'; // New property to select direction
+    overflow?: boolean; // New boolean property to control overflow
+}
+
+const ErrorBox: React.FC<ErrorBoxProps & { visible: boolean; onClose: () => void }> = ({ 
+    children, 
+    className = "", 
+    direction = 'vertical', 
+    overflow = false, 
+    visible, 
+    onClose 
+}) => {
+
+    const directionStyle = direction === 'horizontal' ? 'grid-flow-col' : 'grid-flow-row';
+    const overflowStyle = overflow ? 'overflow-auto' : 'overflow-hidden';
+
+    const baseStyles = "h-auto w-full content-center group flex gap-4 items-center rounded-lg p-4 bg-(--error-color) text-(--primary-color) p-4 font-semibold";
+    const hiddenStyle = visible ? "" : "hidden"; // Now controlled from parent
+
+    return (
+        <div className={`${baseStyles} ${className} ${hiddenStyle}`}>
+            <div className="flex-shrink-0 align-middle">
+                {children}
+            </div>
+            <button
+                onClick={onClose} // Closes the error box
+                className="align-middle ml-auto inline-flex cursor-pointer hover:opacity-50"
+                aria-label="Close">
+                <img src="/images/icons/close.svg" alt="Close" className="w-6 h-6" />
+            </button>
+        </div>
+    );
+};
+
+
+
 
 interface ButtonProps extends ChildProps {
     onClick?: () => void;
@@ -199,7 +278,7 @@ const ButtonLink: React.FC<ButtonLinkProps> = ({ children, href = "", className 
         color: text_color,
     };
 
-    const baseStyle = `h-[56px] w-max ${smallpadding ? "px-4" : "px-8"} text-center content-center cursor-pointer group flex justify-between inline-block rounded-lg no-underline p-4 font-semibold`;
+    const baseStyle = `h-[56px] w-full ${smallpadding ? "px-(var(--sm-p))" : "px-(var(--md-p))"} text-center content-center cursor-pointer group flex justify-between inline-block rounded-lg no-underline p-4 font-semibold`;
     const onHoverStyle = `hover:bg-opacity-50`;
 
     return (
@@ -214,7 +293,7 @@ const ButtonLink: React.FC<ButtonLinkProps> = ({ children, href = "", className 
 };
 
 const Submit: React.FC<ButtonProps> = ({ children, onClick, className = "" }) => {
-    const baseStyles = "p-4 bg-(--submit-color) w-full text-(--secondary-color) rounded-[10px] font-semibold transition-all text-l h-auto cursor-pointer";
+    const baseStyles = "p-4 bg-(--submit-color) w-full text-(--secondary-color) rounded-[10px] font-semibold transition-all text-lg h-auto cursor-pointer";
     const onHoverStyle = `hover:bg-(--secondary-color) hover:text-(--submit-color)`;
 
     return (
@@ -249,4 +328,30 @@ const Image: React.FC<ImageProps> = ({ src, alt, className = "", width = "100%",
     );
 };
 
-export { Button, ButtonLink, Submit, Container, Field, Divider, Link, Image };
+
+
+interface DataFieldProps extends ChildProps {
+    onClick?: () => void;
+    color?: string;
+    selected?: boolean;
+}
+
+const DataField: React.FC<DataFieldProps> = ({ children, onClick, className = "", selected = false, color="--error-color" }) => {
+    
+
+    let baseStyle = `min-h-[56px] border-2 rounded-xl border-[var()] px-4 content-center group flex gap-4 rounded-lg p-4 font-semibold`;
+
+    return (
+        <div
+            className={`${baseStyle} ${className}`}
+            onClick={onClick}
+        >
+            {children}
+        </div>
+    );
+};
+
+
+
+
+export { Button, ButtonLink, Submit, Container, Field, Divider, Link, Image, ErrorBox, ToggleBox, DataField };
