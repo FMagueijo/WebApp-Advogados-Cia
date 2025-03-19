@@ -5,7 +5,10 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation, // Import useLocation
 } from "react-router";
+
+import { Navbar } from "./components/navbar";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -24,6 +27,12 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+
+  // List the routes where the Navbar should not be displayed
+  const routesWithoutNavbar = ["/login", "/define-password"];
+  const showNavbar = !routesWithoutNavbar.includes(location.pathname);
+
   return (
     <html lang="en">
       <head>
@@ -33,7 +42,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        {showNavbar && <Navbar className="" />}
+        <div className="p-8 ">
+          {children}
+        </div>
+
         <ScrollRestoration />
         <Scripts />
       </body>
