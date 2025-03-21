@@ -1,3 +1,4 @@
+"use client"
 import React, { useState } from "react";
 
 interface BaseProps {
@@ -9,15 +10,22 @@ interface ChildProps extends BaseProps {
 }
 
 interface ContainerProps extends ChildProps {
-    direction?: 'vertical' | 'horizontal'; // New property to select direction
+    direction?: 'vertical' | 'horizontal' | 'wrap'; // New property to select direction
     overflow?: boolean; // New boolean property to control overflow
 }
 
 const Container: React.FC<ContainerProps> = ({ children, className = "", direction = 'vertical', overflow = false }) => {
-    const baseStyles = `p-8 rounded-[10px] border-2 border-[var(--secondary-color)] grid gap-[32px]`;
+    const baseStyles = `p-8 rounded-lg border-2 border-[var(--secondary-color)] grid gap-[32px]`;
 
     // Determine the grid direction based on the direction prop
-    const directionStyle = direction === 'horizontal' ? 'grid-flow-col' : 'grid-flow-row';
+    let directionStyle = '';
+    if (direction === 'horizontal') {
+        directionStyle = 'grid-flow-col';
+    } else if (direction === 'vertical') {
+        directionStyle = 'grid-flow-row';
+    } else if (direction === 'wrap') {
+        directionStyle = 'flex flex-wrap ';
+    }
 
     // Overflow style based on the overflow prop
     const overflowStyle = overflow ? 'overflow-auto' : 'overflow-hidden';
@@ -134,7 +142,7 @@ const Field: React.FC<FieldProps> = ({
     const errorMessages = error ? error.split("\n").filter(Boolean) : [];
 
     return (
-        <div className="bg-(--secondary-color) w-full p-4 rounded-[10px] font-light h-auto flex flex-col gap-3">
+        <div className="bg-(--secondary-color) w-full p-4 rounded-lg font-light h-auto flex flex-col gap-3">
             <p className="font-semibold text-xs">{required ? "{*} " : ""}{name}</p>
             <input
                 type={showHideToggle && passwordVisible ? "text" : type}
@@ -167,13 +175,13 @@ interface ErrorBoxProps extends ChildProps {
     overflow?: boolean; // New boolean property to control overflow
 }
 
-const ErrorBox: React.FC<ErrorBoxProps & { visible: boolean; onClose: () => void }> = ({ 
-    children, 
-    className = "", 
-    direction = 'vertical', 
-    overflow = false, 
-    visible, 
-    onClose 
+const ErrorBox: React.FC<ErrorBoxProps & { visible: boolean; onClose: () => void }> = ({
+    children,
+    className = "",
+    direction = 'vertical',
+    overflow = false,
+    visible,
+    onClose
 }) => {
 
     const directionStyle = direction === 'horizontal' ? 'grid-flow-col' : 'grid-flow-row';
@@ -269,23 +277,16 @@ interface ButtonLinkProps extends LinkProps {
     smallpadding?: boolean;
 }
 
-const ButtonLink: React.FC<ButtonLinkProps> = ({ children, href = "", className = "", selected = false, smallpadding = false, custombg = "" }) => {
-    const main_color = custombg ? custombg : (selected ? "var(--primary-color)" : "var(--secondary-color)");
-    const text_color = selected ? "var(--secondary-color)" : "var(--primary-color)";
+let ButtonLink: React.FC<ButtonLinkProps> = ({ children, href = "", className = "", selected = false, smallpadding = false, custombg = "" }) => {
+    let mainColor = custombg ? custombg : (selected ? "--primary-color" : "--secondary-color");
+    let textColor = selected ? "--secondary-color" : "--primary-color";
 
-    const buttonStyle = {
-        backgroundColor: main_color,
-        color: text_color,
-    };
-
-    const baseStyle = `h-[56px] w-full ${smallpadding ? "px-(var(--sm-p))" : "px-(var(--md-p))"} text-center content-center cursor-pointer group flex justify-between inline-block rounded-lg no-underline p-4 font-semibold`;
-    const onHoverStyle = `hover:bg-opacity-50`;
+    let baseStyle = `h-[56px] bg-(${mainColor}) text-(${textColor}) font-semibold py-4 ${smallpadding ? "px-4" : "px-8"} border-lg rounded-lg hover:opacity-50`;
 
     return (
         <a
-            className={`${baseStyle} ${onHoverStyle} ${className}`}
+            className={`${baseStyle} ${className}`}
             href={href}
-            style={buttonStyle} // Apply inline style for colors
         >
             {children}
         </a>
@@ -293,7 +294,7 @@ const ButtonLink: React.FC<ButtonLinkProps> = ({ children, href = "", className 
 };
 
 const Submit: React.FC<ButtonProps> = ({ children, onClick, className = "" }) => {
-    const baseStyles = "p-4 bg-(--submit-color) w-full text-(--secondary-color) rounded-[10px] font-semibold transition-all text-lg h-auto cursor-pointer";
+    const baseStyles = "p-4 bg-(--submit-color) w-full text-(--secondary-color) rounded-lg font-semibold transition-all text-lg h-auto cursor-pointer";
     const onHoverStyle = `hover:bg-(--secondary-color) hover:text-(--submit-color)`;
 
     return (
@@ -317,7 +318,7 @@ interface ImageProps extends BaseProps {
 }
 
 const Image: React.FC<ImageProps> = ({ src, alt, className = "", width = "100%", height = "auto", rounded = true, shadow = false }) => {
-    const baseStyles = `w-full ${width} ${height} object-cover ${rounded ? "rounded-[10px]" : ""} ${shadow ? "shadow-lg" : ""}`;
+    const baseStyles = `w-full ${width} ${height} object-cover ${rounded ? "rounded-lg" : ""} ${shadow ? "shadow-lg" : ""}`;
 
     return (
         <img
@@ -332,15 +333,14 @@ const Image: React.FC<ImageProps> = ({ src, alt, className = "", width = "100%",
 
 interface DataFieldProps extends ChildProps {
     onClick?: () => void;
-    color?: string;
+    colorOverride?: string;
     selected?: boolean;
 }
 
-const DataField: React.FC<DataFieldProps> = ({ children, onClick, className = "", selected = false, color="--error-color" }) => {
-    
+const DataField: React.FC<DataFieldProps> = ({ children, onClick, className = "", selected = false, colorOverride = "--secondary-color" }) => {
 
-    let baseStyle = `min-h-[56px] border-2 rounded-xl border-[var()] px-4 content-center group flex gap-4 rounded-lg p-4 font-semibold`;
 
+    let baseStyle = `min-h-[56px] border-2 rounded-lg px-4 flex gap-4 p-4 font-semibold border-(${colorOverride}) `;
     return (
         <div
             className={`${baseStyle} ${className}`}
