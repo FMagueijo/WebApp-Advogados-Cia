@@ -223,7 +223,7 @@ const Button: React.FC<ButtonProps> = ({ children, onClick, className = "", sele
     };
 
     const baseStyle = `h-[56px] px-4 content-center cursor-pointer group flex justify-between inline-block rounded-lg no-underline p-4 font-semibold`;
-    const onHoverStyle = `hover:bg-opacity-50`;
+    const onHoverStyle = `hover:opacity-75`;
 
     return (
         <button
@@ -247,15 +247,16 @@ const Divider: React.FC = () => {
 
 interface LinkProps extends ChildProps {
     href?: string;
+    no_padding?: boolean;
 }
 
-const Link: React.FC<LinkProps> = ({ children, className = "", href = "" }) => {
-    const baseStyles = "h-[56px] w-full content-center group flex items-center rounded-lg border-2 border-[var(--primary-color)] no-underline p-4 font-semibold";
+const Link: React.FC<LinkProps> = ({ children, className = "", href = "", no_padding = false}) => {
+    const baseStyles = "h-[56px] w-full content-center group flex items-center rounded-lg border-2 border-[var(--primary-color)] no-underline font-semibold";
     const hoverStyle = "hover:bg-[var(--primary-color)] hover:text-[var(--secondary-color)]";
 
     return (
-        <a href={href} className={`${baseStyles} ${className} ${hoverStyle}`}>
-            <div className="flex-shrink-0 align-middle">
+        <a href={href} className={`${baseStyles} ${className} ${hoverStyle} ${no_padding ? "" : "p-4"}`}>
+            <div className={`flex-shrink-0 align-middle`}>
                 {children}
             </div>
             <button
@@ -264,6 +265,28 @@ const Link: React.FC<LinkProps> = ({ children, className = "", href = "" }) => {
                     window.open(href, "_blank");
                 }}
                 className="align-middle ml-auto inline-flex group-hover:invert cursor-pointer hover:opacity-50"
+                aria-label="Open in new tab">
+                <img src="/images/icons/open_in_new.svg" alt="Open link" className="w-4 h-4" />
+            </button>
+        </a>
+    );
+};
+
+const HeaderLink: React.FC<LinkProps> = ({ children, className = "", href = "", no_padding=false }) => {
+    const baseStyles = "w-full content-center group flex items-center rounded-lg font-semibold";
+    const hoverStyle = "hover:underline";
+
+    return (
+        <a href={href} className={`${baseStyles} ${className} ${hoverStyle} ${no_padding ? "" : "p-4"} `}>
+            <div className={`flex-shrink-0 align-middle`}>
+                {children}
+            </div>
+            <button
+                onClick={(e) => {
+                    e.preventDefault(); // Prevents the parent <a> from triggering
+                    window.open(href, "_blank");
+                }}
+                className="align-middle ml-auto inline-flex cursor-pointer hover:opacity-50"
                 aria-label="Open in new tab">
                 <img src="/images/icons/open_in_new.svg" alt="Open link" className="w-4 h-4" />
             </button>
@@ -281,11 +304,11 @@ let ButtonLink: React.FC<ButtonLinkProps> = ({ children, href = "", className = 
     let mainColor = custombg ? custombg : (selected ? "--primary-color" : "--secondary-color");
     let textColor = selected ? "--secondary-color" : "--primary-color";
 
-    let baseStyle = `h-[56px] bg-(${mainColor}) text-(${textColor}) font-semibold py-4 ${smallpadding ? "px-4" : "px-8"} border-lg rounded-lg hover:opacity-50`;
+    let baseStyle = `h-[56px] bg-(${mainColor}) text-(${textColor}) font-semibold py-4 ${smallpadding ? "px-4" : "px-8"} border-lg rounded-lg hover:opacity-75`;
 
     return (
         <a
-            className={`${baseStyle} ${className}`}
+            className={`${baseStyle} ${className} text-center`}
             href={href}
         >
             {children}
@@ -340,10 +363,11 @@ interface DataFieldProps extends ChildProps {
 const DataField: React.FC<DataFieldProps> = ({ children, onClick, className = "", selected = false, colorOverride = "--secondary-color" }) => {
 
 
-    let baseStyle = `min-h-[56px] border-2 rounded-lg px-4 flex gap-4 p-4 font-semibold border-(${colorOverride}) `;
+    const baseStyle = `min-h-[56px] border-2 rounded-lg px-4 flex gap-4 p-4 font-semibold`;
     return (
         <div
-            className={`${baseStyle} ${className}`}
+            style={{ borderColor: `var(${colorOverride})` }}
+            className={`border-${colorOverride} ${baseStyle} ${className}`}
             onClick={onClick}
         >
             {children}
@@ -354,4 +378,4 @@ const DataField: React.FC<DataFieldProps> = ({ children, onClick, className = ""
 
 
 
-export { Button, ButtonLink, Submit, Container, Field, Divider, Link, Image, ErrorBox, ToggleBox, DataField };
+export { Button, ButtonLink, HeaderLink, Submit, Container, Field, Divider, Link, Image, ErrorBox, ToggleBox, DataField };

@@ -28,9 +28,9 @@ const NO_NAV_BAR_PAGES = [
 const BurgerNav: React.FC = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-    const pathname = usePathname(); 
+    const pathname = usePathname();
 
-    
+
 
     return (
         <div className="flex flex-col gap-8 w-full content-start items-start">
@@ -40,6 +40,7 @@ const BurgerNav: React.FC = () => {
                     <img src={isMobileMenuOpen ? "/images/icons/close.svg" : "/images/icons/menu.svg"} className="h-6 self-r" />
                 </div>
             </X.Button>
+            
             <X.Container direction="horizontal" className={`items-start justify-start w-full ${isMobileMenuOpen ? "" : "hidden"}`} overflow>
                 {navLinks.map((link) => (
                     <X.ButtonLink
@@ -50,7 +51,7 @@ const BurgerNav: React.FC = () => {
                         {link.label}
                     </X.ButtonLink>
                 ))}
-    
+
             </X.Container>
             <X.Container direction="horizontal" className={`items-start justify-start w-full ${isMobileMenuOpen ? "" : "hidden"}`} overflow>
                 {utilLinks.map((link) => (
@@ -61,7 +62,7 @@ const BurgerNav: React.FC = () => {
                         smallpadding={true}
                         custombg={link.customColor ? link.customColor : ""}
                         className="flex-shrink-0">
-                        <img className="min-w-6 flex-shrink-0" src={link.ico} />
+                        <img className={"min-w-6 flex-shrink-0" + (pathname === link.href ? " invert" : "")} src={link.ico} />
                     </X.ButtonLink>
                 ))}
 
@@ -81,15 +82,15 @@ const Navbar: React.FC<NavProps> = ({ className = "" }) => {
     if (NO_NAV_BAR_PAGES.includes(pathname)) {
         return null; // Don't render the navbar
     }
-    
+
     return (
-        <div className={`${className} sticky top-0 p-8 mb-[-32px] bg-(--background-color)/95 backdrop-blur-md z-50`}>
+        <div className={`${className} sticky w-full p-8 top-0 bg-(--background-color)/90 backdrop-blur-sm z-50 -mt-8`}>
             <nav>
                 <ul className="flex flex-row gap-8 overflow-hidden ">
                     <li className="flex flex-col w-full xl:hidden justify-center items-center gap-8">
                         <BurgerNav></BurgerNav>
                     </li>
-                    <li className={` hidden lg:block`}>
+                    <li className={` hidden xl:block`}>
                         <X.Container className="h-full w-max">
                             <img src="/images/brand/logo.svg" className="h-full w-max" />
                         </X.Container>
@@ -108,16 +109,16 @@ const Navbar: React.FC<NavProps> = ({ className = "" }) => {
                         </X.Container>
                     </li>
                     <li className={`hidden xl:block`}>
-                        <X.Container direction="horizontal" className="justify-center" overflow>
+                        <X.Container direction="horizontal" className="h-full justify-center" overflow>
                             {utilLinks.map((link) => (
                                 <X.ButtonLink
                                     key={link.href}
                                     selected={pathname === link.href}
                                     href={link.href}
                                     smallpadding={true}
-                                    custombg= { link.customColor ? link.customColor : ""} 
+                                    custombg={link.customColor ? link.customColor : ""}
                                     className="flex-shrink-0 group">
-                                    <img className={"min-w-6 flex-shrink-0" + (pathname === link.href ? " invert":"") }  src={link.ico} />
+                                    <img className={"min-w-6 flex-shrink-0" + (pathname === link.href ? " invert" : "")} src={link.ico} />
                                 </X.ButtonLink>
                             ))}
                         </X.Container>
@@ -127,6 +128,7 @@ const Navbar: React.FC<NavProps> = ({ className = "" }) => {
         </div>
     );
 };
+
 
 
 export { Navbar };
