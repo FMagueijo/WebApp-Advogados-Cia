@@ -375,7 +375,56 @@ const DataField: React.FC<DataFieldProps> = ({ children, onClick, className = ""
     );
 };
 
+interface DropdownProps {
+    label: string;
+    options: string[];
+    onSelect: (selectedOption: string) => void;
+}
+
+const Dropdown: React.FC<DropdownProps> = ({ label, options, onSelect }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedOption, setSelectedOption] = useState<string | null>(null);
+
+    const handleSelect = (option: string) => {
+        setSelectedOption(option);
+        onSelect(option);
+        setIsOpen(false);
+    };
+
+    return (
+        <div className="relative">
+            {/* Botão do dropdown */}
+            <button
+                className="flex items-center justify-between px-4 py-2 bg-(--secondary-color) text-(--primary-color) rounded-lg border-2 border-[var(--primary-color)] hover:bg-(--primary-color) hover:text-(--secondary-color) transition-all focus:outline-none focus:ring-0 focus:border-transparent"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span>{selectedOption || label}</span>
+                <img
+                    src="/images/icons/arrow_down.svg"
+                    alt="Dropdown arrow"
+                    className={`w-4 h-4 ml-2 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+            </button>
+
+            {/* Lista de opções (dropdown menu) */}
+            {isOpen && (
+                <div className="absolute mt-2 w-full bg-(--secondary-color) rounded-lg shadow-lg z-10">
+                    {options.map((option, index) => (
+                        <div
+                            key={index}
+                            className="px-4 py-2 text-(--primary-color) hover:bg-(--primary-color) hover:text-(--secondary-color) cursor-pointer focus:outline-none focus:ring-0"
+                            onClick={() => handleSelect(option)}
+                        >
+                            {option}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 
-
-export { Button, ButtonLink, HeaderLink, Submit, Container, Field, Divider, Link, Image, ErrorBox, ToggleBox, DataField };
+export { Button, ButtonLink, HeaderLink, Submit, Container, 
+    Field, Divider, Link, Image, ErrorBox, ToggleBox, DataField,
+Dropdown };

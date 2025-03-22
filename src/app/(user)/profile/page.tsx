@@ -34,7 +34,7 @@ export default function Perfil() {
         <div className="flex justify-between items-center">
         <p className="text-lg font-semibold">O meu perfil</p>
         <img src="/images/icons/edit.svg" className="h-6" /> 
-  </div>
+      </div>
           <X.Divider></X.Divider>
           <Dados titulo="Nome Completo" valor="Inácio Plebeu Matias" />
           <Dados titulo="Email" valor="Inácio Plebeu Matias" />
