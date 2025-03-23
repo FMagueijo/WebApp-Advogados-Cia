@@ -18,7 +18,7 @@ export default function ListarColab() {
   ]);
 
   // Função para alternar o estado de ativo/inativo
-  const toggleAtivo = (id) => {
+  const toggleAtivo = (id:number) => {
     setColaboradores((prevColaboradores) =>
       prevColaboradores.map((colab) =>
         colab.id === id ? { ...colab, ativo: !colab.ativo } : colab
