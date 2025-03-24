@@ -392,10 +392,10 @@ const Dropdown: React.FC<DropdownProps> = ({ label, options, onSelect }) => {
     };
 
     return (
-        <div className="relative">
+        <div className="">
             {/* Botão do dropdown */}
             <button
-                className="flex items-center justify-between px-4 py-2 bg-(--secondary-color) text-(--primary-color) rounded-lg border-2 border-[var(--primary-color)] hover:bg-(--primary-color) hover:text-(--secondary-color) transition-all focus:outline-none focus:ring-0 focus:border-transparent"
+                className=" w-full flex items-center justify-between px-4 py-2 bg-(--secondary-color) text-(--primary-color) rounded-lg border-2 border-[var(--primary-color)] hover:bg-(--primary-color) hover:text-(--secondary-color) transition-all focus:outline-none focus:ring-0 focus:border-transparent"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <span>{selectedOption || label}</span>
@@ -408,11 +408,11 @@ const Dropdown: React.FC<DropdownProps> = ({ label, options, onSelect }) => {
 
             {/* Lista de opções (dropdown menu) */}
             {isOpen && (
-                <div className="absolute mt-2 w-full bg-(--secondary-color) rounded-lg shadow-lg z-10">
+                <div className="absolute max-w-2xl mt-2 w-full bg-(--secondary-color) rounded-lg shadow-lg z-10">
                     {options.map((option, index) => (
                         <div
                             key={index}
-                            className="px-4 py-2 text-(--primary-color) hover:bg-(--primary-color) hover:text-(--secondary-color) cursor-pointer focus:outline-none focus:ring-0"
+                            className=" px-4 py-2 text-(--primary-color) hover:bg-(--primary-color) hover:text-(--secondary-color) cursor-pointer focus:outline-none focus:ring-0"
                             onClick={() => handleSelect(option)}
                         >
                             {option}
