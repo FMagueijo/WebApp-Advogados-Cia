@@ -142,7 +142,7 @@ const Field: React.FC<FieldProps> = ({
     const errorMessages = error ? error.split("\n").filter(Boolean) : [];
 
     return (
-        <div className="bg-(--secondary-color) w-full p-4 rounded-lg font-light h-auto flex flex-col gap-3">
+        <div className="bg-(--secondary-color) w-full p-4 rounded-lg font-light h-max flex flex-col gap-3">
             <p className="font-semibold text-xs">{required ? "{*} " : ""}{name}</p>
             <input
                 type={showHideToggle && passwordVisible ? "text" : type}
