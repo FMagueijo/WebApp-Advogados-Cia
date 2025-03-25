@@ -12,10 +12,10 @@ export default function AdicionarRegisto() {
   return (
     <div className="w-full">
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Coluna Esquerda - Formulário */}
-        <X.Container className="w-full md:w-2/3 !p-6 !border-2 !border-[var(--primary-color)]">
+        {/* Coluna Esquerda - Formulário (mantido igual) */}
+        <X.Container className="w-full md:w-2/3">
           <h1 className="text-xl font-bold mb-2">Adicionar Registo - [43] #AAAA3</h1>
-          <X.Divider/>
+          <X.Divider />
 
           <div className="space-y-4">
             {/* Dropdown Acontecimento Jurídico */}
@@ -42,40 +42,44 @@ export default function AdicionarRegisto() {
               <X.Field
                 value={resumo}
                 onChange={(e) => setResumo(e.target.value)}
-                className="!bg-[var(--secondary-color)] !border-none !p-2"
               />
             </div>
 
-            {/* Descrição Detalhada */}
-            <div>
-              <p className="font-semibold text-sm mb-1">Descrição Detalhada</p>
-              <textarea
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-                className="w-full bg-[var(--secondary-color)] rounded p-2 focus:outline-none resize-none"
-                rows={5}
-              />
-            </div>
+            {/* Descrição Detalhada e Botão Criar Caso */}
+            <div className="flex flex-col">
+              <div className="w-full">
+                <p className="font-semibold text-sm mb-1">Descrição Detalhada</p>
+                <textarea
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                  className="w-full bg-[var(--secondary-color)] rounded p-2 focus:outline-none resize-none"
+                  rows={5}
+                />
+              </div>
 
-            {/* Botão Criar Caso */}
-            <div className="pt-2">
-              <X.ButtonLink className="w-full bg-[var(--submit-color)] text-white !py-2">
-                Criar Caso
-              </X.ButtonLink>
+              <div className="pt-2 w-full">
+                <X.ButtonLink className="block w-full bg-[var(--submit-color)] text-black !py-2">
+                  Criar Caso
+                </X.ButtonLink>
+              </div>
             </div>
           </div>
         </X.Container>
 
-        {/* Coluna Direita - Documentos COM BORDA BRANCA */}
-        <X.Container className="w-full md:w-1/3 !p-6 !border-2 !border-white">
+        {/* Coluna Direita - Documentos (MODIFICADA) */}
+        <X.Container className="w-full md:w-1/3">
           <h2 className="text-lg font-semibold mb-4">Documentos</h2>
-          <X.ButtonLink className="mb-6">Adicionar Foto</X.ButtonLink>
-          
-          <div className="flex flex-wrap gap-4">
-            <X.DataField className="w-24 h-24 flex items-center justify-center">
+          <X.ButtonLink className="mb-6 w-full">Adicionar Foto</X.ButtonLink>
+
+          {/* Container das imagens - agora em coluna */}
+          <div className="flex flex-col gap-4">
+            {/* Caixa de imagem 1 - ocupa 100% da largura */}
+            <X.DataField className="w-full h-32 flex items-center justify-center">
               <span className="text-gray-500">[Imagem]</span>
             </X.DataField>
-            <X.DataField className="w-24 h-24 flex items-center justify-center">
+            
+            {/* Caixa de imagem 2 - ocupa 100% da largura */}
+            <X.DataField className="w-full h-32 flex items-center justify-center">
               <span className="text-gray-500">[Imagem]</span>
             </X.DataField>
           </div>
