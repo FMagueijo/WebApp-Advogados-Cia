@@ -43,6 +43,25 @@ const AcoesRapidas: FunctionComponent = () => {
       <X.ButtonLink>Criar Colaborador</X.ButtonLink>
     </X.Container>
   );
+}
+const Notificacoes: FunctionComponent = () => {
+  return (
+    <X.Container className="w-full">
+       <X.HeaderLink no_padding>Notificações</X.HeaderLink>
+      <X.Divider></X.Divider>
+      <X.Link> Novo Caso<br></br>
+      <small style={{ color: "#999" }}>
+      Novo caso criado para...
+  </small></X.Link>
+  <X.Link> Caso Encerrado <br></br>
+  <small style={{ color: "#999" }}>
+  O caso #43 foi fechado...
+  </small></X.Link>
+      
+    </X.Container>
+  );
+
+
 
 }
 export default function Home() {
@@ -52,9 +71,9 @@ export default function Home() {
       <div className="flex flex-col grow gap-8 min-w-auto gap-8"> {/* Takes 2 vertical spaces */}
         <Casos />
       </div>
-      
+
       <div className="flex flex-col grow gap-8 min-w-auto gap-8">
-        
+
         <X.Container className="w-full">
           <X.HeaderLink no_padding>Colaboradores</X.HeaderLink>
           <X.Divider></X.Divider>
@@ -65,7 +84,7 @@ export default function Home() {
             </div>
           </X.DataField>
         </X.Container>
-        
+
         <X.Container className="w-full">
           <X.HeaderLink no_padding>Clientes</X.HeaderLink>
           <X.Divider></X.Divider>
@@ -99,7 +118,7 @@ export default function Home() {
         </X.Container>
 
       </div>
-      
+
       <div className="flex flex-col grow gap-8 min-w-auto gap-8">
 
         <X.Container className="w-full">
@@ -133,6 +152,7 @@ export default function Home() {
 
       <div className="flex flex-col grow gap-8 min-w-auto gap-8 row-start-1 lg:col-end-4 xl:col-end-5">
         <AcoesRapidas />
+        <Notificacoes/>
       </div>
     </div>
   );
