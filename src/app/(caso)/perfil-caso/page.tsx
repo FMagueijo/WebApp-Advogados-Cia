@@ -21,43 +21,42 @@ const Suporte: FunctionComponent = () => {
       <div className="flex flex-row gap-4">
       <X.Dropdown 
                         label="Filtros"
-                        options={["Fechado", "Terminado"]}
+                        options={["", ""]}
                         onSelect={(selectedOption) => console.log("Opção selecionada:", selectedOption)}
                       />   
       <X.Dropdown 
                         label="Ordenar"
-                        options={["Fechado", "Terminado"]}
+                        options={["Data Ascendente ", "Data Desscendente"]}
                         onSelect={(selectedOption) => console.log("Opção selecionada:", selectedOption)}
                       />    
       </div> 
       <X.Divider></X.Divider>
-          <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left ">
-                      <th className="p-3">Resumo</th>
-                      <th className="p-3">Data Criada</th>
-                      </tr>
-                       </thead>
-                  <tbody>
-                                    
-                   
-                    <td className="p-2"><X.Link className="group"><div>Reuniao</div> </X.Link></td>
-                    <td className="p-2"><X.DataField className="group"><div>14/02/2025 17:20 </div> </X.DataField></td>
-                    
-                    <tr className="border-b border-[var(--secondary-color)]">
-                    <td className="p-2"><X.Link className="group"><div>Reuniao</div> </X.Link></td>
-                    <td className="p-2"><X.DataField className="group"><div>14/02/2025 17:20 </div> </X.DataField></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>         
+      <div className="overflow-x-auto">
+  <table className="w-full">
+    <thead>
+      <tr className="text-left ">
+        <th className="p-3">Resumo</th>
+        <th className="p-3">Data Criada</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr className="border-b border-[var(--secondary-color)]">
+        <td className="p-2"><X.Link className="group"><div>Reuniao</div> </X.Link></td>
+        <td className="p-2"><X.DataField className="group"><div>14/02/2025 17:20 </div> </X.DataField></td>
+      </tr>
+      <tr className="border-b border-[var(--secondary-color)]">
+        <td className="p-2"><X.Link className="group"><div>Ev - Ida Tribunal</div> </X.Link></td>
+        <td className="p-2"><X.DataField className="group"><div>10/02/2025 14:20 </div> </X.DataField></td>
+      </tr>
+    </tbody>
+  </table>
+</div> 
     </X.Container>
     <X.Container className="w-full">
     <p className="font-semibold">Colaboradores Associados </p>
     <X.Divider></X.Divider>
     <div className="flex flex-row">
-      <X.ButtonLink>Adicionar registo</X.ButtonLink>   
+      <X.ButtonLink>Associar colaborador</X.ButtonLink>   
       </div>
       <X.Divider></X.Divider>
         <X.Link>[23] Nuno Pinho</X.Link>
@@ -81,9 +80,11 @@ export default function perfilCaso() {
           <X.Divider></X.Divider>
            <X.Dropdown 
                         label="Aberto"
-                        options={["Fechado", "Terminado"]}
+                        options={["Aberto","Fechado", "Terminado"]}
                         onSelect={(selectedOption) => console.log("Opção selecionada:", selectedOption)}
                       /> 
+                      
+
         </X.Container>
         <X.Container className="w-full" >   
         <div className="flex justify-between items-center">

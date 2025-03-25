@@ -36,12 +36,11 @@ const BurgerNav: React.FC = () => {
         <div className="flex flex-col gap-8 w-full content-start items-start">
             <X.Button onClick={toggleMobileMenu} className="w-max">
                 <div className="flex flex-row gap-4 h-max">
-                    <img src="/images/brand/logo.svg" className="h-6 " />
+                    <img src="/images/brand/logo.svg" className="h-6" />
                     <img src={isMobileMenuOpen ? "/images/icons/close.svg" : "/images/icons/menu.svg"} className="h-6 self-r" />
                 </div>
             </X.Button>
-            
-            <X.Container direction="horizontal" className={`items-start justify-start w-full ${isMobileMenuOpen ? "" : "hidden"}`} overflow>
+            <X.Container direction="horizontal" className={`items-start justify-start w-full ${isMobileMenuOpen ? "" : "hidden"} overflow-x-auto overflow-y-hidden`}>
                 {navLinks.map((link) => (
                     <X.ButtonLink
                         key={link.href}
@@ -53,7 +52,7 @@ const BurgerNav: React.FC = () => {
                 ))}
 
             </X.Container>
-            <X.Container direction="horizontal" className={`items-start justify-start w-full ${isMobileMenuOpen ? "" : "hidden"}`} overflow>
+            <X.Container direction="horizontal" className={`items-start justify-start w-full ${isMobileMenuOpen ? "" : "hidden"}`}>
                 {utilLinks.map((link) => (
                     <X.ButtonLink
                         key={link.href}
@@ -86,17 +85,17 @@ const Navbar: React.FC<NavProps> = ({ className = "" }) => {
     return (
         <div className={`${className} sticky w-full p-8 top-0 bg-(--background-color)/90 backdrop-blur-sm z-50 -mt-8`}>
             <nav>
-                <ul className="flex flex-row gap-8 overflow-hidden ">
+                <ul className="flex flex-row gap-8  overflow-hidden ">
                     <li className="flex flex-col w-full xl:hidden justify-center items-center gap-8">
                         <BurgerNav></BurgerNav>
                     </li>
-                    <li className={` hidden xl:block`}>
-                        <X.Container className="h-full w-max">
-                            <img src="/images/brand/logo.svg" className="h-full w-max" />
+                    <li className={` hidden xl:block w-lg `}>
+                        <X.Container className="h-full w-full">
+                            <img src="/images/brand/logo.svg" className="h-full w-full" loading="lazy"/>
                         </X.Container>
                     </li>
                     <li className={`flex-grow overflow-x-auto hidden xl:block w-full`}>
-                        <X.Container direction="horizontal" className="justify-start" overflow>
+                        <X.Container direction="horizontal" className="justify-start overflow-x-auto overflow-y">
                             {navLinks.map((link) => (
                                 <X.ButtonLink
                                     key={link.href}
@@ -109,7 +108,7 @@ const Navbar: React.FC<NavProps> = ({ className = "" }) => {
                         </X.Container>
                     </li>
                     <li className={`hidden xl:block`}>
-                        <X.Container direction="horizontal" className="h-full justify-center" overflow>
+                        <X.Container direction="horizontal" className="h-full justify-center overflow-x-auto overflow-y-hidden">
                             {utilLinks.map((link) => (
                                 <X.ButtonLink
                                     key={link.href}
