@@ -1,1 +1,1 @@
-
+DROP DATABASE advogados_cia;
