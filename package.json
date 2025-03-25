@@ -9,7 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "advogados-cia-app": "file:",
+    "bcryptjs": "^3.0.2",
+    "mysql2": "^3.14.0",
     "next": "15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -17,7 +20,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.17.27",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

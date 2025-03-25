@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { usePathname } from "next/navigation";
-import * as X from "../components/xcomponents";
-import "@/app/AppContext";
+import * as X from "@/components/xcomponents";
+import {} from "./actions";
 
 const navLinks = [
     { href: "/", label: "Inicio" },
