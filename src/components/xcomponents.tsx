@@ -17,7 +17,7 @@ const Container: React.FC<ContainerProps> = ({ children, className = "", directi
     const baseStyles = "p-8 rounded-lg border-2 border-[var(--secondary-color)] grid gap-8";
     const directionStyle = direction === 'horizontal' ? 'grid-flow-col' :
         direction === 'wrap' ? 'flex flex-wrap' : 'grid-flow-row';
-   
+
     return (
         <div className={`${className} ${baseStyles}  ${directionStyle}`}>
             {children}
@@ -45,6 +45,96 @@ const ToggleBox: React.FC<ToggleBoxProps> = ({ label, checked, onChange }) => {
                 ></div>
             </div>
             <span className="text-xs font-semibold ml-2 text-[var(--primary-color)]">{label}</span>
+        </div>
+    );
+};
+
+
+interface TextareaProps extends BaseProps {
+    name?: string;
+    placeholder?: string;
+    required?: boolean;
+    value?: string;
+    onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    errorMessage?: string;
+    rows?: number;
+    maxLength?: number;
+    pattern?: RegExp;
+}
+
+const Textarea: React.FC<TextareaProps> = ({
+    className = "",
+    name = "Textarea",
+    placeholder = "placeholder",
+    required = false,
+    value = "",
+    onChange,
+    errorMessage,
+    rows = 4,
+    maxLength,
+    pattern,
+}) => {
+    const [internalValue, setInternalValue] = useState<string>(value);
+    const [error, setError] = useState<string | null>(null);
+
+    const validateInput = (value: string) => {
+        let e_msg = "";
+
+        if (required && value.trim() === "") {
+            e_msg += `${name} é obrigatório.\n`;
+        }
+
+        if (pattern && !pattern.test(value)) {
+            e_msg += `Invalid ${name}.\n`;
+        }
+
+        return e_msg;
+    };
+
+    const handleInternalChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+        setInternalValue(newValue);
+
+        if (onChange) {
+            onChange(e);
+        }
+
+        const validationError = validateInput(newValue);
+        setError(validationError);
+
+        if (errorMessage) {
+            setError(prev => (prev ? prev + "\n" + errorMessage : errorMessage));
+        }
+    };
+
+    const inputValue = onChange ? value : internalValue;
+    const errorMessages = error ? error.split("\n").filter(Boolean) : [];
+
+    return (
+        <div className="bg-[var(--secondary-color)] w-full p-4 rounded-lg font-light flex flex-col gap-3">
+            <p className="font-semibold text-xs">{required ? "{*} " : ""}{name}</p>
+            <textarea
+                name={name}
+                required={required}
+                placeholder={placeholder}
+                value={inputValue}
+                onChange={handleInternalChange}
+                rows={rows}
+                maxLength={maxLength}
+                className="text-lg w-full select-none focus:ring-0 focus:outline-none bg-transparent resize-none"
+            />
+            {maxLength && (
+                <p className="text-xs text-right text-gray-500">
+                    {inputValue.length}/{maxLength}
+                </p>
+            )}
+            {errorMessages.length > 0 && (
+                <div className="text-[var(--error-color)] font-semibold text-xs">
+                    {errorMessages.map((msg, idx) => (
+                        <p key={idx}>- {msg}</p>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
@@ -192,8 +282,8 @@ const Button: React.FC<ButtonProps> = ({ children, onClick, className = "", sele
         <button
             type="button"
             className={`h-14 px-4 content-center cursor-pointer group flex justify-between inline-block rounded-lg no-underline p-4 font-semibold hover:opacity-75 ${selected
-                    ? "bg-[var(--primary-color)] text-[var(--secondary-color)]"
-                    : "bg-[var(--secondary-color)] text-[var(--primary-color)]"
+                ? "bg-[var(--primary-color)] text-[var(--secondary-color)]"
+                : "bg-[var(--secondary-color)] text-[var(--primary-color)]"
                 } ${className}`}
             onClick={onClick}
         >
@@ -274,10 +364,10 @@ const ButtonLink: React.FC<ButtonLinkProps> = ({
     return (
         <a
             className={`h-14 font-semibold rounded-lg hover:opacity-75 ${selected
-                    ? "bg-[var(--primary-color)] text-[var(--secondary-color)]"
-                    : custombg
-                        ? `bg-(${custombg}) text-[var(--secondary-color)]`
-                        : "bg-[var(--secondary-color)] text-[var(--primary-color)]"
+                ? "bg-[var(--primary-color)] text-[var(--secondary-color)]"
+                : custombg
+                    ? `bg-(${custombg}) text-[var(--secondary-color)]`
+                    : "bg-[var(--secondary-color)] text-[var(--primary-color)]"
                 } ${smallpadding ? "px-4" : "px-8"} py-4 text-center ${className}`}
             href={href}
         >
@@ -341,7 +431,7 @@ const DataField: React.FC<DataFieldProps> = ({
 }) => {
     return (
         <div
-            style={{ borderColor:`var(${colorOverride})` }}
+            style={{ borderColor: `var(${colorOverride})` }}
             className={`min-h-14 border-2 rounded-lg px-4 flex gap-4 p-4 font-semibold ${className}`}
             onClick={onClick}
         >
@@ -410,5 +500,6 @@ export {
     ErrorBox,
     ToggleBox,
     DataField,
-    Dropdown
+    Dropdown,
+    Textarea
 };
