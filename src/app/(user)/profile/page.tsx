@@ -19,9 +19,9 @@ interface DadosProps {
 
 const Dados: React.FC<DadosProps> = ({ titulo, valor }) => (
     <X.Container className="w-full">
-      <div className="space-y-4">
+      <div className="space-y-2">
         <h2 className="text-base font-semibold text-white">{titulo}</h2> 
-        <p className="text-lg text-gray-700">{valor}</p> 
+        <p className="text-lg text-gray-500">{valor}</p> 
       </div>
     </X.Container>
   );

@@ -10,28 +10,16 @@ interface ChildProps extends BaseProps {
 }
 
 interface ContainerProps extends ChildProps {
-    direction?: 'vertical' | 'horizontal' | 'wrap'; // New property to select direction
-    overflow?: boolean; // New boolean property to control overflow
+    direction?: 'vertical' | 'horizontal' | 'wrap';
 }
 
-const Container: React.FC<ContainerProps> = ({ children, className = "", direction = 'vertical', overflow = false }) => {
-    const baseStyles = `p-8 rounded-lg border-2 border-[var(--secondary-color)] grid gap-[32px]`;
-
-    // Determine the grid direction based on the direction prop
-    let directionStyle = '';
-    if (direction === 'horizontal') {
-        directionStyle = 'grid-flow-col';
-    } else if (direction === 'vertical') {
-        directionStyle = 'grid-flow-row';
-    } else if (direction === 'wrap') {
-        directionStyle = 'flex flex-wrap ';
-    }
-
-    // Overflow style based on the overflow prop
-    const overflowStyle = overflow ? 'overflow-auto' : 'overflow-hidden';
+const Container: React.FC<ContainerProps> = ({ children, className = "", direction = 'vertical' }) => {
+    const baseStyles = "p-8 rounded-lg border-2 border-[var(--secondary-color)] grid gap-8";
+    const directionStyle = direction === 'horizontal' ? 'grid-flow-col' :
+        direction === 'wrap' ? 'flex flex-wrap' : 'grid-flow-row';
 
     return (
-        <div className={`${className} ${baseStyles} ${overflowStyle} ${directionStyle}`}>
+        <div className={`${className} ${baseStyles}  ${directionStyle}`}>
             {children}
         </div>
     );
@@ -47,18 +35,110 @@ const ToggleBox: React.FC<ToggleBoxProps> = ({ label, checked, onChange }) => {
     return (
         <div className="flex items-center">
             <div
-                className={`relative inline-block w-10 h-6 ${checked ? "bg-(--submit-color)" : "bg-(--primary-color)"} rounded-full`}
+                className={`relative inline-block w-10 h-6 rounded-full cursor-pointer ${checked ? "bg-[var(--submit-color)]" : "bg-[var(--primary-color)]"
+                    }`}
                 onClick={() => onChange(!checked)}
-                style={{ cursor: "pointer" }}
             >
                 <div
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full  transition-transform duration-200 ease-in-out ${checked ? "translate-x-4 bg-(--secondary-color)" : "translate-x-0 bg-(--secondary-color)"}`}
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform duration-200 ease-in-out bg-[var(--secondary-color)] ${checked ? "translate-x-4" : "translate-x-0"
+                        }`}
                 ></div>
             </div>
-            <span className="text-xs font-semibold ml-2 text-(--primary-color)">{label}</span>
+            <span className="text-xs font-semibold ml-2 text-[var(--primary-color)]">{label}</span>
         </div>
     );
 };
+
+
+interface TextareaProps extends BaseProps {
+    name?: string;
+    placeholder?: string;
+    required?: boolean;
+    value?: string;
+    onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    errorMessage?: string;
+    rows?: number;
+    maxLength?: number;
+    pattern?: RegExp;
+}
+
+const Textarea: React.FC<TextareaProps> = ({
+    className = "",
+    name = "Textarea",
+    placeholder = "placeholder",
+    required = false,
+    value = "",
+    onChange,
+    errorMessage,
+    rows = 4,
+    maxLength,
+    pattern,
+}) => {
+    const [internalValue, setInternalValue] = useState<string>(value);
+    const [error, setError] = useState<string | null>(null);
+
+    const validateInput = (value: string) => {
+        let e_msg = "";
+
+        if (required && value.trim() === "") {
+            e_msg += `${name} é obrigatório.\n`;
+        }
+
+        if (pattern && !pattern.test(value)) {
+            e_msg += `Invalid ${name}.\n`;
+        }
+
+        return e_msg;
+    };
+
+    const handleInternalChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+        setInternalValue(newValue);
+
+        if (onChange) {
+            onChange(e);
+        }
+
+        const validationError = validateInput(newValue);
+        setError(validationError);
+
+        if (errorMessage) {
+            setError(prev => (prev ? prev + "\n" + errorMessage : errorMessage));
+        }
+    };
+
+    const inputValue = onChange ? value : internalValue;
+    const errorMessages = error ? error.split("\n").filter(Boolean) : [];
+
+    return (
+        <div className="bg-[var(--secondary-color)] w-full p-4 rounded-lg font-light flex flex-col gap-3">
+            <p className="font-semibold text-xs">{required ? "{*} " : ""}{name}</p>
+            <textarea
+                name={name}
+                required={required}
+                placeholder={placeholder}
+                value={inputValue}
+                onChange={handleInternalChange}
+                rows={rows}
+                maxLength={maxLength}
+                className="text-lg w-full select-none focus:ring-0 focus:outline-none bg-transparent resize-none"
+            />
+            {maxLength && (
+                <p className="text-xs text-right text-gray-500">
+                    {inputValue.length}/{maxLength}
+                </p>
+            )}
+            {errorMessages.length > 0 && (
+                <div className="text-[var(--error-color)] font-semibold text-xs">
+                    {errorMessages.map((msg, idx) => (
+                        <p key={idx}>- {msg}</p>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 interface FieldProps extends BaseProps {
     type?: string;
     name?: string;
@@ -66,10 +146,10 @@ interface FieldProps extends BaseProps {
     required?: boolean;
     value?: string;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    errorMessage?: string;  // Custom error message from outside
-    showHideToggle?: boolean;  // Toggle for password visibility
-    validationType?: "email" | "text" | "password"; // Type of validation needed
-    pattern?: RegExp; // Custom validation pattern
+    errorMessage?: string;
+    showHideToggle?: boolean;
+    validationType?: "email" | "text" | "password";
+    pattern?: RegExp;
 }
 
 const Field: React.FC<FieldProps> = ({
@@ -78,67 +158,55 @@ const Field: React.FC<FieldProps> = ({
     name = "Field",
     placeholder = "placeholder",
     required = false,
-    value = "",  // Value for controlled components
-    onChange,    // External onChange for controlled input
-    errorMessage,  // Custom external error message
-    showHideToggle = false,  // Toggle for password visibility
-    pattern,  // Custom validation pattern
+    value = "",
+    onChange,
+    errorMessage,
+    showHideToggle = false,
+    pattern,
 }) => {
     const [internalValue, setInternalValue] = useState<string>(value);
     const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null); // Error state
+    const [error, setError] = useState<string | null>(null);
 
     const togglePasswordVisibility = () => {
         setPasswordVisible(!passwordVisible);
     };
 
-    // Validate input based on required fields, email, custom patterns, etc.
     const validateInput = (value: string) => {
         let e_msg = "";
 
-        // Internal validation: Required field
         if (required && value.trim() === "") {
-            e_msg += `${name} é obrigatório.\n`; // Required field validation
+            e_msg += `${name} é obrigatório.\n`;
         }
 
-        // Email validation (if type is "email")
         if (type === "email" && value.trim() !== "" && !/\S+@\S+\.\S+/.test(value)) {
-            e_msg += "Please enter a valid email address.\n"; // Basic email validation
+            e_msg += "Please enter a valid email address.\n";
         }
 
-        // Pattern validation (if pattern is provided)
         if (pattern && !pattern.test(value)) {
-            e_msg += `Invalid ${name}.\n`; // Pattern validation
+            e_msg += `Invalid ${name}.\n`;
         }
 
-        return e_msg; // Return the accumulated error message
+        return e_msg;
     };
 
-    // Handle input change and validate
     const handleInternalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
         setInternalValue(newValue);
 
-
-        // Call external onChange if it's provided
         if (onChange) {
             onChange(e);
         }
 
-        // Perform internal validation
         const validationError = validateInput(newValue);
-        setError(validationError); // Set internal validation errors
+        setError(validationError);
 
-        // If there's an external error message passed as a prop, combine it with the internal validation errors
         if (errorMessage) {
-            setError(prev => (prev ? prev + "\n" + errorMessage : errorMessage)); // Combine external error with internal errors
+            setError(prev => (prev ? prev + "\n" + errorMessage : errorMessage));
         }
-
     };
 
     const inputValue = onChange ? value : internalValue;
-
-    // Split error messages by line to render them individually
     const errorMessages = error ? error.split("\n").filter(Boolean) : [];
 
     return (
@@ -149,19 +217,21 @@ const Field: React.FC<FieldProps> = ({
                 name={name}
                 required={required}
                 placeholder={placeholder}
-                value={inputValue}  // Controlled value if passed from parent or internal state
-                onChange={handleInternalChange}  // Internal change handler
-                className={`text-lg w-full select-none focus:ring-0 focus:outline-none focus:ring-0 focus:border-transparent ${className}`}
+                value={inputValue}
+                onChange={handleInternalChange}
+                className="text-lg w-full select-none focus:ring-0 focus:outline-none bg-transparent"
             />
             {showHideToggle && (
-                <ToggleBox onChange={togglePasswordVisibility} label="Mostrar Password" checked={passwordVisible}></ToggleBox>
+                <ToggleBox
+                    onChange={togglePasswordVisibility}
+                    label="Mostrar Password"
+                    checked={passwordVisible}
+                />
             )}
-
-            {/* Render error messages */}
             {errorMessages.length > 0 && (
-                <div className="text-(--error-color) font-semibold text-xs">
+                <div className="text-[var(--error-color)] font-semibold text-xs">
                     {errorMessages.map((msg, idx) => (
-                        <p key={idx}>- {msg}</p> // Render each error message in its own <p> element
+                        <p key={idx}>- {msg}</p>
                     ))}
                 </div>
             )}
@@ -169,13 +239,14 @@ const Field: React.FC<FieldProps> = ({
     );
 };
 
-
 interface ErrorBoxProps extends ChildProps {
-    direction?: 'vertical' | 'horizontal'; // New property to select direction
-    overflow?: boolean; // New boolean property to control overflow
+    direction?: 'vertical' | 'horizontal';
+    overflow?: boolean;
+    visible: boolean;
+    onClose: () => void;
 }
 
-const ErrorBox: React.FC<ErrorBoxProps & { visible: boolean; onClose: () => void }> = ({
+const ErrorBox: React.FC<ErrorBoxProps> = ({
     children,
     className = "",
     direction = 'vertical',
@@ -183,20 +254,16 @@ const ErrorBox: React.FC<ErrorBoxProps & { visible: boolean; onClose: () => void
     visible,
     onClose
 }) => {
-
     const directionStyle = direction === 'horizontal' ? 'grid-flow-col' : 'grid-flow-row';
     const overflowStyle = overflow ? 'overflow-auto' : 'overflow-hidden';
 
-    const baseStyles = "h-auto w-full content-center group flex gap-4 items-center rounded-lg p-4 bg-(--error-color) text-(--primary-color) p-4 font-semibold";
-    const hiddenStyle = visible ? "" : "hidden"; // Now controlled from parent
-
     return (
-        <div className={`${baseStyles} ${className} ${hiddenStyle}`}>
+        <div className={`${!visible && 'hidden'} h-auto w-full content-center group flex gap-4 items-center rounded-lg p-4 bg-[var(--error-color)] text-[var(--primary-color)] font-semibold ${className}`}>
             <div className="flex-shrink-0 align-middle">
                 {children}
             </div>
             <button
-                onClick={onClose} // Closes the error box
+                onClick={onClose}
                 className="align-middle ml-auto inline-flex cursor-pointer hover:opacity-50"
                 aria-label="Close">
                 <img src="/images/icons/close.svg" alt="Close" className="w-6 h-6" />
@@ -205,31 +272,19 @@ const ErrorBox: React.FC<ErrorBoxProps & { visible: boolean; onClose: () => void
     );
 };
 
-
-
-
 interface ButtonProps extends ChildProps {
     onClick?: () => void;
     selected?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({ children, onClick, className = "", selected = false }) => {
-    const main_color = selected ? "var(--primary-color)" : "var(--secondary-color)";
-    const text_color = selected ? "var(--secondary-color)" : "var(--primary-color)";
-
-    const buttonStyle = {
-        backgroundColor: main_color,
-        color: text_color,
-    };
-
-    const baseStyle = `h-[56px] px-4 content-center cursor-pointer group flex justify-between inline-block rounded-lg no-underline p-4 font-semibold`;
-    const onHoverStyle = `hover:opacity-75`;
-
     return (
         <button
             type="button"
-            className={`${baseStyle} ${onHoverStyle} ${className}`}
-            style={buttonStyle} // Apply inline style for colors
+            className={`h-14 px-4 content-center cursor-pointer group flex justify-between inline-block rounded-lg no-underline p-4 font-semibold hover:opacity-75 ${selected
+                ? "bg-[var(--primary-color)] text-[var(--secondary-color)]"
+                : "bg-[var(--secondary-color)] text-[var(--primary-color)]"
+                } ${className}`}
             onClick={onClick}
         >
             {children}
@@ -237,12 +292,8 @@ const Button: React.FC<ButtonProps> = ({ children, onClick, className = "", sele
     );
 };
 
-const gradientStyles = "bg-gradient-to-r from-[#F23558] to-[#F24B88] text-white hover:opacity-90";
-
 const Divider: React.FC = () => {
-    return (
-        <div className="w-full h-[2px] bg-[var(--secondary-color)]" />
-    );
+    return <div className="w-full h-px bg-[var(--secondary-color)]" />;
 };
 
 interface LinkProps extends ChildProps {
@@ -250,18 +301,19 @@ interface LinkProps extends ChildProps {
     no_padding?: boolean;
 }
 
-const Link: React.FC<LinkProps> = ({ children, className = "", href = "", no_padding = false}) => {
-    const baseStyles = "h-[56px] w-full content-center group flex items-center rounded-lg border-2 border-[var(--primary-color)] no-underline font-semibold";
-    const hoverStyle = "hover:bg-[var(--primary-color)] hover:text-[var(--secondary-color)]";
-
+const Link: React.FC<LinkProps> = ({ children, className = "", href = "", no_padding = false }) => {
     return (
-        <a href={href} className={`${baseStyles} ${className} ${hoverStyle} ${no_padding ? "" : "p-4"}`}>
-            <div className={`flex-shrink-0 align-middle`}>
+        <a
+            href={href}
+            className={`h-14 w-full content-center group flex items-center rounded-lg border-2 border-[var(--primary-color)] no-underline font-semibold hover:bg-[var(--primary-color)] hover:text-[var(--secondary-color)] ${no_padding ? "" : "p-4"
+                } ${className}`}
+        >
+            <div className="flex-shrink-0 align-middle">
                 {children}
             </div>
             <button
                 onClick={(e) => {
-                    e.preventDefault(); // Prevents the parent <a> from triggering
+                    e.preventDefault();
                     window.open(href, "_blank");
                 }}
                 className="align-middle ml-auto inline-flex group-hover:invert cursor-pointer hover:opacity-50"
@@ -272,18 +324,19 @@ const Link: React.FC<LinkProps> = ({ children, className = "", href = "", no_pad
     );
 };
 
-const HeaderLink: React.FC<LinkProps> = ({ children, className = "", href = "", no_padding=false }) => {
-    const baseStyles = "w-full content-center group flex items-center rounded-lg font-semibold";
-    const hoverStyle = "hover:underline";
-
+const HeaderLink: React.FC<LinkProps> = ({ children, className = "", href = "", no_padding = false }) => {
     return (
-        <a href={href} className={`${baseStyles} ${className} ${hoverStyle} ${no_padding ? "" : "p-4"} `}>
-            <div className={`flex-shrink-0 align-middle`}>
+        <a
+            href={href}
+            className={`w-full content-center group flex items-center rounded-lg font-semibold hover:underline ${no_padding ? "" : "p-4"
+                } ${className}`}
+        >
+            <div className="flex-shrink-0 align-middle">
                 {children}
             </div>
             <button
                 onClick={(e) => {
-                    e.preventDefault(); // Prevents the parent <a> from triggering
+                    e.preventDefault();
                     window.open(href, "_blank");
                 }}
                 className="align-middle ml-auto inline-flex cursor-pointer hover:opacity-50"
@@ -300,15 +353,22 @@ interface ButtonLinkProps extends LinkProps {
     smallpadding?: boolean;
 }
 
-let ButtonLink: React.FC<ButtonLinkProps> = ({ children, href = "", className = "", selected = false, smallpadding = false, custombg = "" }) => {
-    let mainColor = custombg ? custombg : (selected ? "--primary-color" : "--secondary-color");
-    let textColor = selected ? "--secondary-color" : "--primary-color";
-
-    let baseStyle = `h-[56px] bg-(${mainColor}) text-(${textColor}) font-semibold py-4 ${smallpadding ? "px-4" : "px-8"} border-lg rounded-lg hover:opacity-75`;
-
+const ButtonLink: React.FC<ButtonLinkProps> = ({
+    children,
+    href = "",
+    className = "",
+    selected = false,
+    smallpadding = false,
+    custombg = ""
+}) => {
     return (
         <a
-            className={`${baseStyle} ${className} text-center`}
+            className={`h-14 font-semibold rounded-lg hover:opacity-75 ${selected
+                ? "bg-[var(--primary-color)] text-[var(--secondary-color)]"
+                : custombg
+                    ? `bg-(${custombg}) text-[var(--secondary-color)]`
+                    : "bg-[var(--secondary-color)] text-[var(--primary-color)]"
+                } ${smallpadding ? "px-4" : "px-8"} py-4 text-center ${className}`}
             href={href}
         >
             {children}
@@ -317,13 +377,10 @@ let ButtonLink: React.FC<ButtonLinkProps> = ({ children, href = "", className = 
 };
 
 const Submit: React.FC<ButtonProps> = ({ children, onClick, className = "" }) => {
-    const baseStyles = "p-4 bg-(--submit-color) w-full text-(--secondary-color) rounded-lg font-semibold transition-all text-lg h-auto cursor-pointer";
-    const onHoverStyle = `hover:bg-(--secondary-color) hover:text-(--submit-color)`;
-
     return (
         <button
             type="submit"
-            className={`${baseStyles} ${onHoverStyle} ${className}`}
+            className={`p-4 w-full text-lg h-auto cursor-pointer rounded-lg font-semibold transition-all bg-[var(--submit-color)] text-[var(--secondary-color)] hover:bg-[var(--secondary-color)] hover:text-[var(--submit-color)] ${className}`}
             onClick={onClick}
         >
             {children}
@@ -340,19 +397,24 @@ interface ImageProps extends BaseProps {
     shadow?: boolean;
 }
 
-const Image: React.FC<ImageProps> = ({ src, alt, className = "", width = "100%", height = "auto", rounded = true, shadow = false }) => {
-    const baseStyles = `w-full ${width} ${height} object-cover ${rounded ? "rounded-lg" : ""} ${shadow ? "shadow-lg" : ""}`;
-
+const Image: React.FC<ImageProps> = ({
+    src,
+    alt,
+    className = "",
+    width = "100%",
+    height = "auto",
+    rounded = true,
+    shadow = false
+}) => {
     return (
         <img
             src={src}
             alt={alt}
-            className={`${baseStyles} ${className}`}
+            className={`w-full ${width} ${height} object-cover ${rounded ? "rounded-lg" : ""
+                } ${shadow ? "shadow-lg" : ""} ${className}`}
         />
     );
 };
-
-
 
 interface DataFieldProps extends ChildProps {
     onClick?: () => void;
@@ -360,14 +422,17 @@ interface DataFieldProps extends ChildProps {
     selected?: boolean;
 }
 
-const DataField: React.FC<DataFieldProps> = ({ children, onClick, className = "", selected = false, colorOverride = "--secondary-color" }) => {
-
-
-    const baseStyle = `min-h-[56px] border-2 rounded-lg px-4 flex gap-4 p-4 font-semibold`;
+const DataField: React.FC<DataFieldProps> = ({
+    children,
+    onClick,
+    className = "",
+    selected = false,
+    colorOverride = "--secondary-color"
+}) => {
     return (
         <div
             style={{ borderColor: `var(${colorOverride})` }}
-            className={`border-${colorOverride} ${baseStyle} ${className}`}
+            className={`min-h-14 border-2 rounded-lg px-4 flex gap-4 p-4 font-semibold ${className}`}
             onClick={onClick}
         >
             {children}
@@ -392,10 +457,9 @@ const Dropdown: React.FC<DropdownProps> = ({ label, options, onSelect }) => {
     };
 
     return (
-        <div className="">
-            {/* Botão do dropdown */}
+        <div className="relative">
             <button
-                className=" w-full flex items-center justify-between px-4 py-2 bg-(--secondary-color) text-(--primary-color) rounded-lg border-2 border-[var(--primary-color)] hover:bg-(--primary-color) hover:text-(--secondary-color) transition-all focus:outline-none focus:ring-0 focus:border-transparent"
+                className="w-full flex items-center justify-between px-4 py-2 bg-[var(--secondary-color)] text-[var(--primary-color)] rounded-lg border-2 border-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-[var(--secondary-color)] transition-all focus:outline-none"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <span>{selectedOption || label}</span>
@@ -406,13 +470,12 @@ const Dropdown: React.FC<DropdownProps> = ({ label, options, onSelect }) => {
                 />
             </button>
 
-            {/* Lista de opções (dropdown menu) */}
             {isOpen && (
-                <div className="absolute max-w-2xl mt-2 w-full bg-(--secondary-color) rounded-lg shadow-lg z-10">
+                <div className="absolute max-w-2xl mt-2 w-full bg-[var(--secondary-color)] rounded-lg shadow-lg z-10">
                     {options.map((option, index) => (
                         <div
                             key={index}
-                            className=" px-4 py-2 text-(--primary-color) hover:bg-(--primary-color) hover:text-(--secondary-color) cursor-pointer focus:outline-none focus:ring-0"
+                            className="px-4 py-2 text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-[var(--secondary-color)] cursor-pointer"
                             onClick={() => handleSelect(option)}
                         >
                             {option}
@@ -424,7 +487,19 @@ const Dropdown: React.FC<DropdownProps> = ({ label, options, onSelect }) => {
     );
 };
 
-
-export { Button, ButtonLink, HeaderLink, Submit, Container, 
-    Field, Divider, Link, Image, ErrorBox, ToggleBox, DataField,
-Dropdown };
+export {
+    Button,
+    ButtonLink,
+    HeaderLink,
+    Submit,
+    Container,
+    Field,
+    Divider,
+    Link,
+    Image,
+    ErrorBox,
+    ToggleBox,
+    DataField,
+    Dropdown,
+    Textarea
+};
