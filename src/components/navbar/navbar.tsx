@@ -46,6 +46,8 @@ const NO_NAV_BAR_PAGES = [
     "/_error",
     "/login",
     "/definir-password",
+    "/logout",
+    "/goodbye",
 ];
 
 // Helper function to check if user has required role

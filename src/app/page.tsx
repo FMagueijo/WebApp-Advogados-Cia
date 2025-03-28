@@ -1,8 +1,8 @@
 "use client"
-
 import { useSession } from "next-auth/react";
 import * as X from "../components/xcomponents";
 import { FunctionComponent } from "react";
+import { sys_users, UserRoles } from "@/types/roles";
 
 const Casos: FunctionComponent = () => {
   return (
@@ -39,11 +39,25 @@ const Casos: FunctionComponent = () => {
 }
 
 const AcoesRapidas: FunctionComponent = () => {
+
+  const { data: session } = useSession();
+  const role = session?.user.role;
+
+  const acoes = [
+    { link: "/criar-colaborador", roles: [1], label:"Criar Colaborador" },
+    { link: "/criar-caso", roles: [2], label:"Criar Caso" },
+    { link: "/criar-cliente", roles: [2], label:"Criar Cliente" },
+    { link: "/criar-evento", roles: [2], label:"Criar Evento" },
+
+  ].filter((acao) => acao.roles.includes(role as number) || acao.roles.length == 0);
+
   return (
     <X.Container className="w-full">
       <p className="font-semibold">Ações Rápidas</p>
       <X.Divider></X.Divider>
-      <X.ButtonLink>Criar Colaborador</X.ButtonLink>
+      {acoes.map((acao) => (
+        <X.ButtonLink href={acao.link}>{acao.label}</X.ButtonLink>
+      ))}
     </X.Container>
   );
 }
@@ -158,7 +172,7 @@ export default function Home() {
 
       <div className="flex flex-col grow min-w-auto gap-8 row-start-1 lg:col-end-4 xl:col-end-5">
         <AcoesRapidas />
-        { session?.user.role == 2 && <Notificacoes />}
+        {session?.user.role == 2 && <Notificacoes />}
       </div>
     </div>
   );

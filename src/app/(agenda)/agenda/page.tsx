@@ -14,7 +14,7 @@ export function CalHeader({
     const baseStyles = "";
 
     return (
-        <div className={`flex flex-row w-full items-center p-4 rounded-lg border-2 border-(--secondary-color) gap-4 ${current && "bg-(--secondary-color)"}`}>
+        <div className={`flex flex-row sticky top-32 xl:top-48 bg-(--background-color) w-full items-center p-4 rounded-lg border-2 border-(--secondary-color) gap-4 ${current && "bg-(--secondary-color)"}`}>
             <div className={`flex flex-col gap-2 w-full`}>
                 <p className='font-light text-xl break-words'>{sem}</p>
                 <p className='font-bold text-4xl break-words'>{dia}</p>

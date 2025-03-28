@@ -4,9 +4,11 @@ import { withAuth } from 'next-auth/middleware';
 const access_config = {
     publicPaths: ['/_next', '/favicon.ico', '/images'],
     authPages: ['/login', '/register', '/forgot-password'],
-    rolePaths: {
-        '/admin': 1,    // ADMIN 
-        '/criar-colaborador': 2,  // COLAB 
+    rolePaths: { 
+        '/criar-colaborador': 1,  // COLAB 
+        '/criar-cliente': 2,  // COLAB 
+        '/criar-caso': 2,  // COLAB 
+        '/criar-evento': 2,  // COLAB x
     }
 };
 
@@ -15,9 +17,6 @@ export default withAuth(
         const { pathname } = req.nextUrl;
         const token = req.nextauth?.token;
         
-        if (process.env.NO_AUTH !== undefined) {
-            return NextResponse.next();  // Skip authentication if the flag is set
-        }
         // Block logged-in users from auth pages
         if (access_config.authPages.some(p => pathname.startsWith(p))) {
             return token ? NextResponse.redirect(new URL('/', req.url)) : NextResponse.next();
