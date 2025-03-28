@@ -49,7 +49,6 @@ const ToggleBox: React.FC<ToggleBoxProps> = ({ label, checked, onChange }) => {
     );
 };
 
-
 interface TextareaProps extends BaseProps {
     name?: string;
     placeholder?: string;
@@ -440,6 +439,20 @@ const DataField: React.FC<DataFieldProps> = ({
     );
 };
 
+interface DadosProps {
+    titulo: string;
+    valor: string;
+}
+
+const Dados: React.FC<DadosProps> = ({ titulo, valor }) => (
+    <Container className="w-full">
+        <div className="space-y-2">
+            <h2 className="text-base font-semibold text-white">{titulo}</h2> 
+            <p className="text-lg text-gray-500">{valor}</p> 
+        </div>
+    </Container>
+);
+
 interface DropdownProps {
     label: string;
     options: string[];
@@ -501,5 +514,6 @@ export {
     ToggleBox,
     DataField,
     Dropdown,
-    Textarea
+    Textarea,
+    Dados
 };
