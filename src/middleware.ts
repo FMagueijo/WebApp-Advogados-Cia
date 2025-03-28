@@ -14,7 +14,10 @@ export default withAuth(
     function middleware(req) {
         const { pathname } = req.nextUrl;
         const token = req.nextauth?.token;
-
+        
+        if (process.env.NO_AUTH !== undefined) {
+            return NextResponse.next();  // Skip authentication if the flag is set
+        }
         // Block logged-in users from auth pages
         if (access_config.authPages.some(p => pathname.startsWith(p))) {
             return token ? NextResponse.redirect(new URL('/', req.url)) : NextResponse.next();
