@@ -20,7 +20,7 @@ export default function ListarCasos() {
             <p className="text-lg font-semibold">Lista Casos</p>
           </div>
           <X.Divider />
-          <X.ButtonLink className="w-3/12">Criar Caso</X.ButtonLink>
+          <X.ButtonLink className="w-max">Criar Caso</X.ButtonLink>
 
           {/* Filtros */}
           <div className="flex gap-4">

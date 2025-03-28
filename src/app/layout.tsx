@@ -1,9 +1,11 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
 import * as XC from "../components/xcomponents";
 import { Navbar } from "@/components/navbar/navbar";
+import AuthProvider from "@/components/auth/authprovider";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,13 +29,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Navbar></Navbar>
-        <div className="p-8 ">
-          {children}
-        </div>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <AuthProvider>
+          <Suspense fallback={<div className="h-screen w-full"></div>}>
+            <Navbar />
+            <div className="p-8">{children}</div>
+          </Suspense>
+        </AuthProvider>
       </body>
     </html>
   );
