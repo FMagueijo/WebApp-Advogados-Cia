@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import * as X from "@/components/xcomponents";
+import { signIn } from "next-auth/react";
+import LoginForm from "@/components/auth/loginForm";
 
 export const metadata: Metadata = {
     title: "Create Next App",
@@ -7,24 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function Login() {
+
     return (
         <div className="flex items-center justify-center w-full">
-            <div className="flex flex-col gap-8 w-full lg:w-xl items-center justify-center grid-flow-row">
-                <X.Container className="w-full items-center justify-center">
-                    <img src="/images/brand/logo.svg" className="h-max" />
-                </X.Container>
-
-                {/* Form container, stretched to full width on small devices */}
-                <form action="" className="w-full">
-                    <X.Container className="w-full">
-                        <X.Field required type="email" placeholder="Email" name="Email" />
-                        <X.Field required type="password" placeholder="Password" name="Password" showHideToggle />
-                        <X.Submit>Login</X.Submit>
-                    </X.Container>
-                </form>
-                <X.Link href="" className="">Esqueceu-se da Password?</X.Link>
-            </div>
+            <LoginForm></LoginForm>
         </div>
     );
 }
-

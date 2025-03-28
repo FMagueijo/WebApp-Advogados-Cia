@@ -1,3 +1,6 @@
+"use client"
+
+import { useSession } from "next-auth/react";
 import * as X from "../components/xcomponents";
 import { FunctionComponent } from "react";
 
@@ -47,17 +50,17 @@ const AcoesRapidas: FunctionComponent = () => {
 const Notificacoes: FunctionComponent = () => {
   return (
     <X.Container className="w-full">
-       <X.HeaderLink no_padding>Notificações</X.HeaderLink>
+      <X.HeaderLink no_padding>Notificações</X.HeaderLink>
       <X.Divider></X.Divider>
       <X.Link> Novo Caso<br></br>
-      <small style={{ color: "#999" }}>
-      Novo caso criado para...
-  </small></X.Link>
-  <X.Link> Caso Encerrado <br></br>
-  <small style={{ color: "#999" }}>
-  O caso #43 foi fechado...
-  </small></X.Link>
-      
+        <small style={{ color: "#999" }}>
+          Novo caso criado para...
+        </small></X.Link>
+      <X.Link> Caso Encerrado <br></br>
+        <small style={{ color: "#999" }}>
+          O caso #43 foi fechado...
+        </small></X.Link>
+
     </X.Container>
   );
 
@@ -65,14 +68,17 @@ const Notificacoes: FunctionComponent = () => {
 
 }
 export default function Home() {
+
+  const { data: session } = useSession();
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 w-full gap-8">
       {/* Column 1: Casos */}
-      <div className="flex flex-col grow gap-8 min-w-auto gap-8"> {/* Takes 2 vertical spaces */}
+      <div className="flex flex-col grow min-w-auto gap-8"> {/* Takes 2 vertical spaces */}
         <Casos />
       </div>
 
-      <div className="flex flex-col grow gap-8 min-w-auto gap-8">
+      <div className="flex flex-col grow min-w-auto gap-8">
 
         <X.Container className="w-full">
           <X.HeaderLink no_padding>Colaboradores</X.HeaderLink>
@@ -119,7 +125,7 @@ export default function Home() {
 
       </div>
 
-      <div className="flex flex-col grow gap-8 min-w-auto gap-8">
+      <div className="flex flex-col grow min-w-auto gap-8">
 
         <X.Container className="w-full">
           <p className="font-semibold">Faturamento</p>
@@ -150,9 +156,9 @@ export default function Home() {
         </X.Container>
       </div>
 
-      <div className="flex flex-col grow gap-8 min-w-auto gap-8 row-start-1 lg:col-end-4 xl:col-end-5">
+      <div className="flex flex-col grow min-w-auto gap-8 row-start-1 lg:col-end-4 xl:col-end-5">
         <AcoesRapidas />
-        <Notificacoes/>
+        { session?.user.role == 2 && <Notificacoes />}
       </div>
     </div>
   );

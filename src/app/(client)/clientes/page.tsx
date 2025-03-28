@@ -15,13 +15,12 @@ export default function ListarColab() {
   return (
     <div className="w-full">
       <div className="flex flex-col gap-8">
-        <X.Container className="w-full">
+        <X.Container className="w-full overflow-x-auto">
           <div className="flex justify-between items-center">
             <p className="text-lg font-semibold">Listar Colaboradores</p>
           </div>
           <X.Divider></X.Divider>
-          <X.ButtonLink className="w-3/12">Criar Colaborador</X.ButtonLink>
-
+          <X.ButtonLink className="w-max">Criar Colaborador</X.ButtonLink>
           <div className="flex gap-4">
             <X.Dropdown
               label="Filtrar Por"
@@ -37,29 +36,51 @@ export default function ListarColab() {
           <X.Divider></X.Divider>
 
           {/* Tabela de Colaboradores */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full table-auto border-separate border-spacing-4">
               <thead>
-                <tr className="text-left border-b-2 border-[var(--secondary-color)]">
-                  <th className="p-4"></th>
-                  <th className="p-4">ID</th>
-                  <th className="p-4">Nome</th>
-                  <th className="p-4">Email</th>
-                  <th className="p-4">Nº de Casos</th>
-                  <th className="p-4">Dívida</th>
-                  <th className="p-4"></th>
+                <tr className="text-left border-[var(--secondary-color)]">
+                  <th className="w-[40px] px-2">{" "}</th> {/* Profile icon */}
+                  <th className="w-[100px] px-2">ID</th>
+                  <th className="min-w-[150px] px-2">Nome</th>
+                  <th className="min-w-[200px] px-2">Email</th>
+                  <th className="min-w-[120px] px-2">Nº de Casos</th>
+                  <th className="min-w-[120px] px-2">Dívida</th>
+                  <th className="w-[100px] px-2">{" "}</th> {/* Novo Caso */}
                 </tr>
               </thead>
               <tbody>
                 {colaboradores.map((colab) => (
                   <tr key={colab.id} className="border-b border-[var(--secondary-color)]">
-                    <td className="p-4"><X.Link className="group"><img className="w-6 h-6 group-hover:invert" src="/images/icons/profile.svg" alt="Ícone" /></X.Link></td>
-                    <td className="p-4"><X.DataField className="w-6/10"><div className="flex flex-row gap-4 w-full items-center"><div className="flex-1 text-left">{colab.id}</div></div></X.DataField></td>
-                    <td className="p-4"><X.DataField><div className="flex flex-row gap-4 w-full items-center"><div className="flex-1 text-left">{colab.nome}</div></div></X.DataField></td>
-                    <td className="p-4"><X.Link href={`mailto:${colab.email}`}>{colab.email}</X.Link></td>
-                    <td className="p-4"><X.DataField><div className="flex flex-row gap-4 w-full items-center"><div className="flex-1 text-left">{colab.casos}</div></div></X.DataField></td>
-                    <td className="p-4"><X.DataField><div className="flex flex-row gap-4 w-full items-center"><div className="flex-1 text-left">{colab.casos}</div></div></X.DataField></td>
-                    <td className="p-4"><X.Link className="group"><span className="text-sm text-[var(--primary-color)] group-hover:text-[var(--secondary-color)] transition-colors">Novo Caso</span></X.Link></td>
+                    <td className="px-2">
+                      <X.Link className="group inline-flex">
+                        <img className="w-6 h-6 group-hover:invert" src="/images/icons/profile.svg" alt="Ícone" />
+                      </X.Link>
+                    </td>
+                    <td className="px-2 whitespace-nowrap">
+                      <X.DataField>{colab.id}</X.DataField>
+                    </td>
+                    <td className="px-2">
+                      <X.DataField className="truncate">{colab.nome}</X.DataField>
+                    </td>
+                    <td className="px-2">
+                      <X.Link href={`mailto:${colab.email}`} className="truncate block">
+                        {colab.email}
+                      </X.Link>
+                    </td>
+                    <td className="px-2 whitespace-nowrap">
+                      <X.DataField>{colab.casos}</X.DataField>
+                    </td>
+                    <td className="px-2 whitespace-nowrap">
+                      <X.DataField colorOverride="--submit-color">€ {colab.casos}</X.DataField>
+                    </td>
+                    <td className="px-2 whitespace-nowrap">
+                      <X.Link className="group">
+                        <span className="text-sm text-[var(--primary-color)] group-hover:text-[var(--secondary-color)] transition-colors">
+                          Novo Caso
+                        </span>
+                      </X.Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
