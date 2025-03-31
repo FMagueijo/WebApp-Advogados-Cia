@@ -19,7 +19,7 @@ export function CalHeader({
                 <p className='font-light text-xl break-words'>{sem}</p>
                 <p className='font-bold text-4xl break-words'>{dia}</p>
             </div>
-            <a href="" className='font-semibold text-lg min-w-max hover:underline'>+ Evento</a>
+            <a href="/criar-evento" className='font-semibold text-lg min-w-max hover:underline'>+ Evento</a>
         </div>
     );
 }
@@ -36,7 +36,7 @@ export function CalLink({
     current?: boolean;
 }) {
     return (
-        <a className='group flex flex-row gap-4  p-4 border-2 border-(--primary-color) rounded-lg items-center text-(--primary-color) bg-transparent cursor-pointer hover:bg-(--primary-color) hover:text-(--secondary-color)'>
+        <a href='/evento' className='group flex flex-row gap-4  p-4 border-2 border-(--primary-color) rounded-lg items-center text-(--primary-color) bg-transparent cursor-pointer hover:bg-(--primary-color) hover:text-(--secondary-color)'>
             <div className='flex flex-col gap-2 w-full'>
                 <p className='font-semibold text-xl break-words wrap text-wrap  max-w-max'>{hora}</p>
                 <p className='font-semibold text-4xl break-words text-wrap  max-w-max'>{title}</p>

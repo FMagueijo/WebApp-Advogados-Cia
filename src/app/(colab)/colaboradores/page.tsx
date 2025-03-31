@@ -34,7 +34,7 @@ export default function ListarColab() {
             <p className="text-lg font-semibold">Listar Colaboradores</p>
           </div>
           <X.Divider></X.Divider>
-          <X.ButtonLink className="w-3/12">Criar Colaborador</X.ButtonLink>
+          <X.ButtonLink className="w-3/12" href="/criar-colaborador">Criar Colaborador</X.ButtonLink>
 
           <div className="flex gap-4">
             <X.Dropdown

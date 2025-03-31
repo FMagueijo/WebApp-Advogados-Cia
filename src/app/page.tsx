@@ -7,7 +7,7 @@ import { sys_users, UserRoles } from "@/types/roles";
 const Casos: FunctionComponent = () => {
   return (
     <X.Container className="w-full">
-      <X.HeaderLink no_padding>Casos</X.HeaderLink>
+      <X.HeaderLink no_padding href="/casos">Casos</X.HeaderLink>
       <X.Divider></X.Divider>
       <X.DataField colorOverride="--open-color">
         <div className="flex flex-row gap-4 w-full items-center ">
@@ -64,7 +64,7 @@ const AcoesRapidas: FunctionComponent = () => {
 const Notificacoes: FunctionComponent = () => {
   return (
     <X.Container className="w-full">
-      <X.HeaderLink no_padding>Notificações</X.HeaderLink>
+      <X.HeaderLink no_padding href="/notificacoes">Notificações</X.HeaderLink>
       <X.Divider></X.Divider>
       <X.Link> Novo Caso<br></br>
         <small style={{ color: "#999" }}>
@@ -77,9 +77,6 @@ const Notificacoes: FunctionComponent = () => {
 
     </X.Container>
   );
-
-
-
 }
 export default function Home() {
 
@@ -95,7 +92,7 @@ export default function Home() {
       <div className="flex flex-col grow min-w-auto gap-8">
 
         <X.Container className="w-full">
-          <X.HeaderLink no_padding>Colaboradores</X.HeaderLink>
+          <X.HeaderLink no_padding href="/colaboradores">Colaboradores</X.HeaderLink>
           <X.Divider></X.Divider>
           <X.DataField>
             <div className="flex flex-row gap-4 w-full items-center ">
@@ -106,7 +103,7 @@ export default function Home() {
         </X.Container>
 
         <X.Container className="w-full">
-          <X.HeaderLink no_padding>Clientes</X.HeaderLink>
+          <X.HeaderLink no_padding href="/clientes">Clientes</X.HeaderLink>
           <X.Divider></X.Divider>
           <X.DataField>
             <div className="flex flex-row gap-4 w-full items-center ">
@@ -117,7 +114,7 @@ export default function Home() {
         </X.Container>
 
         <X.Container className="w-full">
-          <X.HeaderLink no_padding>Top Casos</X.HeaderLink>
+          <X.HeaderLink no_padding href="/casos">Top Casos</X.HeaderLink>
           <X.Divider></X.Divider>
           <p className="font-semibold">Colaborador:</p>
           <X.Link>[4] Telmo Maia</X.Link>

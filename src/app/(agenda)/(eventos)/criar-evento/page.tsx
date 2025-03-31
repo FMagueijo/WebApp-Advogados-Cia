@@ -9,7 +9,7 @@ const CreateEventPage: React.FC = () => {
     return (
         <div className="flex flex-row gap-8 "> {/* Fundo igual ao da Navbar */}
             {/* Conteúdo da Página */}
-            <X.Container className="w-full p-8">
+            <X.Container className="w-full p-8 h-max">
                 <div className="flex justify-between items-center">
                     <p className="text-lg font-semibold">Criar evento</p>
                 </div>
