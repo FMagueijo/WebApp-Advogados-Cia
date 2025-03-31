@@ -17,7 +17,7 @@ export default function ListarColab() {
       <div className="flex flex-col gap-8">
         <X.Container className="w-full overflow-x-auto">
           <div className="flex justify-between items-center">
-            <p className="text-lg font-semibold">Listar Colaboradores</p>
+            <p className="text-lg font-semibold">Listar Clientes</p>
           </div>
           <X.Divider></X.Divider>
           <X.ButtonLink className="w-max" href="/criar-cliente">Criar Cliente</X.ButtonLink>
