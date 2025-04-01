@@ -31,6 +31,7 @@ const navLinks: NavLink[] = [
 ];
 
 export async function logout() {
+    console.log("Logging out...");
     await signOut();
 }
 
@@ -155,18 +156,30 @@ const Navbar: React.FC<NavProps> = ({ className = "" }) => {
                     </li>
                     <li className={`hidden xl:block`}>
                         <X.Container direction="horizontal" className="h-full justify-center overflow-x-auto overflow-y-hidden">
-                            {filteredUtilLinks.map((link) => (
-                                <X.ButtonLink
+                            {filteredUtilLinks.map((link) => link.onClick ? (
+                                <X.Button
                                     key={link.href}
                                     selected={pathname === link.href}
-                                    href={link.onClick ? undefined : link.href}
-                                    smallpadding={true}
                                     onClick={link.onClick}
                                     custombg={link.customColor ? link.customColor : ""}
                                     className="flex-shrink-0 group">
                                     <img className={"min-w-6 flex-shrink-0" + (pathname === link.href ? " invert" : "")} src={link.ico} />
-                                </X.ButtonLink>
-                            ))}
+                                </X.Button>
+                            ) :
+                                (
+                                    <X.ButtonLink
+                                        key={link.href}
+                                        selected={pathname === link.href}
+                                        href={link.onClick ? undefined : link.href}
+                                        smallpadding={true}
+                                        onClick={link.onClick}
+                                        custombg={link.customColor ? link.customColor : ""}
+                                        className="flex-shrink-0 group">
+                                        <img className={"min-w-6 flex-shrink-0" + (pathname === link.href ? " invert" : "")} src={link.ico} />
+                                    </X.ButtonLink>
+                                )
+
+                            )}
                         </X.Container>
                     </li>
                 </ul>
