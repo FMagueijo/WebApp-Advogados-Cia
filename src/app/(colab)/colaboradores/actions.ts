@@ -1,0 +1,63 @@
+// app/(colab)/colaboradores/actions.ts
+'use server';
+
+import prisma from '@/lib/prisma';
+
+export async function fetchColaboradores(
+    filters: Record<string, any> = {},
+    order: Record<string, boolean> = {}
+) {
+    console.log(filters);
+    try {
+        // Convert filters to Prisma where clause
+        const where: any = {};
+
+        if (filters.ID) where.id = Number(filters.ID);
+        if (filters.Nome) where.nome = { contains: filters.Nome };
+        if (filters.Email) where.email = { contains: filters.Email };
+        if (filters.Aaa) {
+            if (filters.Aaa === "Ativo") where.esta_verificado = true;
+            if (filters.Aaa === "Não Verificado") where.esta_verificado = false;
+            if (filters.Aaa === "Bloqueado") where.bloqueado = true;
+        }
+
+        // Convert order to Prisma orderBy
+        const orderBy: any = [];
+        for (const [key, value] of Object.entries(order)) {
+            const prismaKey = {
+                "ID": "id",
+                "Nome": "nome",
+                "Email": "email"
+            }[key] || key;
+            orderBy.push({ [prismaKey]: value ? "desc" : "asc" });
+        }
+
+        const result = await prisma.user.findMany({
+            orderBy,
+            select: {
+                id: true,
+                nome: true,
+                email: true,
+                esta_verificado: true,
+                role: {  // This replaces the 'include'
+                    select: {
+                        role_id: true,
+                        nome_role: true
+                        // Include other role fields you need
+                    }
+                }
+            },
+            where: {
+                ...where,
+                role: {
+                    nome_role: "colaborador"
+                }
+            }
+        });
+
+        return JSON.parse(JSON.stringify(result));
+    } catch (error) {
+        console.error('Database error:', error);
+        throw new Error('Failed to fetch colaboradores: ' + error);
+    }
+}

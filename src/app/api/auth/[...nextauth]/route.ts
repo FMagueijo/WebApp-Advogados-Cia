@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { createConnection } from 'mysql2/promise';
 import { compare } from 'bcryptjs';
+import prisma from '@/lib/prisma';
 
 const handler = NextAuth({
     providers: [
@@ -17,31 +18,28 @@ const handler = NextAuth({
                 }
 
                 try {
-                    const connection = await createConnection({
-                        host: process.env.DB_HOST,
-                        user: process.env.DB_USER,
-                        password: process.env.DB_PASSWORD,
-                        database: process.env.DB_NAME,
-                        port: Number(process.env.DB_PORT) || 3306
+                
+                    const user = await prisma.user.findUnique({
+                        where: {
+                            email: credentials.email,
+                        },
+                        select: {
+                            id: true,
+                            email: true,
+                            password_hash: true,
+                            role_id: true,
+                        },
                     });
 
-                    const [rows] = await connection.execute(
-                        'SELECT id, email, password_hash, role_id FROM utilizador WHERE email = ?',
-                        [credentials.email]
-                    );
-
-                    await connection.end();
-
-                    const user = (rows as any)[0];
                     if (!user) return null;
 
-                    const isValid = await compare(credentials.password, user.password_hash);
+                    const isValid = user.password_hash ? await compare(credentials.password, user.password_hash) : false;
                     if (!isValid) return null;
 
                     return {
                         id: user.id.toString(),
                         email: user.email,
-                        role: user.role_id
+                        role: user.role_id ?? undefined
                     };
                 } catch (error) {
                     console.error('Authentication error:', error);

@@ -2,14 +2,19 @@
 ## Ficheiros Necessarios (Não Disponibilizados)
 - ".env" - na raiz do projeto.
 
-## Iniciar Base de Dados
-- Abrir XAMPP & liga apache e mysql.
-- Na página de sql do site local do mysql colar e executar o código do ficheiro "/src/database/criar_bd.sql".
+## Abrir Webapp
+### Pre-requisitos
+- Ter Mysql e Apache ligados através do XAMPP 
+- Certificar-se que a porta do Mysql é a 3306
 
-## Iniciar Webapp
+### Iniciar Webapp
 - Abrir Projeto no Visual Studio Code.
 - Abrir Terminal (Bash).
-- Executar o comando "npm install" para instalar todos os pacotes necessários (Apenas necessário executar após mudnças no ficheiro de pacotes node).
-- Finalmente executar o comando "npm run dev", esperar executar e clicar no link "localhost:<port>".
- 
-  
+- Executar o comando "npm run fast-dev" para abrir e fazer todos os processos necessarios para abrir a Webapp.
+- Esperar executar e clicar no link "localhost:<port>".
+
+## Fazer Alterações á BD
+- Fazer alteração no ficheiro "./prisma/schema.prisma".
+- Abrir Terminal (Bash).
+- Executar o comando "npm run make-schema-edit" para executar migracao da BD.
+- Feito.

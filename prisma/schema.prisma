@@ -1,0 +1,29 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  role_id  Int     @id @default(autoincrement())
+  nome_role String  @unique @map("nome_role") @db.VarChar(50)
+  users    User[]
+
+  @@map("role")
+}
+
+model User {
+  id              Int     @id @default(autoincrement())
+  nome            String  @db.VarChar(95)
+  esta_verificado Boolean @default(false)
+  password_hash   String? @db.VarChar(255)
+  email           String  @unique @db.VarChar(255)
+  role_id         Int?
+  role            Role?   @relation(fields: [role_id], references: [role_id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@map("utilizador")
+}
