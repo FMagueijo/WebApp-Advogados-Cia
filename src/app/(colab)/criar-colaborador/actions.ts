@@ -24,12 +24,10 @@ export async function criarColaborador(formData: FormData) {
       data: {
         nome,
         email,
-        // Nota: Estes campos não existem no teu modelo atual
-        // telefone, 
-        // codigoPostal, 
-        // endereco,
-        // Se precisares destes campos, deves adicioná-los ao teu modelo Prisma primeiro
-        esta_verificado: true, // ou false, conforme a tua lógica
+        telefone, 
+        codigo_postal: codigoPostal,
+        endereco,
+        esta_verificado: false,
         role: {
           connect: {
             nome_role: 'colaborador'
