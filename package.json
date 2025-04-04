@@ -10,7 +10,6 @@
     "fast-dev": "npm install && npm run db:reset && npm run dev",
     "make-schema-edit": "prisma generate && prisma migrate dev --name schema_update",
     "db:reset": "prisma migrate reset --force && prisma generate"
-
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
@@ -36,5 +35,4 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   }
-
 }
