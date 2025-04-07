@@ -27,3 +27,14 @@ model User {
 
   @@map("utilizador")
 }
+
+model Cliente {
+  id        Int     @id @default(autoincrement())
+  nome      String  @db.VarChar(100)
+  email     String  @unique @db.VarChar(255)
+  telefone  String  @db.VarChar(20)
+  codigoPostal String @db.VarChar(10)
+  endereco  String  @db.VarChar(255)
+
+  @@map("cliente")
+}
