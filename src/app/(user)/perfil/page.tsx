@@ -1,112 +1,193 @@
-"use client"
+"use client";
 
 import * as X from "@/components/xcomponents";
 import type { FunctionComponent } from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchUserProfile, updateUserProfile } from "./actions";
+import { useSession } from "next-auth/react";
 
 const Suporte: FunctionComponent = () => {
   return (
     <X.Container className="w-full">
       <p className="font-semibold">Área de Suporte</p>
-      <X.Divider></X.Divider>
+      <X.Divider />
       <X.ButtonLink>Definir Nova Password</X.ButtonLink>    
       <X.ButtonLink>Contactar Admin</X.ButtonLink>    
     </X.Container>
   );
-}
+};
 
-interface DadosProps {
+interface DadosFieldProps {
   titulo: string;
   valor: string;
   editando?: boolean;
   onMudanca?: (novoValor: string) => void;
+  disabled?: boolean;
 }
 
-const Dados: React.FC<DadosProps> = ({ titulo, valor, editando = false, onMudanca }) => (
+const DadosField: React.FC<DadosFieldProps> = ({ 
+  titulo, 
+  valor, 
+  editando = false, 
+  onMudanca, 
+  disabled = false 
+}) => (
   <X.Container className="w-full">
     <div className="space-y-2">
-      <h2 className="text-base font-semibold text-white">{titulo}</h2> 
+      <h2 className="text-base font-semibold text-white">{titulo}</h2>
       {editando ? (
         <input
           type="text"
           value={valor}
           onChange={(e) => onMudanca && onMudanca(e.target.value)}
-          className="text-lg text-gray-300 bg-gray-700 p-1 rounded w-full border border-gray-600 focus:border-blue-500 focus:outline-none"
+          className={`text-lg text-gray-300 bg-gray-700 p-1 rounded w-full border border-gray-600 focus:border-blue-500 focus:outline-none ${
+            disabled ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          disabled={disabled}
         />
       ) : (
-        <p className="text-lg text-gray-500">{valor}</p>
+        <p className="text-lg text-gray-500">{valor || "Não definido"}</p>
       )}
     </div>
   </X.Container>
 );
 
-export default function Perfil() {
-  const [editando, setEditando] = useState(false);
-  const [dados, setDados] = useState({
-    nome: "Inácio Plebeu Matias",
-    email: "inacio@example.com",
-    telefone: "+351 912 345 678",
-    endereco: "Rua Exemplo, 123, Lisboa",
-    outros: "..."
+const LoadingSpinner = () => (
+  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+);
+
+export default function PerfilPage() {
+  const { data: session } = useSession();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [profileData, setProfileData] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    endereco: "",
+    codigo_postal: ""
   });
 
-  const alternarEdicao = () => {
-    setEditando(!editando);
+  useEffect(() => {
+    const loadProfileData = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        setIsLoading(true);
+        const userId = Number(session.user.id);
+        const data = await fetchUserProfile(userId);
+        setProfileData(data);
+      } catch (error) {
+        console.error("Failed to load profile:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfileData();
+  }, [session]);
+
+  const toggleEditMode = async () => {
+    if (isEditing) {
+      try {
+        setIsLoading(true);
+        if (!session?.user?.id) return;
+        
+        const userId = Number(session.user.id);
+        const updatedData = await updateUserProfile(userId, {
+          nome: profileData.nome,
+          telefone: profileData.telefone,
+          endereco: profileData.endereco,
+          codigo_postal: profileData.codigo_postal
+        });
+        
+        setProfileData(prev => ({ ...prev, ...updatedData }));
+      } catch (error) {
+        console.error("Failed to update profile:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    setIsEditing(!isEditing);
   };
 
-  const handleMudanca = (campo: keyof typeof dados) => (novoValor: string) => {
-    setDados(prev => ({ ...prev, [campo]: novoValor }));
-  };
+  const handleFieldChange = (field: keyof typeof profileData) => 
+    (value: string) => {
+      setProfileData(prev => ({ ...prev, [field]: value }));
+    };
+
+  if (isLoading && !profileData.nome) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <LoadingSpinner />
+        <span className="ml-2">Carregando perfil...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-row gap-8">
-      <div className="flex flex-col gap-8 w-2/3">
+    <div className="flex flex-col md:flex-row gap-8">
+      <div className="w-full md:w-2/3 space-y-6">
         <X.Container className="w-full">
           <div className="flex justify-between items-center">
-            <p className="text-lg font-semibold">O meu perfil</p>
-            <button 
-              onClick={alternarEdicao}
-              className="p-1 hover:bg-gray-700 rounded transition-colors"
-              aria-label={editando ? "Salvar" : "Editar"}
+            <h1 className="text-xl font-bold">Meu Perfil</h1>
+            <button
+              onClick={toggleEditMode}
+              className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+              disabled={isLoading}
+              aria-label={isEditing ? "Salvar alterações" : "Editar perfil"}
             >
-              <img src="/images/icons/edit.svg" className="h-6" />
+              {isLoading ? (
+                <LoadingSpinner />
+              ) : isEditing ? (
+                <img src="/images/icons/check.svg" className="h-5 w-5" alt="Salvar" />
+              ) : (
+                <img src="/images/icons/edit.svg" className="h-5 w-5" alt="Editar" />
+              )}
             </button>
           </div>
-          <X.Divider></X.Divider>
-          <Dados 
-            titulo="Nome Completo" 
-            valor={dados.nome} 
-            editando={editando}
-            onMudanca={handleMudanca('nome')}
-          />
-          <Dados 
-            titulo="Email" 
-            valor={dados.email} 
-            editando={editando}
-            onMudanca={handleMudanca('email')}
-          />
-          <Dados 
-            titulo="Telefone" 
-            valor={dados.telefone} 
-            editando={editando}
-            onMudanca={handleMudanca('telefone')}
-          />
-          <Dados 
-            titulo="Endereço" 
-            valor={dados.endereco} 
-            editando={editando}
-            onMudanca={handleMudanca('endereco')}
-          />
-          <Dados 
-            titulo="Outros dados públicos e privados" 
-            valor={dados.outros} 
-            editando={editando}
-            onMudanca={handleMudanca('outros')}
-          />
+          
+          <X.Divider />
+          
+          <div className="space-y-4">
+            <DadosField
+              titulo="Nome Completo"
+              valor={profileData.nome}
+              editando={isEditing}
+              onMudanca={handleFieldChange('nome')}
+            />
+            
+            <DadosField
+              titulo="Email"
+              valor={profileData.email}
+              disabled={true}
+            />
+            
+            <DadosField
+              titulo="Telefone"
+              valor={profileData.telefone}
+              editando={isEditing}
+              onMudanca={handleFieldChange('telefone')}
+            />
+            
+            <DadosField
+              titulo="Código Postal"
+              valor={profileData.codigo_postal}
+              editando={isEditing}
+              onMudanca={handleFieldChange('codigo_postal')}
+            />
+            
+            <DadosField
+              titulo="Endereço"
+              valor={profileData.endereco}
+              editando={isEditing}
+              onMudanca={handleFieldChange('endereco')}
+            />
+          </div>
         </X.Container>
       </div>
-
-      <div className="flex flex-col gap-8 w-1/3">
+      
+      <div className="w-full md:w-1/3">
         <Suporte />
       </div>
     </div>

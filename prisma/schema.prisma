@@ -22,6 +22,9 @@ model User {
   esta_verificado Boolean @default(false)
   password_hash   String? @db.VarChar(255)
   email           String  @unique @db.VarChar(255)
+  telefone        String? @db.VarChar(20)
+  codigo_postal   String? @db.VarChar(8)
+  endereco        String? @db.VarChar(255)
   role_id         Int?
   role            Role?   @relation(fields: [role_id], references: [role_id], onDelete: SetNull, onUpdate: Cascade)
 
