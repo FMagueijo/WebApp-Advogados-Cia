@@ -34,7 +34,6 @@ export async function criarColaborador(formData: FormData) {
         telefone,
         codigo_postal: codigoPostal,
         endereco,
-        esta_verificado: false,
         role: {
           connect: {
             nome_role: 'colaborador'

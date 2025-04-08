@@ -3,6 +3,31 @@
 
 import prisma from '@/lib/prisma';
 
+export async function toggleBloqueado(id: number) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id },
+            select: { esta_bloqueado: true },
+        });
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id },
+            data: {
+                esta_bloqueado: !user.esta_bloqueado,
+            },
+        });
+
+        return updatedUser;
+    } catch (error) {
+        console.error('Database error:', error);
+        throw new Error('Failed to toggle user bloqueado status: ' + error);
+    }
+}
+
 export async function fetchColaboradores(
     filters: Record<string, any> = {},
     order: Record<string, boolean> = {}
@@ -15,10 +40,22 @@ export async function fetchColaboradores(
         if (filters.ID) where.id = Number(filters.ID);
         if (filters.Nome) where.nome = { contains: filters.Nome };
         if (filters.Email) where.email = { contains: filters.Email };
-        if (filters.Aaa) {
-            if (filters.Aaa === "Ativo") where.esta_verificado = true;
-            if (filters.Aaa === "Não Verificado") where.esta_verificado = false;
-            if (filters.Aaa === "Bloqueado") where.bloqueado = true;
+        if (filters.Estado) {
+            switch (filters.Estado) {
+                case "Ativo":
+                    where.esta_bloqueado = false;
+                    where.password_hash = { not: null };
+                    break;
+                case "Não Verificado":
+                    where.password_hash = null;
+                    break;
+                case "Bloqueado":
+                    where.esta_bloqueado = true;
+                    break;
+                default:
+                    break;
+            }
+
         }
 
         // Convert order to Prisma orderBy
@@ -38,7 +75,8 @@ export async function fetchColaboradores(
                 id: true,
                 nome: true,
                 email: true,
-                esta_verificado: true,
+                password_hash: true,
+                esta_bloqueado: true,
                 role: {  // This replaces the 'include'
                     select: {
                         role_id: true,

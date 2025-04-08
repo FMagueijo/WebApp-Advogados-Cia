@@ -2,7 +2,7 @@
 
 import * as X from "@/components/xcomponents";
 import { useEffect, useState } from "react";
-import { fetchColaboradores } from "./actions";
+import { fetchColaboradores, toggleBloqueado } from "./actions";
 import { RoleData, UserData } from "@/types/types";
 import { useSession } from "next-auth/react";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
@@ -41,7 +41,10 @@ export default function ListarColab() {
 
   // Function to toggle active/inactive state
   const toggleAtivo = (id: number) => {
-
+    toggleBloqueado(id)
+      .then(() => {
+        loadData(); // Reload data after toggling
+      });
   };
 
 
@@ -56,7 +59,7 @@ export default function ListarColab() {
           <X.Divider></X.Divider>
           {user?.role == 1 && <X.ButtonLink className="w-max" href="/criar-colaborador">Criar Colaborador</X.ButtonLink>}
 
-            <div className="flex flex-row gap-4 flex-wrap w-full overflow-x-auto">
+          <div className="flex flex-row gap-4 flex-wrap w-full overflow-x-auto">
             <X.SortBox
               label="Ordenar"
               options={["ID", "Nome", "Email"]}
@@ -64,17 +67,24 @@ export default function ListarColab() {
             />
             <X.FilterBox
               filters={[
-              { label: "ID", value: "user_id", type: "number" },
-              { label: "Nome", value: "user_name", type: "text" },
-              { label: "Email", value: "user_email", type: "text" },
-              { label: "Estado", value: "Aaa", type: "combobox", options: ["Ativo", "Não Verificado", "Bloqueado"] },
+                { label: "ID", value: "user_id", type: "number" },
+                { label: "Nome", value: "user_name", type: "text" },
+                { label: "Email", value: "user_email", type: "text" },
+                { label: "Estado", value: "user_estado", type: "combobox", options: ["Qualquer", "Ativo", "Não Verificado", "Bloqueado"] },
               ]}
               onFilterChange={(newFilters: Record<string, any>) => {
-              setTimeout(() => setFilters(newFilters), 0);
+                setTimeout(() => setFilters(newFilters), 0);
               }}
               label="Filtros"
             />
-            </div>
+            <X.Button onClick={loadData} className="w-max">
+              <img
+                src="/images/icons/sync.svg"
+                alt="Refresh"
+                className="w-6 h-6"
+              />
+            </X.Button>
+          </div>
           <X.Divider></X.Divider>
           {status === "loading" ? <SimpleSkeleton /> :
 
@@ -99,11 +109,11 @@ export default function ListarColab() {
                   </thead>
                   <tbody>
                     {colaboradores.map((colab) => {
-                      const link = colab.esta_verificado ? utilLinks[0] : utilLinks[1];
+                      const link = colab.esta_bloqueado ? utilLinks[0] : utilLinks[1];
                       return (
                         <tr key={colab.id} className="border-b border-[var(--secondary-color)]">
                           <td className="px-2">
-                            <X.Link className="group inline-flex" href={"/utilizador/" + colab.id}>
+                            <X.Link className="group inline-flex" href={"/perfil-terceiro/" + colab.id}>
                               <img className="w-6 h-6 group-hover:invert" src="/images/icons/profile.svg" alt="Ícone" />
                             </X.Link>
                           </td>
@@ -119,29 +129,29 @@ export default function ListarColab() {
                             </X.Link>
                           </td>
                           <td className="px-2 whitespace-nowrap">
-                            <X.DataField>{"dawd"}</X.DataField>
+                            <X.DataField>{"0"}</X.DataField>
                           </td>
                           {user?.role == 1 &&
                             <>
                               <td className="px-2 whitespace-nowrap">
                                 <X.DataField
-                                  colorOverride={colab.esta_verificado ? "--success-color" : "--error-color"}
+                                  colorOverride={colab.password_hash == null || colab.esta_bloqueado ? "--error-color" : "--success-color"}
                                 >
-                                  {colab.esta_verificado ? "Ativo" : "Não Verificado"}
+                                  {colab.password_hash == null ? "Não Verificado" : colab.esta_bloqueado ? "Bloqueado" : "Ativo"}
                                 </X.DataField>
                               </td>
                               <td className="px-2 whitespace-nowrap">
-                                <button
-                                  onClick={() => toggleAtivo(colab.id)}
-                                  style={{ backgroundColor: `var(${link.customColor})` }}
-                                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                                >
-                                  <img
-                                    src={link.ico}
-                                    alt={link.label}
-                                    className="w-6 h-6"
-                                  />
-                                </button>
+                                {
+                                  colab.password_hash !== null &&
+                                  <X.Button onClick={() => toggleAtivo(colab.id)} custombg={link.customColor}>
+                                    <img
+                                      src={link.ico}
+                                      alt={link.label}
+                                      className="w-6 h-6"
+                                    />
+                                  </X.Button>
+                                }
+
                               </td>
                             </>
                           }

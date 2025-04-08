@@ -19,7 +19,7 @@ model Role {
 model User {
   id              Int     @id @default(autoincrement())
   nome            String  @db.VarChar(95)
-  esta_verificado Boolean @default(false)
+  esta_bloqueado Boolean @default(false)
   password_hash   String? @db.VarChar(255)
   email           String  @unique @db.VarChar(255)
   telefone        String? @db.VarChar(20)

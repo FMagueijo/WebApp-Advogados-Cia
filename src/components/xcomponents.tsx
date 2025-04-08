@@ -283,15 +283,16 @@ interface ButtonProps extends ChildProps {
 const Button: React.FC<ButtonProps> = ({ children, onClick, className = "", selected = false, custombg = undefined }) => {
 
     const main_col = custombg ? custombg : "--secondary-color";
-
+    
     return (
         <button
             type="button"
             className={`h-14 px-4 content-center cursor-pointer group flex justify-between rounded-lg no-underline p-4 font-semibold hover:opacity-75 ${selected
-                ? "bg-(--primary-color) text-(--secondary-color)"
-                : `bg-(${main_col}) text-(--primary-color)`
+                ? "text-(--secondary-color)"
+                : `text-(--primary-color)`
                 } ${className}`}
             onClick={onClick}
+            style={{ backgroundColor: `var(${main_col})` }}
         >
             {children}
         </button>
