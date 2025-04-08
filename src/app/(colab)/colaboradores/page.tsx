@@ -60,6 +60,13 @@ export default function ListarColab() {
           {user?.role == 1 && <X.ButtonLink className="w-max" href="/criar-colaborador">Criar Colaborador</X.ButtonLink>}
 
           <div className="flex flex-row gap-4 flex-wrap w-full overflow-x-auto">
+            <X.Button onClick={loadData} className="w-max">
+              <img
+                src="/images/icons/sync.svg"
+                alt="Refresh"
+                className="w-6 h-6"
+              />
+            </X.Button>
             <X.SortBox
               label="Ordenar"
               options={["ID", "Nome", "Email"]}
@@ -77,13 +84,7 @@ export default function ListarColab() {
               }}
               label="Filtros"
             />
-            <X.Button onClick={loadData} className="w-max">
-              <img
-                src="/images/icons/sync.svg"
-                alt="Refresh"
-                className="w-6 h-6"
-              />
-            </X.Button>
+            
           </div>
           <X.Divider></X.Divider>
           {status === "loading" ? <SimpleSkeleton /> :
