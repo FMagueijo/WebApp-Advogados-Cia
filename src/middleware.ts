@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAuth } from 'next-auth/middleware';
 
 const access_config = {
-    publicPaths: ['/_next', '/favicon.ico', '/images'],
+    publicPaths: ['/_next', '/favicon.ico', '/images', '/definir-password'],
     authPages: ['/login', '/register', '/forgot-password'],
     rolePaths: { 
         '/criar-colaborador': 1,  // COLAB 
