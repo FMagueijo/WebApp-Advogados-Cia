@@ -15,7 +15,7 @@ const utilLinks = [
 
 export default function ListarColab() {
   //const [colaboradores, setColaboradores] = useState<UserData[]>([]);
-  const [userRoles, setUserRoles] = useState<RoleData[]>([]); // State to store roles by user ID
+  
 
   const [colaboradores, setColaboradores] = useState<any[]>([]);
 
@@ -60,11 +60,11 @@ export default function ListarColab() {
           {user?.role == 1 && <X.ButtonLink className="w-max" href="/criar-colaborador">Criar Colaborador</X.ButtonLink>}
 
           <div className="flex flex-row gap-4 flex-wrap w-full overflow-x-auto">
-            <X.Button onClick={loadData} className="w-max">
+            <X.Button onClick={loadData} className="w-max group">
               <img
                 src="/images/icons/sync.svg"
                 alt="Refresh"
-                className="w-6 h-6"
+                className={`w-6 h-6  group-hover:animate-spin ${status === "loading" ? "animate-spin" : ""}`} 
               />
             </X.Button>
             <X.SortBox
