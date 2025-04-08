@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import * as X from "@/components/xcomponents";
-import { signIn } from "next-auth/react";
 import LoginForm from "@/components/auth/loginForm";
 
 export const metadata: Metadata = {

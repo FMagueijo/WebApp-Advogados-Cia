@@ -2,27 +2,61 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { useRouter } from "next/router"; // Importa o useRouter do Next.js
+import { User } from "@prisma/client";
+import {hash} from "bcryptjs";
+import { redirect } from "next/navigation";
 
-export function HandleLogin() {
-    // Use o useRouter para acessar os parâmetros da rota
-    const router = useRouter();
-    const { token } = router.query; // Extraia o token da query
-    console.log("Token from HandleLogin:", token); // Use the token to avoid unused variable error
+export async function validateToken(token: string) {
+
+    try {
+        const tokenRecord = await prisma.tokenPass.findUnique({
+            where: { token },
+            include: { user: true }
+        });
+        
+        // Token not found or expired
+        if (!tokenRecord /*|| (tokenRecord.expiresAt && new Date() > tokenRecord.expiresAt)*/) {
+            return { valid: false };
+        }
+
+        return {
+            valid: true,
+            user: {
+                id: tokenRecord.user_id,
+                nome: tokenRecord.user.nome,
+                email: tokenRecord.user.email
+            }
+        };
+    } catch (error) {
+
+        console.log("2");
+        console.error('Database error:', error);
+        return { valid: false };
+    }
 }
 
-export function GetToken(): string | undefined {
-    const router = useRouter();
-    const { token } = router.query;
-    return typeof token === "string" ? token : undefined;
-}
+export async function changePassword(password: string, user: User, ) {
 
-export async function isValidToken(token: string | undefined): Promise<boolean> {
+    try {
 
-    const tok = await prisma.tokenPass.findFirst({
-        select: { token: true },
-        where: { token },
-    });
+        const hashedpass = await hash(password, 12);
+        await prisma.user.update({
+            data: {
+                password_hash: hashedpass,
+            },
+            where: {
+                id: user.id
+            }
+        });
 
-    return tok !== null; // Retorna true se o token for válido, false caso contrário
+        await prisma.tokenPass.deleteMany({
+            where: {
+                user_id: user.id
+            }
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+    }
+
+    redirect("/login");
 }

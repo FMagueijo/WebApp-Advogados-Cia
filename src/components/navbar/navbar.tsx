@@ -44,10 +44,12 @@ const utilLinks: UtilLink[] = [
     },
 ];
 
-const NO_NAV_BAR_PAGES = [
+
+
+const NO_NAV_BAR_PAGES: (string | RegExp)[] = [
     "/_error",
     "/login",
-    "/definir-password",
+    /^\/definir-password\/.+$/, // Matches `/definir-password/[anything]`
     "/logout",
     "/goodbye",
 ];
@@ -149,10 +151,22 @@ interface NavProps {
 const Navbar: React.FC<NavProps> = ({ className = "" }) => {
     const pathname = usePathname();
     const { data: session, status } = useSession();
-
+    
     if (NO_NAV_BAR_PAGES.includes(pathname)) return null;
+    
+    const shouldHideNavbar = NO_NAV_BAR_PAGES.some((page) => {
+        if (typeof page === "string") {
+            return pathname === page; // Exact match
+        } else if (page instanceof RegExp) {
+            return page.test(pathname); // Regex test
+        }
+        return false;
+    });
+
+    if (shouldHideNavbar) return null;
 
     if (status === "loading") return <Skeleton />;
+
     const filteredNavLinks = navLinks.filter(link =>
         hasRequiredRole(session?.user?.role, link.roles)
     );
