@@ -19,8 +19,10 @@ export default function LoginForm() {
             const result = await signIn('credentials', {
                 email: formData.get('Email'),
                 password: formData.get('Password'),
-                redirect: false,
+                redirect: false
             });
+
+            console.log(result);
 
             if (result?.error) {
                 throw new Error(result.error);
@@ -31,9 +33,9 @@ export default function LoginForm() {
             }
 
             window.location.href = '/';
+
         } catch (err) {
-            console.error('Erro no login:', err);
-            setError(err instanceof Error ? err.message : 'Erro desconhecido');
+            setError(err ? (err as Error).message : 'Erro desconhecido');
         } finally {
             setIsLoading(false);
         }
@@ -48,7 +50,7 @@ export default function LoginForm() {
             <form onSubmit={handleSubmit} className="w-full">
                 <X.Container className="w-full">
                     {error && (
-                        <X.ErrorBox className="w-full" visible >
+                        <X.ErrorBox className="w-full" visible={!!error} onClose={() => { setError(null); } }> 
                             {error}
                         </X.ErrorBox>
                     )}

@@ -52,6 +52,7 @@ const NO_NAV_BAR_PAGES: (string | RegExp)[] = [
     /^\/definir-password\/.+$/, // Matches `/definir-password/[anything]`
     "/logout",
     "/goodbye",
+    "/forbidden",
 ];
 
 const hasRequiredRole = (userRole: number | undefined, requiredRoles?: number[]) => {

@@ -194,10 +194,12 @@ const Field: React.FC<FieldProps> = ({
 
     const handleInternalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
-        setInternalValue(newValue);
 
         if (onChange) {
             onChange(e);
+            setInternalValue(newValue);
+        } else {
+            setInternalValue(newValue);
         }
 
         const validationError = validateInput(newValue);
@@ -208,7 +210,7 @@ const Field: React.FC<FieldProps> = ({
         }
     };
 
-    const inputValue = onChange ? value : internalValue;
+    const inputValue = internalValue;
     const errorMessages = error ? error.split("\n").filter(Boolean) : [];
 
     return (

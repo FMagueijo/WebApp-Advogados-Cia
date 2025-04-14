@@ -17,3 +17,4 @@ export interface FilterData {
     value?: string;
     options?: string[];
 }
+

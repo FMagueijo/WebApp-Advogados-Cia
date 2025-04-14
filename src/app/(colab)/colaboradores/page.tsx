@@ -47,6 +47,7 @@ export default function ListarColab() {
       });
   };
 
+  if(colaboradores == undefined) return <SimpleSkeleton />
 
 
   return (
