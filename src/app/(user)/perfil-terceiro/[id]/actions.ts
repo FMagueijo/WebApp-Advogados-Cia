@@ -12,7 +12,7 @@ interface UserProfile {
   codigo_postal: string;
 }
 
-export async function fetchUserProfile(userId: number): Promise<UserProfile> {
+export async function fetchUserProfile(userId: number): Promise<UserProfile | null> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -39,7 +39,7 @@ export async function fetchUserProfile(userId: number): Promise<UserProfile> {
     };
   } catch (error) {
     console.error('Database error:', error);
-    throw new Error(`Erro ao carregar perfil: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    return null;
   }
 }
 

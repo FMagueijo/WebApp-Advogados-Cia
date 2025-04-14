@@ -248,6 +248,7 @@ interface ErrorBoxProps extends ChildProps {
     overflow?: boolean;
     visible: boolean;
     onClose?: () => void;
+    hideCloseButton?: boolean;
 }
 
 const ErrorBox: React.FC<ErrorBoxProps> = ({
@@ -256,7 +257,8 @@ const ErrorBox: React.FC<ErrorBoxProps> = ({
     direction = 'vertical',
     overflow = false,
     visible,
-    onClose
+    onClose,
+    hideCloseButton = false
 }) => {
     const directionStyle = direction === 'horizontal' ? 'grid-flow-col' : 'grid-flow-row';
     const overflowStyle = overflow ? 'overflow-auto' : 'overflow-hidden';
@@ -266,12 +268,15 @@ const ErrorBox: React.FC<ErrorBoxProps> = ({
             <div className="flex-shrink-0 align-middle">
                 {children}
             </div>
-            <button
-                onClick={onClose}
-                className="align-middle ml-auto inline-flex cursor-pointer hover:opacity-50"
-                aria-label="Close">
-                <img src="/images/icons/close.svg" alt="Close" className="w-6 h-6" />
-            </button>
+            {
+                hideCloseButton &&
+                <button
+                    onClick={onClose}
+                    className="align-middle ml-auto inline-flex cursor-pointer hover:opacity-50"
+                    aria-label="Close">
+                    <img src="/images/icons/close.svg" alt="Close" className="w-6 h-6" />
+                </button>
+            }
         </div>
     );
 };
@@ -285,7 +290,7 @@ interface ButtonProps extends ChildProps {
 const Button: React.FC<ButtonProps> = ({ children, onClick, className = "", selected = false, custombg = undefined }) => {
 
     const main_col = custombg ? custombg : "--secondary-color";
-    
+
     return (
         <button
             type="button"

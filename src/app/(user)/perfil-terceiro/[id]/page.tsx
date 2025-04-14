@@ -7,6 +7,7 @@ import { fetchUserProfile, updateUserProfile } from "./actions";
 import { useSession } from "next-auth/react";
 import { User } from "@prisma/client";
 import { useParams } from "next/navigation";
+import SimpleSkeleton from "@/components/loading/simple_skeleton";
 
 const Suporte: FunctionComponent = () => {
   return (
@@ -84,53 +85,57 @@ export default function PerfilPage() {
     loadProfileData();
   }, [session]);
 
-  
+  if (profileData == null && !isLoading) {
+    return (
+      <X.ErrorBox visible hideCloseButton>
+        Não foi possivel carregar o perfil do Utilizador.
+      </X.ErrorBox>
+    );
+  }
+
   if (isLoading && profileData == null) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <LoadingSpinner />
-        <span className="ml-2">Carregando perfil...</span>
-      </div>
+      <SimpleSkeleton></SimpleSkeleton>
     );
   }
 
   return (
     <div className="flex flex-col md:flex-row gap-8">
-        <X.Container className="w-full">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold">{ profileData?.nome } | <span> Perfil</span></h1>
-          </div>
+      <X.Container className="w-full">
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-bold">{profileData?.nome} | <span> Perfil</span></h1>
+        </div>
 
-          <X.Divider />
+        <X.Divider />
 
-          <div className="space-y-4">
-            <DadosField
-              titulo="Nome Completo"
-              valor={profileData.nome}
-            />
+        <div className="space-y-4">
+          <DadosField
+            titulo="Nome Completo"
+            valor={profileData.nome}
+          />
 
-            <DadosField
-              titulo="Email"
-              valor={profileData.email}
-              disabled={true}
-            />
+          <DadosField
+            titulo="Email"
+            valor={profileData.email}
+            disabled={true}
+          />
 
-            <DadosField
-              titulo="Telefone"
-              valor={profileData.telefone}
-            />
+          <DadosField
+            titulo="Telefone"
+            valor={profileData.telefone}
+          />
 
-            <DadosField
-              titulo="Código Postal"
-              valor={profileData.codigo_postal}
-            />
+          <DadosField
+            titulo="Código Postal"
+            valor={profileData.codigo_postal}
+          />
 
-            <DadosField
-              titulo="Endereço"
-              valor={profileData.endereco}
-            />
-          </div>
-        </X.Container>
+          <DadosField
+            titulo="Endereço"
+            valor={profileData.endereco}
+          />
+        </div>
+      </X.Container>
     </div>
   );
 }
