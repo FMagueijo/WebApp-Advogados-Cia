@@ -269,7 +269,7 @@ const ErrorBox: React.FC<ErrorBoxProps> = ({
                 {children}
             </div>
             {
-                hideCloseButton &&
+                !hideCloseButton &&
                 <button
                     onClick={onClose}
                     className="align-middle ml-auto inline-flex cursor-pointer hover:opacity-50"
