@@ -1,7 +1,11 @@
 'use server';
 
 import prisma from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
+import { hash } from 'bcryptjs';
+import { revalidatePath } from "next/cache";
+import { enviarEmailContactoAdmin } from '@/lib/sendEmail'; // importa aqui
+
+
 
 interface UserProfile {
   id?: number;
@@ -71,5 +75,62 @@ export async function updateUserProfile(userId: number, data: Omit<UserProfile, 
   } catch (error) {
     console.error('Database error:', error);
     throw new Error(`Erro ao atualizar perfil: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+  }
+}
+
+export async function updatePassword(formData: FormData) {
+  try {
+    const userId = 1; // Substitua por como você obtém o ID (ex: via props, contexto, etc.)
+    const newPassword = formData.get("newPassword") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    // Validações
+    if (!newPassword || !confirmPassword) {
+      throw new Error("Preencha todos os campos");
+    }
+
+    if (newPassword !== confirmPassword) {
+      throw new Error("As senhas não coincidem");
+    }
+
+    if (newPassword.length < 8) {
+      throw new Error("A senha deve ter pelo menos 8 caracteres");
+    }
+
+    // Atualiza no banco
+    const hashedPassword = await hash(newPassword, 12);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password_hash: hashedPassword },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao atualizar senha:", error);
+    throw error;
+  }
+}
+
+export async function contactAdmin(formData: FormData) {
+  try {
+    const message = formData.get('message') as string;
+    
+    if (!message) {
+      throw new Error('A mensagem é obrigatória');
+    }
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'joao.silva@email.com';
+
+    // Envie o email usando a função existente ou crie uma nova
+    await enviarEmailContactoAdmin({
+      userEmail: 'user@exemplo.com', // Substitua pelo email do usuário atual
+      message,
+      adminEmail
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao contactar admin:', error);
+    throw error;
   }
 }

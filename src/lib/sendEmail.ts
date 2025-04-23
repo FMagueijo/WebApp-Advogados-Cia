@@ -35,3 +35,37 @@ export async function enviarEmailNovoColaborador(nome: string, email: string, li
     throw error;
   }
 }
+
+export async function enviarEmailContactoAdmin(params: {
+  userEmail: string;
+  message: string;
+  adminEmail: string;
+}) {
+  const payload = {
+    service_id: process.env.EMAILJS_SERVICE_ID,
+    template_id: process.env.EMAILJS_CONTACT_TEMPLATE_ID, // Novo template
+    user_id: process.env.EMAILJS_PUBLIC_KEY,
+    template_params: {
+      user_email: params.userEmail,
+      message: params.message,
+      admin_email: params.adminEmail
+    }
+  };
+
+  try {
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Falha ao enviar email: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('Erro ao enviar email:', error);
+    throw error;
+  }
+}

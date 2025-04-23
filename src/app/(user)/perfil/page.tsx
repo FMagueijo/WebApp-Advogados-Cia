@@ -3,16 +3,121 @@
 import * as X from "@/components/xcomponents";
 import type { FunctionComponent } from "react";
 import { useState, useEffect } from "react";
-import { fetchUserProfile, updateUserProfile } from "./actions";
+import { fetchUserProfile, updateUserProfile, updatePassword,contactAdmin } from "./actions";
 import { useSession } from "next-auth/react";
+import { useFormState, useFormStatus } from "react-dom";
 
+const LoadingSpinner = () => (
+  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+);
 const Suporte: FunctionComponent = () => {
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handlePasswordSubmit = async (formData: FormData) => {
+    try {
+      const result = await updatePassword(formData);
+      if (result?.success) {
+        setMessage({ type: 'success', text: "Senha atualizada com sucesso!" });
+        setShowPasswordForm(false);
+      }
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : "Erro ao atualizar senha" 
+      });
+    }
+  };
+
+  const handleContactSubmit = async (formData: FormData) => {
+    try {
+      const result = await contactAdmin(formData);
+      if (result?.success) {
+        setMessage({ type: 'success', text: "Mensagem enviada ao admin com sucesso!" });
+        setShowContactForm(false);
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : "Erro ao enviar mensagem"
+      });
+    }
+  };
   return (
     <X.Container className="w-full">
       <p className="font-semibold">Área de Suporte</p>
       <X.Divider />
-      <X.ButtonLink>Definir Nova Password</X.ButtonLink>    
-      <X.ButtonLink>Contactar Admin</X.ButtonLink>    
+      
+      {showPasswordForm ? (
+        <form action={handlePasswordSubmit} className="space-y-4">
+          <X.Field
+            required
+            type="password"
+            placeholder="Nova Senha"
+            name="newPassword"
+          />
+          <X.Field
+            required
+            type="password"
+            placeholder="Confirmar Nova Senha"
+            name="confirmPassword"
+          />
+          
+          {message && (
+            <div className={`text-sm ${
+              message.type === 'success' ? 'text-green-500' : 'text-red-500'
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <X.Submit>Atualizar Senha</X.Submit>
+            <X.Button
+              onClick={() => setShowPasswordForm(false)}
+            >
+              Cancelar
+            </X.Button>
+          </div>
+        </form>
+      ) : showContactForm ? (
+        <form action={handleContactSubmit} className="space-y-4">
+          <X.Field
+            required
+            placeholder="Digite sua mensagem"
+            name="message"
+            className="w-full"
+          />
+          
+          {message && (
+            <div className={`text-sm ${
+              message.type === 'success' ? 'text-green-500' : 'text-red-500'
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <X.Submit>Enviar Mensagem</X.Submit>
+            <X.Button
+              onClick={() => setShowContactForm(false)}
+            >
+              Cancelar
+            </X.Button>
+          </div>
+        </form>
+      ) : (
+        <X.Button onClick={() => setShowPasswordForm(true)} className="w-full text-center">
+          Definir Nova Password
+        </X.Button>
+      )}
+      <X.Button 
+            onClick={() => setShowContactForm(true)}
+            className="w-full text-center"
+          >
+            Contactar Admin
+          </X.Button>
     </X.Container>
   );
 };
@@ -50,10 +155,6 @@ const DadosField: React.FC<DadosFieldProps> = ({
       )}
     </div>
   </X.Container>
-);
-
-const LoadingSpinner = () => (
-  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
 );
 
 export default function PerfilPage() {
