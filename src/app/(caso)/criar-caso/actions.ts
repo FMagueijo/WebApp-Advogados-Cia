@@ -4,18 +4,19 @@ import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-export async function criarCaso(formData: FormData) {
+export async function criarCaso(formData: FormData, userId: string | number) {
   try {
     const processo = formData.get('Processo') as string;
     const resumo = formData.get('Resumo') as string;
     const descricao = formData.get('Descrição Detalhada') as string;
     const clienteId = formData.get('clienteId') as string;
 
-    console.log('clienteId recebido:', clienteId); // <--- Debug
-
-    if (!processo || !resumo || !clienteId) {
-      throw new Error('Processo, Resumo e Cliente são obrigatórios');
+    if (!processo || !resumo || !clienteId || !userId) {
+      throw new Error('Processo, Resumo, Cliente e Utilizador são obrigatórios');
     }
+
+    // Converter userId para número
+    const userIdNumber = typeof userId === 'string' ? parseInt(userId) : userId;
 
     await prisma.caso.create({
       data: {
@@ -23,6 +24,7 @@ export async function criarCaso(formData: FormData) {
         resumo,
         descricao: descricao || null,
         cliente_id: parseInt(clienteId),
+        user_id: userIdNumber // Agora garantido ser um número
       }
     });
 

@@ -1,10 +1,13 @@
 "use client";
-
 import * as X from "@/components/xcomponents";
 import { criarCaso, listarClientes, criarCliente } from "./actions";
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 export default function CriarCaso() {
+  const { data: session } = useSession();
+  const user = session?.user;
+  
   const [clientes, setClientes] = useState<Array<{ id: number, nome: string, email: string, telefone: string, codigoPostal: string, endereco: string }>>([]);
   const [clienteSelecionado, setClienteSelecionado] = useState<{ id: number, nome: string, email: string, telefone: string, codigoPostal: string, endereco: string } | null>(null);
   const [carregando, setCarregando] = useState(false);
@@ -38,11 +41,24 @@ export default function CriarCaso() {
 
   const handleSubmitCaso = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!user?.id) {
+      setErro('Utilizador não autenticado');
+      return;
+    }
+    
     const form = new FormData(e.currentTarget);
     if (clienteSelecionado) {
       form.append('clienteId', clienteSelecionado.id.toString());
     }
-    await criarCaso(form);
+    
+    try {
+      // Garantir que o user.id seja passado como string (será convertido para número na ação)
+      await criarCaso(form, user.id.toString());
+    } catch (error) {
+      setErro('Erro ao criar caso');
+      console.error(error);
+    }
   };
 
   const handleSubmitCliente = async (e: React.FormEvent<HTMLFormElement>) => {

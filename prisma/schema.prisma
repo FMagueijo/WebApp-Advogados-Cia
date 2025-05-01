@@ -58,6 +58,7 @@ model Caso {
   descricao   String?  @db.Text
   criado_em   DateTime @default(now())
   cliente_id  Int
+  user_id  Int
   cliente     Cliente  @relation(fields: [cliente_id], references: [id])
   
   @@map("caso")
