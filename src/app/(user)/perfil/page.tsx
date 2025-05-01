@@ -3,16 +3,22 @@
 import * as X from "@/components/xcomponents";
 import type { FunctionComponent } from "react";
 import { useState, useEffect } from "react";
-import { fetchUserProfile, updateUserProfile } from "./actions";
+import { fetchUserProfile, requestNewPassword, updateUserProfile } from "./actions";
 import { useSession } from "next-auth/react";
 
+
 const Suporte: FunctionComponent = () => {
+  const { data: session, status } = useSession();
+  const user = session?.user;
+
+  const definirPaswword = async () => {await requestNewPassword(Number(user?.id));};
   return (
     <X.Container className="w-full">
       <p className="font-semibold">Área de Suporte</p>
       <X.Divider />
-      <X.ButtonLink>Definir Nova Password</X.ButtonLink>    
-      <X.ButtonLink>Contactar Admin</X.ButtonLink>    
+      <X.ButtonLink onClick={definirPaswword}>Definir Nova Password</X.ButtonLink>    
+      <X.ButtonLink>Contactar Admin</X.ButtonLink> 
+      <X.Divider />   
     </X.Container>
   );
 };
