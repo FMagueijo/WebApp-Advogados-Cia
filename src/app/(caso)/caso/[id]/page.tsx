@@ -4,7 +4,7 @@ import * as X from "@/components/xcomponents";
 import { useSession } from "next-auth/react";
 import { notFound, useParams } from "next/navigation";
 import { useEffect, useState, type FunctionComponent } from "react";
-import { fetchCasoProfile } from "./actions";
+import { fetchCasoProfile, updateCasoEstado } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
 
 const Suporte: FunctionComponent = () => {
@@ -88,6 +88,9 @@ export default function perfilCaso() {
 
 
   const { data: session } = useSession();
+  
+  const [estado, setEstado] = useState(false);
+
 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,6 +99,7 @@ export default function perfilCaso() {
     processo: "",
     resumo: "",
     descricao: "",
+    estado: "",
   });
 
   useEffect(() => {
@@ -117,6 +121,20 @@ export default function perfilCaso() {
     loadProfileData();
   }, [session]);
 
+  const handleEstadoChange = async (newEstado: string) => {
+    try {
+      setIsLoading(true);
+      // Simulate an API call to update the estado
+      console.log(`Updating estado to: ${newEstado}`);
+      updateCasoEstado(Number(id), newEstado);
+      setProfileData((prevData) => ({ ...prevData, estado: newEstado }));
+    } catch (error) {
+      console.error("Failed to update estado:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if(isLoading){
     return <SimpleSkeleton></SimpleSkeleton>;
   }
@@ -134,12 +152,11 @@ export default function perfilCaso() {
           </div>
           <X.Divider></X.Divider>
           <X.Dropdown
-            label="Aberto"
+            label="Estado"
             options={["Aberto", "Fechado", "Terminado"]}
-            onSelect={(selectedOption) => console.log("Opção selecionada:", selectedOption)}
+            defaultIndex={["Aberto", "Fechado", "Terminado"].indexOf(profileData.estado)}
+            onSelect={handleEstadoChange}
           />
-
-
         </X.Container>
         <X.Container className="w-full" >
           <div className="flex justify-between items-center">
