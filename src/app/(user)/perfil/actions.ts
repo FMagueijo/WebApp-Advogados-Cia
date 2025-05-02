@@ -1,8 +1,9 @@
 'use server';
 
 import prisma from '@/lib/prisma';
+import { enviarEmailNovoColaborador } from '@/lib/sendEmail';
+import { revalidatePath } from 'next/cache';
 import { hash } from 'bcryptjs';
-import { revalidatePath } from "next/cache";
 import { enviarEmailContactoAdmin } from '@/lib/sendEmail'; // importa aqui
 
 
@@ -16,6 +17,29 @@ interface UserProfile {
   codigo_postal: string;
 }
 
+export async function requestNewPassword(userId: number){
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, nome: true }
+    });
+
+    if (!user || !user.email) {
+      throw new Error('Usuário não encontrado ou sem email');
+    }
+    const token = await prisma.tokenPass.create({
+      data: {
+        user_id: userId
+      }
+    });
+    const link = 'http://localhost:3000/definir-password/' + token.token;
+    await enviarEmailNovoColaborador(user.nome, user.email, link);
+  } catch (error) {
+    console.error('Error creating token or sending email:', error);
+    throw new Error('Erro ao solicitar nova senha');
+  }
+      
+}
 export async function fetchUserProfile(userId: number): Promise<UserProfile> {
   try {
     const user = await prisma.user.findUnique({

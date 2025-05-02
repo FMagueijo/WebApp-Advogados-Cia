@@ -3,9 +3,10 @@
 import * as X from "@/components/xcomponents";
 import type { FunctionComponent } from "react";
 import { useState, useEffect } from "react";
-import { fetchUserProfile, updateUserProfile, updatePassword,contactAdmin } from "./actions";
+import { fetchUserProfile, requestNewPassword, updateUserProfile, updatePassword,contactAdmin } from "./actions";
 import { useSession } from "next-auth/react";
 import { useFormState, useFormStatus } from "react-dom";
+
 
 const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
@@ -56,6 +57,10 @@ const Suporte: FunctionComponent = () => {
       });
     }
   };
+  const { data: session, status } = useSession();
+  const user = session?.user;
+
+  const definirPaswword = async () => {await requestNewPassword(Number(user?.id));};
   return (
     <X.Container className="w-full">
       <p className="font-semibold">Área de Suporte</p>
@@ -125,9 +130,7 @@ const Suporte: FunctionComponent = () => {
           </div>
         </form>
       ) : (
-        <X.Button onClick={() => setShowPasswordForm(true)} className="w-full text-center">
-          Definir Nova Password
-        </X.Button>
+        <X.ButtonLink onClick={definirPaswword}>Definir Nova Password</X.ButtonLink>  
       )}
       <X.Button 
             onClick={() => setShowContactForm(true)}
