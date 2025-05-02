@@ -34,14 +34,14 @@ model User {
 }
 
 model Cliente {
-  id            Int       @id @default(autoincrement())
-  nome          String    @db.VarChar(100)
-  email         String    @unique @db.VarChar(255)
-  telefone      String    @db.VarChar(20)
-  codigoPostal  String    @db.VarChar(10)
-  endereco      String    @db.VarChar(255)
-  casos         Caso[]    
-
+  id            Int         @id @default(autoincrement())
+  nome          String      @db.VarChar(100)
+  email         String      @unique @db.VarChar(255)
+  telefone      String      @db.VarChar(20)
+  codigoPostal  String      @db.VarChar(10)
+  endereco      String      @db.VarChar(255)
+  casos         Caso[]      
+  
   @@map("cliente")
 }
 
@@ -50,6 +50,23 @@ model TokenPass {
   token    String  @unique @default(cuid()) @db.VarChar(25)
   user_id  Int
   user     User    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+
+
+
+model Registro {
+  id          Int       @id @default(autoincrement())
+  resumo      String    @db.VarChar(255)
+  descricao   String?   @db.Text
+  tipo        String    @db.VarChar(50)
+  criado_em   DateTime  @default(now())
+  user_id     Int
+  caso_id     Int
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  caso        Caso      @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("registro")
 }
 
 model Caso {
@@ -65,18 +82,4 @@ model Caso {
   registros   Registro[]
 
   @@map("caso")
-}
-
-model Registro {
-  id          Int       @id @default(autoincrement())
-  resumo      String    @db.VarChar(255)
-  descricao   String?   @db.Text
-  tipo        String    @db.VarChar(50)
-  criado_em   DateTime  @default(now())
-  user_id     Int
-  caso_id     Int
-  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  caso        Caso      @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@map("registro")
 }
