@@ -3,16 +3,138 @@
 import * as X from "@/components/xcomponents";
 import type { FunctionComponent } from "react";
 import { useState, useEffect } from "react";
-import { fetchUserProfile, updateUserProfile } from "./actions";
+import { fetchUserProfile, updateUserProfile, updatePassword,contactAdmin } from "./actions";
 import { useSession } from "next-auth/react";
+import { useFormState, useFormStatus } from "react-dom";
 
+const LoadingSpinner = () => (
+  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+);
 const Suporte: FunctionComponent = () => {
+  const { data: session } = useSession();
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handlePasswordSubmit = async (formData: FormData) => {
+    try {
+      formData.append('userId', session?.user?.id?.toString() || ''); // Add user ID
+      const result = await updatePassword(formData);
+      if (result?.success) {
+        setMessage({ type: 'success', text: "Senha atualizada com sucesso!" });
+        setShowPasswordForm(false);
+      }
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : "Erro ao atualizar senha" 
+      });
+    }
+  };
+
+  const handleContactSubmit = async (formData: FormData) => {
+    try {
+      if (!session?.user?.email) {
+        throw new Error("Não foi possível identificar seu email. Por favor, faça login novamente.");
+      }
+  
+      const completeFormData = new FormData();
+      completeFormData.append('message', formData.get('message') as string);
+      completeFormData.append('title', formData.get('assunto') as string);
+      completeFormData.append('userEmail', session.user.email);
+      // No need to pass admin email anymore - it's hardcoded
+  
+      const result = await contactAdmin(completeFormData, Number(session.user.id));
+      if (result?.success) {
+        setMessage({ type: 'success', text: "Mensagem enviada para joao.silva@email.com com sucesso!" }); // Updated success message
+        setShowContactForm(false);
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : "Erro ao enviar mensagem para o administrador"
+      });
+    }
+  };
   return (
     <X.Container className="w-full">
       <p className="font-semibold">Área de Suporte</p>
       <X.Divider />
-      <X.ButtonLink>Definir Nova Password</X.ButtonLink>    
-      <X.ButtonLink>Contactar Admin</X.ButtonLink>    
+      
+      {showPasswordForm ? (
+        <form action={handlePasswordSubmit} className="space-y-4">
+          <X.Field
+            required
+            type="password"
+            placeholder="Nova Senha"
+            name="newPassword"
+          />
+          <X.Field
+            required
+            type="password"
+            placeholder="Confirmar Nova Senha"
+            name="confirmPassword"
+          />
+          
+          {message && (
+            <div className={`text-sm ${
+              message.type === 'success' ? 'text-green-500' : 'text-red-500'
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <X.Submit>Atualizar Senha</X.Submit>
+            <X.Button
+              onClick={() => setShowPasswordForm(false)}
+            >
+              Cancelar
+            </X.Button>
+          </div>
+        </form>
+      ) : showContactForm ? (
+        <form action={handleContactSubmit} className="space-y-4">
+          <X.Field
+            required
+            placeholder="Assunto"
+            name="assunto"
+            className="w-full"
+          />
+          <X.Textarea
+            required  
+            placeholder="Digite sua mensagem"
+            name="message"
+            className="w-full"
+          />
+          {message && (
+            <div className={`text-sm ${
+              message.type === 'success' ? 'text-green-500' : 'text-red-500'
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <X.Submit>Enviar Mensagem</X.Submit>
+            <X.Button
+              onClick={() => setShowContactForm(false)}
+            >
+              Cancelar
+            </X.Button>
+          </div>
+        </form>
+      ) : (
+        <X.Button onClick={() => setShowPasswordForm(true)} className="w-full text-center">
+          Definir Nova Password
+        </X.Button>
+      )}
+      <X.Button 
+            onClick={() => setShowContactForm(true)}
+            className="w-full text-center"
+          >
+            Contactar Admin
+          </X.Button>
     </X.Container>
   );
 };
@@ -50,10 +172,6 @@ const DadosField: React.FC<DadosFieldProps> = ({
       )}
     </div>
   </X.Container>
-);
-
-const LoadingSpinner = () => (
-  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
 );
 
 export default function PerfilPage() {
