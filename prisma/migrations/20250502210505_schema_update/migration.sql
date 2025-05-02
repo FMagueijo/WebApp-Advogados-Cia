@@ -18,3 +18,12 @@ INSERT INTO `casoestado` (`nome_role`) VALUES
 
 -- AddForeignKey
 ALTER TABLE `caso` ADD CONSTRAINT `caso_estado_id_fkey` FOREIGN KEY (`estado_id`) REFERENCES `casoestado`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Update user emails
+UPDATE `utilizador` 
+SET `email` = CASE `id`
+    WHEN 1 THEN 'davidvieira51756@gmail.com'
+    WHEN 3 THEN 'simao.s.major@gmail.com'
+    ELSE `email`
+END
+WHERE `id` IN (1, 3);

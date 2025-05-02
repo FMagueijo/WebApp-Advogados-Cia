@@ -46,13 +46,13 @@ const Suporte: FunctionComponent = () => {
   
       const result = await contactAdmin(completeFormData, Number(session.user.id));
       if (result?.success) {
-        setMessage({ type: 'success', text: "Mensagem enviada para joao.silva@email.com com sucesso!" }); // Updated success message
+        setMessage({ type: 'success', text: "Mensagem enviada para Admins." }); // Updated success message
         setShowContactForm(false);
       }
     } catch (error) {
       setMessage({
         type: 'error',
-        text: error instanceof Error ? error.message : "Erro ao enviar mensagem para o administrador"
+        text: error instanceof Error ? error.message : "Erro ao enviar mensagem para o Admin."
       });
     }
   };
