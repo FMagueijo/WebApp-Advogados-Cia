@@ -57,7 +57,6 @@ const Suporte: FunctionComponent = () => {
       });
     }
   };
-  const { data: session, status } = useSession();
   const user = session?.user;
 
   const definirPaswword = async () => {await requestNewPassword(Number(user?.id));};
