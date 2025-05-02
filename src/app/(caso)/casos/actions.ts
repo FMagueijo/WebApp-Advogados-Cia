@@ -21,6 +21,7 @@ export async function fetchCasos(
       orderBy.push({ [prismaKey]: value ? "desc" : "asc" });
     }
 
+    // Primeiro buscamos os casos
     const casos = await prisma.caso.findMany({
       where,
       orderBy,
@@ -29,20 +30,42 @@ export async function fetchCasos(
         processo: true,
         resumo: true,
         criado_em: true,
-        cliente: { select: { nome: true } },
-        user_id: true,
-        cliente_id: true,
+        user_id: true,  // Mantemos o user_id para buscar depois
+        cliente: {
+          select: {
+            nome: true
+          }
+        },
         descricao: true
       }
     });
 
-    // Simular campo 'estado' com base na descrição (ou outro critério se tiveres)
+    // Pegamos todos os user_ids distintos
+    const userIds = [...new Set(casos.map(c => c.user_id))];
+
+    // Buscamos os usuários correspondentes
+    const usuarios = await prisma.user.findMany({
+      where: {
+        id: { in: userIds }
+      },
+      select: {
+        id: true,
+        nome: true
+      }
+    });
+
+    // Criamos um mapa de id -> nome
+    const usuarioMap = new Map(usuarios.map(u => [u.id, u.nome]));
+
+    // Transformamos os resultados
     const transformados = casos.map(c => ({
       id: c.id,
       processo: c.processo,
       assunto: c.resumo,
-      criadoPor: `[${c.user_id}] ${c.cliente.nome}`,
-      estado: c.descricao?.includes("Fechado") ? "Fechado" : "Aberto" // Ajusta conforme tua lógica real
+      criadoPor: usuarioMap.get(c.user_id) || 'Desconhecido',
+      cliente: c.cliente?.nome || 'Desconhecido',
+      estado: c.descricao?.includes("Fechado") ? "Fechado" : "Aberto",
+      dataCriacao: c.criado_em
     }));
 
     return transformados;
