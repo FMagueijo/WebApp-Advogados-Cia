@@ -26,64 +26,24 @@ interface RegistroCompleto {
 
 // Criar um novo registro
 export async function criarRegistro(formData: FormData, userId: string | number, casoId: string | number): Promise<void> {
+  const input = validarInputRegistro(formData, userId, casoId);
   try {
-    const input = validarInputRegistro(formData, userId, casoId);
-
     // Transação para criar registro e atualizar caso
-    await prisma.$transaction([
-      prisma.registro.create({
-        data: {
-          resumo: input.resumo,
-          descricao: input.descricao,
-          tipo: input.tipo,
-          user_id: input.userId,
-          caso_id: input.casoId
-        }
-      }),
-      prisma.caso.update({
-        where: { id: input.casoId },
-        data: { 
-          // Atualiza a data de modificação se necessário
-          criado_em: new Date() 
-        }
-      })
-    ]);
+    await prisma.registro.create({
+      data: {
+        resumo: input.resumo,
+        descricao: input.descricao,
+        tipo: input.tipo,
+        user_id: input.userId,
+        caso_id: input.casoId
+      }
+    })
 
-    revalidatePath(`/casos/${input.casoId}`);
-    redirect(`/casos/${input.casoId}`);
+    revalidatePath(`/caso/${input.casoId}`);
+    redirect(`/caso/${input.casoId}`);
 
   } catch (error) {
     console.error('Erro ao criar registro:', error);
-    throw new Error(error instanceof Error ? error.message : 'Erro desconhecido ao criar registro');
-  }
-}
-
-// Listar todos os registros de um caso
-export async function listarRegistros(casoId: string | number): Promise<RegistroCompleto[]> {
-  try {
-    const casoIdNumber = typeof casoId === 'string' ? parseInt(casoId) : casoId;
-    
-    const registros = await prisma.registro.findMany({
-      where: { caso_id: casoIdNumber },
-      include: { 
-        user: { select: { nome: true } },
-        caso: { select: { processo: true } } // Inclui informações do caso se necessário
-      },
-      orderBy: { criado_em: 'desc' }
-    });
-
-    return registros.map(reg => ({
-      id: reg.id,
-      resumo: reg.resumo,
-      descricao: reg.descricao,
-      tipo: reg.tipo,
-      criado_em: reg.criado_em,
-      user: { nome: reg.user.nome }
-    }));
-
-  } catch (error) {
-    console.error('Erro ao listar registros:', error);
-    throw new Error('Falha ao carregar registros');
   }
 }
 
