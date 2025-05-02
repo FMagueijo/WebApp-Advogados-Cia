@@ -1,6 +1,7 @@
 "use client";
 
 import * as X from "@/components/xcomponents";
+import { notFound, useParams } from "next/navigation";
 import { useState } from "react";
 
 export default function AdicionarRegisto() {
@@ -8,6 +9,8 @@ export default function AdicionarRegisto() {
   const [descricao, setDescricao] = useState(
     "Nuno Pinho vs Lidl.\n\nDisputa sobre a acusação de furto de uma embalagem de Compal de Manga por Nuno Pinho em uma loja Lidl.\n\nA Lidl alega o furto, enquanto Nuno Pinho nega a acusação."
   );
+
+  
 
   return (
     <div className="w-full">
@@ -77,7 +80,7 @@ export default function AdicionarRegisto() {
             <X.DataField className="w-full h-32 flex items-center justify-center">
               <span className="text-gray-500">[Imagem]</span>
             </X.DataField>
-            
+
             {/* Caixa de imagem 2 - ocupa 100% da largura */}
             <X.DataField className="w-full h-32 flex items-center justify-center">
               <span className="text-gray-500">[Imagem]</span>
