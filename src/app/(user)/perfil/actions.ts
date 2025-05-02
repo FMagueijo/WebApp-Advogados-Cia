@@ -115,19 +115,46 @@ export async function updatePassword(formData: FormData) {
   }
 }
 
-export async function contactAdmin(formData: FormData) {
+export async function contactAdmin(formData: FormData, userId: number) {
   try {
     const message = formData.get('message') as string;
     const userEmail = formData.get('userEmail') as string;
-    
+    const title = formData.get('title') as string;
+
     if (!message) throw new Error('A mensagem é obrigatória');
     if (!userEmail) throw new Error('Email do usuário não encontrado');
 
-    // Hardcoded admin email
+    // Fetch all users who are admins
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { nome: true, email: true }
+    });
+    if (!user) throw new Error('Usuário não encontrado');
+
+    const adminUsers = await prisma.user.findMany({
+      where: { role: { nome_role: 'admin' } },
+      select: { email: true }
+    });
+
+    if (!adminUsers || adminUsers.length === 0) {
+      throw new Error('Nenhum administrador encontrado');
+    }
+
+    // Send email to all admins
+    for (const admin of adminUsers) {
+      await enviarEmailContactoAdmin({
+        user: user.nome,
+        message,
+        adminEmail: admin.email,
+        title: title
+      });
+    }
+
     await enviarEmailContactoAdmin({
-      userEmail,
+      user: user.nome,
       message,
-      adminEmail: 'joao.silva@email.com' // Directly using the admin email
+      adminEmail: "advogadoscia840@gmail.com",
+      title: title
     });
 
     return { success: true };

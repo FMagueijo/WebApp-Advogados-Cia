@@ -40,10 +40,11 @@ const Suporte: FunctionComponent = () => {
   
       const completeFormData = new FormData();
       completeFormData.append('message', formData.get('message') as string);
+      completeFormData.append('title', formData.get('assunto') as string);
       completeFormData.append('userEmail', session.user.email);
       // No need to pass admin email anymore - it's hardcoded
   
-      const result = await contactAdmin(completeFormData);
+      const result = await contactAdmin(completeFormData, Number(session.user.id));
       if (result?.success) {
         setMessage({ type: 'success', text: "Mensagem enviada para joao.silva@email.com com sucesso!" }); // Updated success message
         setShowContactForm(false);
@@ -96,11 +97,16 @@ const Suporte: FunctionComponent = () => {
         <form action={handleContactSubmit} className="space-y-4">
           <X.Field
             required
+            placeholder="Assunto"
+            name="assunto"
+            className="w-full"
+          />
+          <X.Textarea
+            required  
             placeholder="Digite sua mensagem"
             name="message"
             className="w-full"
           />
-          
           {message && (
             <div className={`text-sm ${
               message.type === 'success' ? 'text-green-500' : 'text-red-500'
