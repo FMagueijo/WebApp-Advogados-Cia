@@ -1,38 +1,48 @@
 "use client";
 
 import * as X from "@/components/xcomponents";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { fetchCasos } from "./actions";
 
 export default function ListarCasos() {
-  const [casos, setCasos] = useState([
-    { id: "SI", processo: "#AAA3I", assunto: "Destacamento", criadoPor: "[4] Telmo Maia", estado: "Aberto" },
-    { id: "17", processo: "#AAA7I", assunto: "Divorcio", criadoPor: "[4] Telmo Maia", estado: "Aberto" },
-    { id: "19", processo: "#AAAI9", assunto: "Protecao - Homicidio", criadoPor: "[4] Telmo Maia", estado: "Fechado" },
-    { id: "4", processo: "#AAAA4", assunto: "Furto Leve", criadoPor: "[4] Telmo Maia", estado: "Terminado" },
-  ]);
+  const [casos, setCasos] = useState<any[]>([]);
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [order, setOrder] = useState<Record<string, boolean>>({});
+
+  const loadData = async () => {
+    try {
+      const data = await fetchCasos(filters, order);
+      setCasos(data);
+    } catch (err) {
+      console.error("Erro ao carregar casos:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [filters, order]);
 
   return (
     <div className="w-full">
       <div className="flex flex-col gap-8">
         <X.Container className="w-full">
-          {/* Cabeçalho */}
           <div className="flex justify-between items-center">
             <p className="text-lg font-semibold">Lista Casos</p>
           </div>
           <X.Divider />
           <X.ButtonLink className="w-max" href="/criar-caso">Criar Caso</X.ButtonLink>
 
-          {/* Filtros */}
-          <div className="flex gap-4">
+          {/* Filtros e Ordenação */}
+          <div className="flex gap-4 flex-wrap">
             <X.Dropdown
-              label="Filtrar Por"
+              label="Filtrar Por Estado"
               options={["Aberto", "Fechado", "Terminado"]}
-              onSelect={(selectedOption) => console.log("Filtrar por:", selectedOption)}
+              onSelect={(estado) => setTimeout(() => setFilters({ estado }), 0)}
             />
-            <X.Dropdown
-              label="Ordenar"
+            <X.SortBox
+              label="Ordenar Por"
               options={["ID", "Processo", "Assunto"]}
-              onSelect={(selectedOption) => console.log("Ordenar por:", selectedOption)}
+              onSortChange={(campo, inverso) => setTimeout(() => setOrder({ [campo]: inverso }), 0)}
             />
           </div>
           <X.Divider />
@@ -57,19 +67,16 @@ export default function ListarCasos() {
                         <span>{caso.processo}</span>
                       </X.Link>
                     </td>
-
                     <td className="p-4">
                       <X.DataField className="hover:bg-[var(--secondary-color)]/5">
                         {caso.assunto}
                       </X.DataField>
                     </td>
-
                     <td className="p-4">
                       <X.Link className="hover:text-[var(--primary-color)]">
                         {caso.criadoPor}
                       </X.Link>
                     </td>
-
                     <td className="p-4">
                       <X.DataField
                         className="rounded-lg p-2"
@@ -88,6 +95,7 @@ export default function ListarCasos() {
                 ))}
               </tbody>
             </table>
+            {casos.length === 0 && <p className="p-4">0 resultados</p>}
           </div>
         </X.Container>
       </div>

@@ -14,7 +14,7 @@ const utilLinks = [
 
 
 export default function ListarColab() {
-  //const [colaboradores, setColaboradores] = useState<UserData[]>([]);
+
   
 
   const [colaboradores, setColaboradores] = useState<any[]>([]);
