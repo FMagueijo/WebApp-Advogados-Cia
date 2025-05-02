@@ -11,12 +11,14 @@ const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
 );
 const Suporte: FunctionComponent = () => {
+  const { data: session } = useSession();
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handlePasswordSubmit = async (formData: FormData) => {
     try {
+      formData.append('userId', session?.user?.id?.toString() || ''); // Add user ID
       const result = await updatePassword(formData);
       if (result?.success) {
         setMessage({ type: 'success', text: "Senha atualizada com sucesso!" });
@@ -32,15 +34,24 @@ const Suporte: FunctionComponent = () => {
 
   const handleContactSubmit = async (formData: FormData) => {
     try {
-      const result = await contactAdmin(formData);
+      if (!session?.user?.email) {
+        throw new Error("Não foi possível identificar seu email. Por favor, faça login novamente.");
+      }
+  
+      const completeFormData = new FormData();
+      completeFormData.append('message', formData.get('message') as string);
+      completeFormData.append('userEmail', session.user.email);
+      // No need to pass admin email anymore - it's hardcoded
+  
+      const result = await contactAdmin(completeFormData);
       if (result?.success) {
-        setMessage({ type: 'success', text: "Mensagem enviada ao admin com sucesso!" });
+        setMessage({ type: 'success', text: "Mensagem enviada para joao.silva@email.com com sucesso!" }); // Updated success message
         setShowContactForm(false);
       }
     } catch (error) {
       setMessage({
         type: 'error',
-        text: error instanceof Error ? error.message : "Erro ao enviar mensagem"
+        text: error instanceof Error ? error.message : "Erro ao enviar mensagem para o administrador"
       });
     }
   };

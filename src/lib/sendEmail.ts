@@ -39,16 +39,17 @@ export async function enviarEmailNovoColaborador(nome: string, email: string, li
 export async function enviarEmailContactoAdmin(params: {
   userEmail: string;
   message: string;
-  adminEmail: string;
+  adminEmail?: string; // Make optional since we'll hardcode it
 }) {
   const payload = {
     service_id: process.env.EMAILJS_SERVICE_ID,
-    template_id: process.env.EMAILJS_CONTACT_TEMPLATE_ID, // Novo template
+    template_id: process.env.EMAILJS_CONTACT_TEMPLATE_ID,
     user_id: process.env.EMAILJS_PUBLIC_KEY,
     template_params: {
       user_email: params.userEmail,
       message: params.message,
-      admin_email: params.adminEmail
+      admin_email: 'joao.silva@email.com', // Hardcoded here
+      reply_to: params.userEmail
     }
   };
 

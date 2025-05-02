@@ -80,11 +80,14 @@ export async function updateUserProfile(userId: number, data: Omit<UserProfile, 
 
 export async function updatePassword(formData: FormData) {
   try {
-    const userId = 1; // Substitua por como você obtém o ID (ex: via props, contexto, etc.)
+    // Get user ID from session (you'll need to pass it from the client)
+    const userId = formData.get('userId') as string;
+    if (!userId) throw new Error("User not authenticated");
+
     const newPassword = formData.get("newPassword") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
-    // Validações
+    // Validations
     if (!newPassword || !confirmPassword) {
       throw new Error("Preencha todos os campos");
     }
@@ -97,13 +100,14 @@ export async function updatePassword(formData: FormData) {
       throw new Error("A senha deve ter pelo menos 8 caracteres");
     }
 
-    // Atualiza no banco
+    // Hash and update password
     const hashedPassword = await hash(newPassword, 12);
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: Number(userId) },
       data: { password_hash: hashedPassword },
     });
 
+    revalidatePath('/perfil');
     return { success: true };
   } catch (error) {
     console.error("Erro ao atualizar senha:", error);
@@ -114,18 +118,16 @@ export async function updatePassword(formData: FormData) {
 export async function contactAdmin(formData: FormData) {
   try {
     const message = formData.get('message') as string;
+    const userEmail = formData.get('userEmail') as string;
     
-    if (!message) {
-      throw new Error('A mensagem é obrigatória');
-    }
+    if (!message) throw new Error('A mensagem é obrigatória');
+    if (!userEmail) throw new Error('Email do usuário não encontrado');
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'joao.silva@email.com';
-
-    // Envie o email usando a função existente ou crie uma nova
+    // Hardcoded admin email
     await enviarEmailContactoAdmin({
-      userEmail: 'user@exemplo.com', // Substitua pelo email do usuário atual
+      userEmail,
       message,
-      adminEmail
+      adminEmail: 'joao.silva@email.com' // Directly using the admin email
     });
 
     return { success: true };
