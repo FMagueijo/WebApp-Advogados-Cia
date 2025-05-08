@@ -57,7 +57,7 @@ const Suporte: FunctionComponent = () => {
                 <td className="p-2"><X.Link className="group"><div>Ev - Ida Tribunal  (TEMP)</div> </X.Link></td>
                 <td className="p-2"><X.DataField className="group"><div>10/02/2025 14:20 </div> </X.DataField></td>
               </tr>
-            </tbody>
+            </tbody>  
           </table>
         </div>
       </X.Container>
@@ -66,6 +66,7 @@ const Suporte: FunctionComponent = () => {
         <X.Divider></X.Divider>
         <div className="flex flex-row">
           <X.ButtonLink>Associar colaborador</X.ButtonLink>
+          <X.ButtonLink href={`/caso/${id}/registar-horas`}>Registar Horas</X.ButtonLink>
         </div>
         <X.Divider></X.Divider>
         <X.Link>[23] Nuno Pinho (TEMP)</X.Link>
