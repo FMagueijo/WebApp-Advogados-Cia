@@ -115,7 +115,7 @@ export default function ListarClientes() {
                       <td className="px-2 whitespace-nowrap">
                         <X.Link className="group" href={`/criar-caso?clienteId=${cliente.id}`}>
                           <span className="text-sm text-[var(--primary-color)] group-hover:text-[var(--secondary-color)] transition-colors">
-                            Caso
+                            Novo Caso
                           </span>
                         </X.Link>
                       </td>
