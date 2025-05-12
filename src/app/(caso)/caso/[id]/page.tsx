@@ -10,6 +10,8 @@ import {
   fetchColaboradoresDoCaso,
   updateCasoResumo,
   updateCasoDescricao,
+  listarColaboradores,
+  fetchRegistrosDoCaso,
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
 
@@ -57,128 +59,7 @@ const DadosField: React.FC<DadosFieldProps> = ({
   </X.Container>
 );
 
-const Suporte: FunctionComponent = () => {
-  const params = useParams();
-  const id = params?.id;
-  const [colaboradores, setColaboradores] = useState<any[]>([]);
-  const [loadingColaboradores, setLoadingColaboradores] = useState(true);
-
-  useEffect(() => {
-    const loadColaboradores = async () => {
-      try {
-        setLoadingColaboradores(true);
-        const casoId = Number(id);
-        const data = await fetchColaboradoresDoCaso(casoId);
-        setColaboradores(data);
-      } catch (error) {
-        console.error("Failed to load colaboradores:", error);
-      } finally {
-        setLoadingColaboradores(false);
-      }
-    };
-
-    loadColaboradores();
-  }, [id]);
-
-  return (
-    <>
-      <X.Container className="w-full">
-        <p className="font-semibold">Lista Registos</p>
-        <X.Divider />
-        <div className="flex flex-row">
-          <X.ButtonLink href={`/caso/${id}/criar-registo`}>
-            Adicionar registo
-          </X.ButtonLink>
-        </div>
-        <div className="flex flex-row gap-4">
-          <X.Dropdown
-            label="Filtros"
-            options={["", ""]}
-            onSelect={(selectedOption) =>
-              console.log("Opção selecionada:", selectedOption)
-            }
-          />
-          <X.Dropdown
-            label="Ordenar"
-            options={["Data Ascendente", "Data Descendente"]}
-            onSelect={(selectedOption) =>
-              console.log("Opção selecionada:", selectedOption)
-            }
-          />
-        </div>
-        <X.Divider />
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left">
-                <th className="p-3">Resumo</th>
-                <th className="p-3">Data Criada</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Dados temporários */}
-              <tr className="border-b border-[var(--secondary-color)]">
-                <td className="p-2">
-                  <X.Link className="group">
-                    <div>Reunião (TEMP)</div>
-                  </X.Link>
-                </td>
-                <td className="p-2">
-                  <X.DataField className="group">
-                    <div>14/02/2025 17:20</div>
-                  </X.DataField>
-                </td>
-              </tr>
-              <tr className="border-b border-[var(--secondary-color)]">
-                <td className="p-2">
-                  <X.Link className="group">
-                    <div>Ev - Ida Tribunal (TEMP)</div>
-                  </X.Link>
-                </td>
-                <td className="p-2">
-                  <X.DataField className="group">
-                    <div>10/02/2025 14:20</div>
-                  </X.DataField>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </X.Container>
-
-      <X.Container className="w-full">
-        <p className="font-semibold">Colaboradores Associados</p>
-        <X.Divider />
-        <div className="flex flex-row gap-4">
-          <X.ButtonLink>Associar colaborador</X.ButtonLink>
-          <X.ButtonLink href={`/caso/${id}/registar-horas`}>
-            Registar Horas
-          </X.ButtonLink>
-        </div>
-        <X.Divider />
-        {loadingColaboradores ? (
-          <SimpleSkeleton />
-        ) : colaboradores.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            {colaboradores.map((colaborador) => (
-              <X.Link
-                key={colaborador.id}
-                href={`/perfil-terceiro/${colaborador.id}`}
-                className="hover:text-[var(--primary-color)]"
-              >
-                [{colaborador.id}] {colaborador.nome}
-              </X.Link>
-            ))}
-          </div>
-        ) : (
-          <p>Nenhum colaborador associado a este caso</p>
-        )}
-      </X.Container>
-    </>
-  );
-};
-
-export default function PerfilCaso() {
+const PerfilCaso: FunctionComponent = () => {
   const params = useParams();
   const id = params?.id;
 
@@ -189,6 +70,12 @@ export default function PerfilCaso() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [mostrarModalColaborador, setMostrarModalColaborador] = useState(false);
+  const [colaboradores, setColaboradores] = useState<any[]>([]);
+  const [colaboradorSelecionado, setColaboradorSelecionado] = useState<any | null>(null);
+  const [colaboradoresDoCaso, setColaboradoresDoCaso] = useState<any[]>([]);
+  const [registros, setRegistros] = useState<any[]>([]);
+
   const [profileData, setProfileData] = useState({
     id: "",
     processo: "",
@@ -196,6 +83,18 @@ export default function PerfilCaso() {
     descricao: "",
     estado: "",
   });
+
+  useEffect(() => {
+    const carregarColaboradores = async () => {
+      try {
+        const resultado = await listarColaboradores();
+        setColaboradores(resultado);
+      } catch (error) {
+        console.error("Erro ao carregar colaboradores", error);
+      }
+    };
+    carregarColaboradores();
+  }, []);
 
   useEffect(() => {
     const loadProfileData = async () => {
@@ -208,13 +107,16 @@ export default function PerfilCaso() {
         if (data) {
           setProfileData(data);
         }
+        const colaboradoresCaso = await fetchColaboradoresDoCaso(casoId);
+        setColaboradoresDoCaso(colaboradoresCaso);
+        const registrosCaso = await fetchRegistrosDoCaso(casoId);
+        setRegistros(registrosCaso);
       } catch (error) {
         console.error("Failed to load profile:", error);
       } finally {
         setIsLoading(false);
       }
     };
-
     loadProfileData();
   }, [session, id]);
 
@@ -255,6 +157,18 @@ export default function PerfilCaso() {
       setProfileData((prev) => ({ ...prev, [field]: value }));
     };
 
+  const handleSortRegistros = async (order: 'asc' | 'desc') => {
+    try {
+      setIsLoading(true);
+      const registrosOrdenados = await fetchRegistrosDoCaso(Number(id), order);
+      setRegistros(registrosOrdenados);
+    } catch (error) {
+      console.error("Erro ao ordenar registros:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLoading && !profileData.processo) {
     return <SimpleSkeleton />;
   }
@@ -282,17 +196,9 @@ export default function PerfilCaso() {
               {isLoading ? (
                 <LoadingSpinner />
               ) : isEditing ? (
-                <img
-                  src="/images/icons/check.svg"
-                  className="h-5 w-5"
-                  alt="Salvar"
-                />
+                <img src="/images/icons/check.svg" className="h-5 w-5" alt="Salvar" />
               ) : (
-                <img
-                  src="/images/icons/edit.svg"
-                  className="h-5 w-5"
-                  alt="Editar"
-                />
+                <img src="/images/icons/edit.svg" className="h-5 w-5" alt="Editar" />
               )}
             </button>
           </div>
@@ -304,11 +210,7 @@ export default function PerfilCaso() {
             <X.Dropdown
               label="Estado"
               options={["Aberto", "Fechado", "Terminado"]}
-              defaultIndex={[
-                "Aberto",
-                "Fechado",
-                "Terminado",
-              ].indexOf(profileData.estado)}
+              defaultIndex={["Aberto", "Fechado", "Terminado"].indexOf(profileData.estado)}
               onSelect={handleEstadoChange}
             />
           </X.Container>
@@ -337,8 +239,156 @@ export default function PerfilCaso() {
       </div>
 
       <div className="flex flex-col gap-8 w-1/3">
-        <Suporte />
+        {/* Lista de Registos */}
+        <X.Container className="w-full">
+          <p className="font-semibold">Lista Registos</p>
+          <X.Divider />
+          <div className="flex flex-row">
+            <X.ButtonLink href={`/caso/${id}/criar-registo`}>
+              Adicionar registo
+            </X.ButtonLink>
+          </div>
+          <div className="flex flex-row gap-4 mt-2">
+            <X.Dropdown
+              label="Ordenar"
+              options={["Data Descendente", "Data Ascendente"]}
+              onSelect={(selectedOption) => 
+                handleSortRegistros(selectedOption === "Data Ascendente" ? 'asc' : 'desc')
+              }
+            />
+          </div>
+          <X.Divider />
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-3">Resumo</th>
+                  <th className="p-3">Tipo</th>
+                  <th className="p-3">Data Criada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {registros.length > 0 ? (
+                  registros.map((registro) => (
+                    <tr key={registro.id} className="border-b border-[var(--secondary-color)]">
+                      <td className="p-2">
+                        <X.Link href={`/caso/${id}/registo/${registro.id}`} className="group">
+                          <div>{registro.resumo}</div>
+                        </X.Link>
+                      </td>
+                      <td className="p-2">
+                        <div>{registro.tipo}</div>
+                      </td>
+                      <td className="p-2">
+                        <X.DataField className="group">
+                          <div>
+                            {new Date(registro.criado_em).toLocaleDateString('pt-PT', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </X.DataField>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="p-4 text-center text-gray-500">
+                      Nenhum registo encontrado
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </X.Container>
+
+        {/* Colaboradores Associados */}
+        <X.Container className="w-full">
+          <p className="font-semibold">Colaboradores Associados</p>
+          <X.Divider />
+          <div className="flex flex-row gap-4">
+            <X.Button type="button" onClick={() => setMostrarModalColaborador(true)}>
+              Associar Colaborador
+            </X.Button>
+            <X.ButtonLink href={`/caso/${id}/registar-horas`}>
+              Registar Horas
+            </X.ButtonLink>
+          </div>
+          <X.Divider />
+          {isLoading ? (
+            <SimpleSkeleton />
+          ) : colaboradoresDoCaso.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {colaboradoresDoCaso.map((colaborador) => (
+                <X.Link
+                  key={colaborador.id}
+                  href={`/perfil-terceiro/${colaborador.id}`}
+                  className="hover:text-[var(--primary-color)]"
+                >
+                  [{colaborador.id}] {colaborador.nome}
+                </X.Link>
+              ))}
+            </div>
+          ) : (
+            <p>Nenhum colaborador associado a este caso</p>
+          )}
+        </X.Container>
+
+        {/* Modal de Seleção de Colaborador */}
+        {mostrarModalColaborador && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold">Selecionar Colaborador</p>
+                <button 
+                  onClick={() => {
+                    setMostrarModalColaborador(false);
+                    setColaboradorSelecionado(null);
+                  }} 
+                  className="text-gray-500 hover:text-gray-800 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+              <X.Divider />
+              {colaboradores.length === 0 ? (
+                <p className="text-sm text-gray-500 mt-4">Nenhum colaborador encontrado.</p>
+              ) : (
+                <>
+                  <div className="space-y-2 mt-4">
+                    {colaboradores.map(colaborador => (
+                      <div
+                        key={colaborador.id}
+                        className={`p-2 rounded cursor-pointer hover:bg-green-100 ${
+                          colaboradorSelecionado?.id === colaborador.id ? 'bg-green-100' : ''
+                        }`}
+                        onClick={() => setColaboradorSelecionado(colaborador)}
+                      >
+                        <div className="font-medium">{colaborador.nome}</div>
+                        <div className="text-xs text-gray-500">{colaborador.email}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <X.Button 
+                      onClick={handleAdicionarColaborador}
+                      disabled={!colaboradorSelecionado || isLoading}
+                    >
+                      {isLoading ? <LoadingSpinner /> : "Confirmar"}
+                    </X.Button>
+                  </div>
+                </>
+              )}
+            </X.Container>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default PerfilCaso;

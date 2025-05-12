@@ -59,61 +59,29 @@ export async function updateCasoEstado(casoId: number, novoEstado: string): Prom
     return false;
   }
 }
-export async function fetchColaboradoresDoCaso(casoId: number): Promise<{id: number, nome: string}[]> {
-  try {
-    // Busca os colaboradores através dos registros
-    const colaboradoresViaRegistros = await prisma.registro.findMany({
-      where: { caso_id: casoId },
-      distinct: ['user_id'],
-      select: {
-        user: {
-          select: {
-            id: true,
-            nome: true,
-          },
-        },
-      },
-    });
 
-    // Busca o criador do caso
+export async function fetchColaboradoresDoCaso(casoId: number) {
+  try {
     const caso = await prisma.caso.findUnique({
       where: { id: casoId },
-      select: {
+      include: {
         user: {
           select: {
             id: true,
             nome: true,
-          },
-        },
-      },
-    });
-
-    if (!caso) {
-      throw new Error('Caso não encontrado');
-    }
-
-    // Combina os colaboradores e remove duplicados
-    const colaboradores = [
-      ...colaboradoresViaRegistros.map(r => r.user),
-      caso.user,
-    ];
-
-    // Remove duplicados baseado no ID do usuário
-    const uniqueColaboradores = colaboradores.reduce((acc, current) => {
-      const x = acc.find(item => item.id === current.id);
-      if (!x) {
-        return acc.concat([current]);
-      } else {
-        return acc;
+            email: true
+          }
+        }
       }
-    }, [] as {id: number, nome: string}[]);
-
-    return uniqueColaboradores;
+    });
+    
+    return caso ? [caso.user] : [];
   } catch (error) {
-    console.error('Database error:', error);
-    return [];
+    console.error("Erro ao buscar colaboradores do caso:", error);
+    throw error;
   }
 }
+
 export async function updateCasoResumo(casoId: number, novoResumo: string): Promise<boolean> {
   try {
     await prisma.caso.update({
@@ -141,5 +109,50 @@ export async function updateCasoDescricao(casoId: number, novaDescricao: string)
   } catch (error) {
     console.error('Error updating descricao:', error);
     return false;
+  }
+}
+
+export async function listarColaboradores() {
+  try {
+    const colaboradores = await prisma.user.findMany({
+      where: {
+        role_id: 2 // Filtra apenas usuários com role_id = 2
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        role: {
+          select: {
+            nome_role: true
+          }
+        }
+      }
+    });
+    return colaboradores;
+  } catch (error) {
+    console.error("Erro ao listar colaboradores:", error);
+    throw error;
+  }
+}
+
+export async function fetchRegistrosDoCaso(casoId: number, order: 'asc' | 'desc' = 'desc') {
+  try {
+    const registros = await prisma.registro.findMany({
+      where: { caso_id: casoId },
+      select: {
+        id: true,
+        resumo: true,
+        criado_em: true,
+        tipo: true
+      },
+      orderBy: {
+        criado_em: order
+      }
+    });
+    return registros;
+  } catch (error) {
+    console.error("Erro ao buscar registros do caso:", error);
+    throw error;
   }
 }
