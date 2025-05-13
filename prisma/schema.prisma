@@ -31,6 +31,7 @@ model User {
   casos          Caso[]
 
   @@map("utilizador")
+  HorasTrabalhadas HorasTrabalhadas[]
 }
 
 model Cliente {
@@ -74,6 +75,18 @@ model CasoEstado {
   @@map("casoestado")
 }
 
+model HorasTrabalhadas {
+  id          Int      @id @default(autoincrement())
+  horas       Float    @db.Float
+  data        DateTime @default(now())
+  caso_id     Int
+  caso        Caso     @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id     Int
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("horas_trabalhadas")
+}
+
 model Caso {
   id        Int      @id @default(autoincrement())
   processo  String   @unique @db.VarChar(50)
@@ -93,4 +106,5 @@ model Caso {
   registros Registro[]
 
   @@map("caso")
+  HorasTrabalhadas HorasTrabalhadas[]
 }

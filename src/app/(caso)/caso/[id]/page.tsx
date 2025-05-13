@@ -6,18 +6,11 @@ import { notFound, useParams } from "next/navigation";
 import { useEffect, useState, type FunctionComponent } from "react";
 import { fetchCasoProfile, updateCasoEstado } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
+import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page"; // Corrected the path
 
 const Suporte: FunctionComponent = () => {
   const params = useParams();
   const id = params?.id;
-
-
-  const [colaboradores] = useState([
-    { id: 1, nome: "Humberto Macedo", email: "boy.macedo@hotmail.com", casos: 4, estado: "Desbloqueado", ativo: false },
-    { id: 2, nome: "Nuno Pinho", email: "npinho@outlook.com", casos: 7, estado: "Desbloqueado", ativo: false },
-    { id: 3, nome: "Mariana Silva", email: "advmarisilva@gmail.com", casos: 3, estado: "Bloqueado", ativo: true },
-    { id: 4, nome: "Telmo Maia", email: "telmo.ma.ia@gmail.com", casos: 13, estado: "Desbloqueado", ativo: false },
-  ]);
   
   return (
     <>
@@ -66,33 +59,25 @@ const Suporte: FunctionComponent = () => {
         <X.Divider></X.Divider>
         <div className="flex flex-row">
           <X.ButtonLink>Associar colaborador</X.ButtonLink>
-          <X.ButtonLink href={`/caso/${id}/registar-horas`}>Registar Horas</X.ButtonLink>
         </div>
         <X.Divider></X.Divider>
         <X.Link>[23] Nuno Pinho (TEMP)</X.Link>
       </X.Container>
     </>
   );
-
 }
-
-
-
 
 export default function perfilCaso() {
   const params = useParams();
   const id = params?.id;
+  const [isRegistroHorasOpen, setIsRegistroHorasOpen] = useState(false); // Estado movido para cá
 
   if (!id || isNaN(Number(id))) {
-    notFound(); // This renders the closest not-found.tsx
+    notFound();
   }
 
-
   const { data: session } = useSession();
-  
   const [estado, setEstado] = useState(false);
-
-
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [profileData, setProfileData] = useState({
@@ -125,7 +110,6 @@ export default function perfilCaso() {
   const handleEstadoChange = async (newEstado: string) => {
     try {
       setIsLoading(true);
-      // Simulate an API call to update the estado
       console.log(`Updating estado to: ${newEstado}`);
       updateCasoEstado(Number(id), newEstado);
       setProfileData((prevData) => ({ ...prevData, estado: newEstado }));
@@ -136,18 +120,17 @@ export default function perfilCaso() {
     }
   };
 
-  if(isLoading){
+  if(isLoading) {
     return <SimpleSkeleton></SimpleSkeleton>;
   }
-  if(!profileData){
-    return <X.ErrorBox visible hideCloseButton>Caso não encontrado.</X.ErrorBox>
+  if(!profileData) {
+    return <X.ErrorBox visible hideCloseButton>Caso não encontrado.</X.ErrorBox>;
   }
-
 
   return (
     <div className="flex flex-row gap-8">
       <div className="flex flex-col gap-8 w-2/3">
-        <X.Container className="w-full" >
+        <X.Container className="w-full">
           <div className="flex justify-between items-center">
             <p className="text-lg font-semibold">Estado caso</p>
           </div>
@@ -159,11 +142,14 @@ export default function perfilCaso() {
             onSelect={handleEstadoChange}
           />
         </X.Container>
-        <X.Container className="w-full" >
+        <X.Container className="w-full">
           <div className="flex justify-between items-center">
             <p className="text-lg font-semibold">Info geral</p>
           </div>
           <X.Divider></X.Divider>
+          <X.Button onClick={() => setIsRegistroHorasOpen(true)} className="w-max">
+            Registar Horas
+          </X.Button>
           <X.Container className="w-full">
             <p className="text-lg font-semibold"> [ID] Processo </p>
             <p> [{id}] #{profileData.processo}</p>
@@ -179,11 +165,16 @@ export default function perfilCaso() {
         </X.Container>
       </div>
 
-
-
       <div className="flex flex-col gap-8 w-1/3">
         <Suporte />
       </div>
+
+      <RegistrarHorasForm
+        isOpen={isRegistroHorasOpen}
+        onClose={() => setIsRegistroHorasOpen(false)}
+        casoId={Number(id)}
+      
+      />
     </div>
   );
 }
