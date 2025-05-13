@@ -30,6 +30,9 @@ model User {
   registros      Registro[]
   casos          Caso[]
 
+  Evento  Evento[]
+  Eventos Evento[] @relation("EventoColaboradores")
+
   @@map("utilizador")
 }
 
@@ -67,9 +70,9 @@ model Registro {
 }
 
 model CasoEstado {
-  id Int    @id @default(autoincrement())
-  nome_estado    String @unique @map("nome_role") @db.VarChar(50)
-  casos          Caso[]
+  id          Int    @id @default(autoincrement())
+  nome_estado String @unique @map("nome_role") @db.VarChar(50)
+  casos       Caso[]
 
   @@map("casoestado")
 }
@@ -87,10 +90,37 @@ model Caso {
   user_id Int
   user    User @relation(fields: [user_id], references: [id])
 
-  estado_id Int @default(1)
+  estado_id Int        @default(1)
   estado    CasoEstado @relation(fields: [estado_id], references: [id])
 
   registros Registro[]
+  Evento    Evento[]   @relation("EventoCasos")
 
   @@map("caso")
+}
+
+model Evento {
+  id            String     @id @default(cuid())
+  tipo          TipoEvento @default(EVENTO)
+  titulo        String     @db.VarChar(64)
+  descricao     String?    @db.Text
+  data          DateTime   @default(now()) // data do evento/agendamento
+  criado_em     DateTime   @default(now())
+  atualizado_em DateTime   @updatedAt
+
+  local          String? @db.VarChar(255)
+
+  // Relacionamentos
+  user_id Int
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  casos   Caso[] @relation("EventoCasos")
+  users   User[] @relation("EventoColaboradores")
+
+  @@map("evento")
+}
+
+enum TipoEvento {
+  EVENTO
+  COMPROMISSO
+  PRAZO_PROCESSUAL
 }

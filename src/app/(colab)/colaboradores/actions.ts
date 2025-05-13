@@ -69,7 +69,7 @@ export async function fetchColaboradores(
             orderBy.push({ [prismaKey]: value ? "desc" : "asc" });
         }
 
-        const result = await prisma.user.findMany({
+        const colabs = await prisma.user.findMany({
             orderBy,
             select: {
                 id: true,
@@ -77,6 +77,11 @@ export async function fetchColaboradores(
                 email: true,
                 password_hash: true,
                 esta_bloqueado: true,
+                _count: {
+                    select: {
+                        casos: true
+                    }
+                },
                 role: {  // This replaces the 'include'
                     select: {
                         role_id: true,
@@ -93,7 +98,10 @@ export async function fetchColaboradores(
             }
         });
 
-        return JSON.parse(JSON.stringify(result));
+        return colabs.map(colab => ({
+            ...colab,
+            casosCount: colab._count?.casos || 0
+        }));
     } catch (error) {
         console.error('Database error:', error);
         throw new Error('Failed to fetch colaboradores: ' + error);
