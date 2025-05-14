@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import * as X from "@/components/xcomponents"; // Ajuste o caminho conforme necessário
-import { CasosList } from "@/components/lists/listar_casos"; // Ajuste o caminho conforme necessário
+import * as X from "@/components/xcomponents";
+import { CasosList } from "@/components/lists/listar_casos";
 import { ColabList } from "@/components/lists/listar_colab";
 import { criarEvento } from "./actions";
 import { TipoEvento } from "@prisma/client";
 import { useSession } from "next-auth/react";
+import SimpleSkeleton from "@/components/loading/simple_skeleton";
 
 const CreateEventPage: React.FC = () => {
     const [showToAll, setShowToAll] = useState(true);
@@ -17,6 +18,11 @@ const CreateEventPage: React.FC = () => {
         "Prazo Processual": TipoEvento.PRAZO_PROCESSUAL,
     };
     const [tipoEvento, setTipoEvento] = useState<string>(Object.keys(tiposEventos)[0]);
+    const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const dataParam = searchParams?.get("data");
+    const [defaultDate, setDefaultDate] = useState<Date | undefined>(
+        dataParam ? new Date(dataParam) : undefined
+    );
 
     const [showAssociarCasos, setShowAssociarCasos] = useState(false);
     const [selectedCases, setSelectedCases] = useState<any[]>([]);
@@ -28,15 +34,15 @@ const CreateEventPage: React.FC = () => {
     const user = session?.user;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (isSubmitting) return;
-    
+
         setIsSubmitting(true);
 
         const formData = new FormData(event.currentTarget);
-    
+
         try {
             await criarEvento(formData, Number(user?.id), tiposEventos[tipoEvento], selectedColabs, selectedCases);
         } finally {
@@ -44,10 +50,18 @@ const CreateEventPage: React.FC = () => {
         }
     };
 
+    // Show skeleton while loading session
+    if (status === "loading") {
+        return (
+            <div className="p-8">
+                <SimpleSkeleton  />
+            </div>
+        );
+    }
+
     return (
         <form onSubmit={handleSubmit} method="post">
-            <div className="flex flex-row gap-8 "> {/* Fundo igual ao da Navbar */}
-                {/* Conteúdo da Página */}
+            <div className="flex flex-row gap-8 ">
                 <X.Container className="w-full p-8 h-max">
                     <div className="flex justify-between items-center">
                         <p className="text-lg font-semibold">Criar evento</p>
@@ -61,13 +75,12 @@ const CreateEventPage: React.FC = () => {
                         }}
                         defaultIndex={0}
                     />
-                    <X.DateTimePicker showDayAdvanceButtons showTimeSelect required name="Data" />
+                    <X.DateTimePicker showDayAdvanceButtons showTimeSelect required name="Data" value={defaultDate} />
                     <X.Field required type="text" placeholder="" name="Titulo" />
                     <X.Textarea placeholder="" name="Descrição" maxLength={256} rows={6} />
                     <X.Field type="text" placeholder="" name="Local" />
                     <X.Submit disabled={isSubmitting}>{isSubmitting ? "Criando..." : "Criar evento"}</X.Submit>
                 </X.Container>
-
 
                 <div className="flex flex-col gap-8 min-w-xl">
                     <X.Container>

@@ -38,6 +38,8 @@ export function CalHeader({
         );
     // Gera string de data local no formato yyyy-mm-ddTHH:MM (sem segundos, local)
     const pad = (n: number) => n.toString().padStart(2, '0');
+    // Zera a hora, minuto, segundo e milissegundo
+    eventDate.setHours(0, 0, 0, 0);
     const dataStr = `${eventDate.getFullYear()}-${pad(eventDate.getMonth() + 1)}-${pad(eventDate.getDate())}T${pad(eventDate.getHours())}:${pad(eventDate.getMinutes())}`;
 
     return (
