@@ -108,8 +108,8 @@ model Divida {
   cliente_id    Int
   cliente       Cliente  @relation(fields: [cliente_id], references: [id])
   
-  caso_id       Int
-  caso          Caso     @relation(fields: [caso_id], references: [id])
+  caso_id       Int?
+  caso          Caso?     @relation(fields: [caso_id], references: [id])
   
   user_id       Int
   user          User     @relation(fields: [user_id], references: [id])
