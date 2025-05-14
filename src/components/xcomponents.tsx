@@ -296,9 +296,8 @@ const Divider: React.FC<{ orientation?: "horizontal" | "vertical"; color?: strin
 }) => {
     return (
         <div
-            className={`${
-                orientation === "horizontal" ? "w-full h-px" : "h-full w-px"
-            }`}
+            className={`${orientation === "horizontal" ? "w-full h-px" : "h-full w-px"
+                }`}
             style={{ backgroundColor: `var(${color})` }}
         />
     );
@@ -758,17 +757,19 @@ interface DateTimePickerProps extends BaseProps {
     onChange?: (date: Date) => void;
     showTimeSelect?: boolean;
     required?: boolean;
+    hide_label?: boolean;
     dateFormat?: string;
 }
-
-const DateTimePicker: React.FC<DateTimePickerProps> = ({
+const DateTimePicker: React.FC<DateTimePickerProps & { showDayAdvanceButtons?: boolean }> = ({
     name,
     value = new Date(),
     onChange,
     showTimeSelect = false,
     required = false,
     dateFormat = "dd/MM/yyyy",
+    hide_label = true,
     className = "",
+    showDayAdvanceButtons = false,
 }) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(value);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -803,36 +804,87 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
         }
     }, [selectedDate, name]);
 
+    const handleReset = () => {
+        const today = new Date();
+        setSelectedDate(today);
+        if (onChange) {
+            onChange(today);
+        }
+    };
+
+    const handleAdvanceDay = (days: number) => {
+        if (!selectedDate) return;
+        const newDate = new Date(selectedDate);
+        newDate.setDate(newDate.getDate() + days);
+        setSelectedDate(newDate);
+        if (onChange) {
+            onChange(newDate);
+        }
+    };
+
     return (
-        <div ref={pickerRef} className="bg-(--secondary-color) w-full p-4 rounded-lg font-light h-max flex flex-col gap-3">
-            <p className="font-semibold text-xs">{required ? "{*} " : ""}{name}</p>
-            <div className="flex flex-row items-center gap-2">
-                <button
-                    className="group font-semibold w-max min-h-14 h-max flex gap-2 items-center justify-center bg-transparent border-2 border-(--secondary-color) text-(--primary-color) rounded-lg hover:opacity-75 transition-all focus:outline-none cursor-pointer"
-                    onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                >
-                    <img
-                        src={isCalendarOpen ? "/images/icons/close.svg" : "/images/icons/calendar.svg"}
-                        alt="Toggle calendar"
-                        className="w-6 h-6"
-                    />
-                    <p className="text-lg font-light w-full select-none focus:ring-0 focus:outline-none bg-transparent border-2 border-(--secondary-color) rounded-lg">
-                        {selectedDate
-                            ? selectedDate.toLocaleDateString("PT-PT") +
-                              (showTimeSelect
-                                  ? ` ${selectedDate.toLocaleTimeString("PT-PT", {
+        <div className={`flex flex-row items-center gap-4 h-22  ${className}`}>
+            <div ref={pickerRef} className={`bg-(--secondary-color) p-4 rounded-lg font-light h-full flex flex-col gap-3 w-full items-center justify-center`}>
+                {!hide_label && <p className="font-semibold text-xs">{required ? "{*} " : ""}{name}</p>}
+                <div className="flex flex-row gap-4 w-full h-full items-center">
+                    {showDayAdvanceButtons && (
+                        <Button onClick={() => handleAdvanceDay(-1)} className="w-max h-full group items-center">
+                            <img
+                                src={"/images/icons/arrow_right.svg"}
+                                alt="Toggle calendar"
+                                className="w-6 h-6 rotate-180"
+                            />
+                        </Button>
+                    )}
+
+                    <button
+                        className="group font-semibold w-full h-full flex gap-2 items-center justify-center bg-transparent border-2 border-(--secondary-color) text-(--primary-color) rounded-lg hover:opacity-75 transition-all focus:outline-none cursor-pointer"
+                        onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                    >
+                        <img
+                            src={isCalendarOpen ? "/images/icons/close.svg" : "/images/icons/calendar.svg"}
+                            alt="Toggle calendar"
+                            className="w-7 h-7"
+                        />
+                        <p className="text-lg w-max font-light w-full select-none focus:ring-0 focus:outline-none bg-transparent border-2 border-(--secondary-color) rounded-lg">
+                            {selectedDate
+                                ? selectedDate.toLocaleDateString("PT-PT") +
+                                (showTimeSelect
+                                    ? ` ${selectedDate.toLocaleTimeString("PT-PT", {
                                         hour: "2-digit",
                                         minute: "2-digit",
                                     })}`
-                                  : "")
-                            : ""}
-                    </p>
-                </button>
+                                    : "")
+                                : ""}
+                        </p>
+                    </button>
+                    {showDayAdvanceButtons && (
+                        <Button onClick={() => handleAdvanceDay(1)} className="w-max h-full group items-center">
+                            <img
+                                src="/images/icons/arrow_right.svg"
+                                alt="Toggle calendar"
+                                className="w-7 h-7"
+                            />
+                        </Button>
+                    )}
+                </div>
+
+                <input type="hidden" name={name} value={selectedDate ? selectedDate.toISOString() : ""} />
+                <Popup isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} title="Selecionar Data">
+                    <Calendar onDateChange={handleChange} selectedDate={selectedDate} />
+                </Popup>
             </div>
-            <input type="hidden" name={name} value={selectedDate ? selectedDate.toISOString() : ""} />
-            <Popup isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} title="Selecionar Data">
-                <Calendar onDateChange={handleChange} selectedDate={selectedDate} />
-            </Popup>
+            <button
+                className="group font-semibold w-max h-full flex gap-2 p-4 items-center justify-center border-2 bg-(--secondary-color) border-transparent text-(--primary-color) rounded-lg hover:opacity-75 transition-all focus:outline-none cursor-pointer"
+                onClick={() => handleReset()}
+            >
+                <img
+                    src={"/images/icons/calendar_today.svg"}
+                    alt="Reset date"
+                    className="w-7 h-7"
+                />
+                Agora
+            </button>
         </div>
     );
 };
@@ -1002,29 +1054,29 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate = new Date(), onDateCh
             </div>
             <div className="flex justify-between items-center mt-4">
                 <div className="flex items-center gap-2">
-                    <Field 
-                        type="number" 
-                        name="Hora" 
+                    <Field
+                        type="number"
+                        name="Hora"
                         value={String(selectedTime.hour)}
                         placeholder={String(selectedTime.hour)}
-                        onChange={(e) => handleTimeChange("hour", Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))} 
-                        className="w-16 p-2 text-center rounded-lg bg-(--background-color) text-(--primary-color)" 
+                        onChange={(e) => handleTimeChange("hour", Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
+                        className="w-16 p-2 text-center rounded-lg bg-(--background-color) text-(--primary-color)"
                         min={0}
                         max={23}
-                        
+
                     />
                     <label className="text-(--primary-color) font-semibold">:</label>
-                    <Field 
-                        type="number" 
-                        name="Minuto" 
+                    <Field
+                        type="number"
+                        name="Minuto"
                         placeholder={String(selectedTime.minute)}
-                        value={String(selectedTime.minute)} 
-                        onChange={(e) => handleTimeChange("minute", Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))} 
-                        className="w-16 p-2 text-center rounded-lg bg-(--background-color) text-(--primary-color)" 
+                        value={String(selectedTime.minute)}
+                        onChange={(e) => handleTimeChange("minute", Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                        className="w-16 p-2 text-center rounded-lg bg-(--background-color) text-(--primary-color)"
                         min={0}
                         max={59}
                     />
-                    
+
                 </div>
             </div>
         </div>

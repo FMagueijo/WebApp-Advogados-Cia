@@ -61,35 +61,10 @@ const CreateEventPage: React.FC = () => {
                         }}
                         defaultIndex={0}
                     />
-                    <X.DateTimePicker showTimeSelect required name="Data" />
+                    <X.DateTimePicker showDayAdvanceButtons showTimeSelect required name="Data" />
                     <X.Field required type="text" placeholder="" name="Titulo" />
                     <X.Textarea placeholder="" name="Descrição" maxLength={256} rows={6} />
                     <X.Field type="text" placeholder="" name="Local" />
-                    {/* Horas?
-                    <div className="flex items-center gap-2">
-                        <X.Field
-                            type="number"
-                            name="Duração (Hora)"
-                            value={"0"}
-                            placeholder={"0"}
-                            className="w-16 p-2 text-center rounded-lg bg-(--background-color) text-(--primary-color)"
-                            min={0}
-                            max={23}
-
-                        />
-                        <label className="text-(--primary-color) font-semibold">:</label>
-                        <X.Field
-                            type="number"
-                            name="Duração (Minuto)"
-                    <X.Submit disabled={isSubmitting}>{isSubmitting ? "Criando..." : "Criar evento"}</X.Submit>
-                            placeholder={"0"}
-                            className="w-16 p-2 text-center rounded-lg bg-(--background-color) text-(--primary-color)"
-                            min={0}
-                            max={59}
-                        />
-
-                    </div>
-                    */}
                     <X.Submit disabled={isSubmitting}>{isSubmitting ? "Criando..." : "Criar evento"}</X.Submit>
                 </X.Container>
 
