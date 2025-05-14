@@ -7,16 +7,14 @@ export async function fetchClientes(
   order: Record<string, boolean> = {}
 ) {
   try {
-    // Convert filters to Prisma where clause
-    const where: any = {};
+  const where: any = {};
 
     if (filters.ID) where.id = Number(filters.ID);
     if (filters.Nome) where.nome = { contains: filters.Nome };
     if (filters.Email) where.email = { contains: filters.Email };
     if (filters.Telefone) where.telefone = { contains: filters.Telefone };
 
-    // Convert order to Prisma orderBy
-    const orderBy: any = [];
+  const orderBy: any = [];
     for (const [key, value] of Object.entries(order)) {
       const prismaKey = {
         "ID": "id",
@@ -47,6 +45,11 @@ export async function fetchClientes(
               }
             }
           }
+        },
+        dividas: {
+          select: {
+            valor: true
+          }
         }
       }
     });
@@ -54,7 +57,8 @@ export async function fetchClientes(
     return clientes.map(cliente => ({
       ...cliente,
       casosCount: cliente.casos.length,
-      estado: cliente.casos.length > 0 ? cliente.casos[0].estado.nome_estado : 'Sem Casos'
+      estado: cliente.casos.length > 0 ? cliente.casos[0].estado.nome_estado : 'Sem Casos',
+      dividaTotal: cliente.dividas.reduce((sum, d) => sum + d.valor, 0)
     }));
   } catch (error) {
     console.error('Database error:', error);

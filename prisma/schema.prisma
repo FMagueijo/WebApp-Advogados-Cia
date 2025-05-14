@@ -29,18 +29,20 @@ model User {
   tokens         TokenPass[]
   registros      Registro[]
   casos          Caso[]
+  dividas        Divida[]
 
   @@map("utilizador")
 }
 
 model Cliente {
-  id           Int    @id @default(autoincrement())
-  nome         String @db.VarChar(100)
-  email        String @unique @db.VarChar(255)
-  telefone     String @db.VarChar(20)
-  codigoPostal String @db.VarChar(10)
-  endereco     String @db.VarChar(255)
+  id           Int      @id @default(autoincrement())
+  nome         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(255)
+  telefone     String   @db.VarChar(20)
+  codigoPostal String   @db.VarChar(10)
+  endereco     String   @db.VarChar(255)
   casos        Caso[]
+  dividas      Divida[]
 
   @@map("cliente")
 }
@@ -67,9 +69,9 @@ model Registro {
 }
 
 model CasoEstado {
-  id Int    @id @default(autoincrement())
-  nome_estado    String @unique @map("nome_role") @db.VarChar(50)
-  casos          Caso[]
+  id          Int    @id @default(autoincrement())
+  nome_estado String @unique @map("nome_role") @db.VarChar(50)
+  casos       Caso[]
 
   @@map("casoestado")
 }
@@ -91,6 +93,26 @@ model Caso {
   estado    CasoEstado @relation(fields: [estado_id], references: [id])
 
   registros Registro[]
+  dividas   Divida[]
 
   @@map("caso")
+}
+
+model Divida {
+  id            Int      @id @default(autoincrement())
+  valor         Float    @db.Float @default(0)
+  criado_em     DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+  pago          Boolean  @default(false)
+  
+  cliente_id    Int
+  cliente       Cliente  @relation(fields: [cliente_id], references: [id])
+  
+  caso_id       Int
+  caso          Caso     @relation(fields: [caso_id], references: [id])
+  
+  user_id       Int
+  user          User     @relation(fields: [user_id], references: [id])
+
+  @@map("divida")
 }

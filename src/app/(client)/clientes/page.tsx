@@ -108,9 +108,7 @@ export default function ListarClientes() {
                         <X.DataField>{cliente.casosCount}</X.DataField>
                       </td>
                       <td className="px-2 whitespace-nowrap">
-                        <X.DataField colorOverride="--submit-color">
-                          € {(cliente.casosCount * 250).toFixed(2)} {/* Random debt calculation */}
-                        </X.DataField>
+                        <X.DataField>€ {cliente.dividaTotal.toFixed(2)}</X.DataField>
                       </td>
                       <td className="px-2 whitespace-nowrap">
                         <X.Link className="group" href={`/criar-caso?clienteId=${cliente.id}`}>
