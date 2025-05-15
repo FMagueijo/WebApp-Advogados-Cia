@@ -78,7 +78,6 @@ export async function criarRegistro(formData: FormData): Promise<void> {
         });
       }
     }
-
     revalidatePath(`/caso/${casoId}`);
     redirect(`/caso/${casoId}`);
 

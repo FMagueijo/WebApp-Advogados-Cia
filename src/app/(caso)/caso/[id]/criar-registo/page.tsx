@@ -4,7 +4,8 @@ import * as X from "@/components/xcomponents";
 import { useState, useRef } from "react";
 import { useSession } from 'next-auth/react';
 import { criarRegistro } from "./actions";
-import { notFound, useParams, useRouter } from 'next/navigation';
+import { notFound, redirect, useParams, useRouter } from 'next/navigation';
+import { revalidatePath } from "next/cache";
 
 export default function AdicionarRegisto() {
   const { data: session } = useSession();
@@ -40,6 +41,7 @@ export default function AdicionarRegisto() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(isCreating) return;
     setIsCreating(true);
 
     if (!user?.id) {
@@ -56,15 +58,15 @@ export default function AdicionarRegisto() {
     formData.append('tipo', tipoCompleto);
     formData.append('userId', user.id.toString());
     formData.append('casoId', casoId.toString());
-    
-    // Adiciona arquivos ao FormData
-    files.forEach((file, index) => {
-      formData.append(`file-${index}`, file);
-    });
 
+    // Adiciona arquivos ao FormData
+    
     try {
+      files.forEach((file, index) => {
+        formData.append(`file-${index}`, file);
+      });
       await criarRegistro(formData);
-      router.push(`/caso/${casoId}`);
+      redirect(`/caso/${casoId}`);
     } catch (error) {
       setErro('Erro ao criar registro');
       console.error(error);
@@ -137,7 +139,7 @@ export default function AdicionarRegisto() {
                 placeholder="Resumo do registo"
               />
             </div>
- <div className="flex flex-col">
+            <div className="flex flex-col">
               <div className="w-full">
                 <p className="font-semibold text-sm mb-1">Descrição Detalhada</p>
                 <X.Textarea
@@ -159,7 +161,7 @@ export default function AdicionarRegisto() {
 
         <X.Container className="w-full md:w-1/3">
           <h2 className="text-lg font-semibold mb-4">Documentos</h2>
-          
+
           <input
             type="file"
             ref={fileInputRef}
@@ -168,8 +170,8 @@ export default function AdicionarRegisto() {
             multiple
             accept="image/*,.pdf,.doc,.docx"
           />
-          
-          <X.Button 
+
+          <X.Button
             type="button"
             className="mb-6 w-full"
             onClick={() => fileInputRef.current?.click()}
