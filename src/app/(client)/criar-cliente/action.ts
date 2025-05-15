@@ -19,16 +19,7 @@ export async function criarCliente(data: ClienteData) {
         email: data.email,
         telefone: data.telefone,
         codigoPostal: data.codigoPostal,
-        endereco: data.endereco,
-        dividas: {
-          create: {
-            valor: 0, // Valor inicial da dívida
-            pago: false // Status inicial
-          }
-        }
-      },
-      include: {
-        dividas: true // Opcional: inclui os dados da dívida criada no retorno
+        endereco: data.endereco
       }
     });
 
@@ -39,5 +30,4 @@ export async function criarCliente(data: ClienteData) {
   } catch (error) {
     console.error("Erro ao criar cliente:", error);
     throw new Error("Erro ao criar cliente.");
-  }
-}
+  }}
