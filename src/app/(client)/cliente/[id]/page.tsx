@@ -171,7 +171,10 @@ export default function ClientDetailsPage() {
   {clientData.casos && clientData.casos.length > 0 ? (
     <div className="space-y-6 mt-6">
       {clientData.casos.map((caso: any) => (
-        <div key={caso.id} className="space-y-4">
+  <div
+    key={caso.id}
+    className="space-y-4 p-4 border border-gray-700 rounded-lg"
+  >
           <DadosField titulo="Processo" valor={caso.processo} />
           <DadosField titulo="Resumo" valor={caso.resumo} />
           <DadosField titulo="Estado" valor={caso.estado?.nome_estado} />
