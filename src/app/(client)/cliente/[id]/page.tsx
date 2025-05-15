@@ -3,25 +3,41 @@
 import * as X from "@/components/xcomponents";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { fetchClientProfile } from "./action";
+import { fetchClientProfile, updateClientProfile } from "./action";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
 
 interface DadosFieldProps {
   titulo: string;
   valor: string;
+  editando?: boolean;
+  onMudanca?: (novoValor: string) => void;
   disabled?: boolean;
 }
 
 const DadosField: React.FC<DadosFieldProps> = ({
   titulo,
   valor,
+  editando = false,
+  onMudanca,
   disabled = false
 }) => (
   <div className="space-y-2 w-full">
     <h2 className="text-base font-semibold text-white">{titulo}</h2>
-    <p className="text-lg text-gray-500 pb-4 border-b border-gray-700">
-      {valor || "Não definido"}
-    </p>
+    {editando ? (
+      <input
+        type="text"
+        value={valor}
+        onChange={(e) => onMudanca && onMudanca(e.target.value)}
+        className={`text-lg text-gray-300 bg-gray-700 p-1 rounded w-full border border-gray-600 focus:border-blue-500 focus:outline-none ${
+          disabled ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+        disabled={disabled}
+      />
+    ) : (
+      <p className="text-lg text-gray-500 pb-4 border-b border-gray-700">
+        {valor || "Não definido"}
+      </p>
+    )}
   </div>
 );
 
@@ -29,6 +45,8 @@ export default function ClientDetailsPage() {
   const params = useParams();
   const [clientData, setClientData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempData, setTempData] = useState<any>(null);
 
   useEffect(() => {
     const loadClientData = async () => {
@@ -37,6 +55,7 @@ export default function ClientDetailsPage() {
         const clientId = Number(params.id);
         const data = await fetchClientProfile(clientId);
         setClientData(data);
+        setTempData(data);
       } catch (error) {
         console.error("Failed to load client:", error);
       } finally {
@@ -47,6 +66,31 @@ export default function ClientDetailsPage() {
     loadClientData();
   }, [params.id]);
 
+  const toggleEditMode = async () => {
+    if (isEditing) {
+      try {
+        setIsLoading(true);
+        const updatedData = await updateClientProfile(Number(params.id), {
+          nome: tempData.nome,
+          telefone: tempData.telefone,
+          endereco: tempData.endereco,
+          codigoPostal: tempData.codigoPostal
+        });
+        
+        setClientData(updatedData);
+      } catch (error) {
+        console.error("Failed to update client:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleFieldChange = (field: string) => (value: string) => {
+    setTempData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
   if (!clientData && !isLoading) {
     return (
       <X.ErrorBox visible hideCloseButton>
@@ -55,21 +99,39 @@ export default function ClientDetailsPage() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !clientData) {
     return <SimpleSkeleton />;
   }
 
   return (
     <div className="flex flex-col gap-8 w-full">
       <X.Container className="w-full">
-        <h1 className="text-xl font-bold pb-4 border-b border-gray-700">
-          {clientData.nome}
-        </h1>
-        
+        <div className="flex justify-between items-center pb-4 border-b border-gray-700">
+          <h1 className="text-xl font-bold">
+            {clientData.nome}
+          </h1>
+          <button
+            onClick={toggleEditMode}
+            className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+            disabled={isLoading}
+            aria-label={isEditing ? "Salvar alterações" : "Editar perfil"}
+          >
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+            ) : isEditing ? (
+              <img src="/images/icons/check.svg" className="h-5 w-5" alt="Salvar" />
+            ) : (
+              <img src="/images/icons/edit.svg" className="h-5 w-5" alt="Editar" />
+            )}
+          </button>
+        </div>
+
         <div className="space-y-6 mt-6">
           <DadosField
             titulo="Nome Completo"
-            valor={clientData.nome}
+            valor={isEditing ? tempData.nome : clientData.nome}
+            editando={isEditing}
+            onMudanca={handleFieldChange('nome')}
           />
           
           <DadosField
@@ -80,17 +142,23 @@ export default function ClientDetailsPage() {
           
           <DadosField
             titulo="Telefone"
-            valor={clientData.telefone}
+            valor={isEditing ? tempData.telefone : clientData.telefone}
+            editando={isEditing}
+            onMudanca={handleFieldChange('telefone')}
           />
           
           <DadosField
             titulo="Código Postal"
-            valor={clientData.codigoPostal}
+            valor={isEditing ? tempData.codigoPostal : clientData.codigoPostal}
+            editando={isEditing}
+            onMudanca={handleFieldChange('codigoPostal')}
           />
           
           <DadosField
             titulo="Endereço"
-            valor={clientData.endereco}
+            valor={isEditing ? tempData.endereco : clientData.endereco}
+            editando={isEditing}
+            onMudanca={handleFieldChange('endereco')}
           />
         </div>
       </X.Container>

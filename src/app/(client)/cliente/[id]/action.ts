@@ -28,3 +28,36 @@ export async function fetchClientProfile(clientId: number) {
     throw new Error('Falha ao carregar perfil do cliente');
   }
 }
+export async function updateClientProfile(clientId: number, data: {
+  nome: string;
+  telefone: string;
+  endereco: string;
+  codigoPostal: string;
+}) {
+  try {
+    const updatedClient = await prisma.cliente.update({
+      where: { id: clientId },
+      data: {
+        nome: data.nome,
+        telefone: data.telefone || null,
+        endereco: data.endereco || null,
+        codigoPostal: data.codigoPostal || null
+      },
+      include: {
+        casos: {
+          include: {
+            estado: true
+          },
+          orderBy: {
+            criado_em: 'desc'
+          }
+        }
+      }
+    });
+
+    return updatedClient;
+  } catch (error) {
+    console.error('Database error:', error);
+    throw new Error('Falha ao atualizar perfil do cliente');
+  }
+}
