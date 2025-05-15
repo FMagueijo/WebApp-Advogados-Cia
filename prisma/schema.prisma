@@ -29,7 +29,6 @@ model User {
   tokens         TokenPass[]
   registros      Registro[]
   casos          Caso[]
-  dividas        Divida[]
 
   @@map("utilizador")
 }
@@ -111,8 +110,5 @@ model Divida {
   caso_id       Int?
   caso          Caso?     @relation(fields: [caso_id], references: [id])
   
-  user_id       Int
-  user          User     @relation(fields: [user_id], references: [id])
-
   @@map("divida")
 }
