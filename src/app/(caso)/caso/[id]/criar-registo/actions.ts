@@ -3,28 +3,50 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { v2 as cloudinary } from 'cloudinary';
+import { Readable } from 'stream';
 
-// Tipos para Registros
-interface RegistroInput {
-  resumo: string;
-  descricao?: string | null; // Corrigido para aceitar explicitamente null
-  tipo: string;
-  casoId: number;
-  userId: number;
+// Configurar Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true
+});
+
+// Função para upload de arquivos para o Cloudinary
+async function uploadToCloudinary(file: File): Promise<{ url: string, public_id: string }> {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: 'auto',
+        folder: 'casos/documentos'
+      },
+      (error, result) => {
+        if (error) {
+          console.error('Erro no upload para Cloudinary:', error);
+          return reject(error);
+        }
+        if (!result) {
+          return reject(new Error('Upload failed: no result from Cloudinary'));
+        }
+        resolve({
+          url: result.secure_url,
+          public_id: result.public_id
+        });
+      }
+    );
+
+    const readableStream = new Readable();
+    readableStream.push(buffer);
+    readableStream.push(null);
+    readableStream.pipe(uploadStream);
+  });
 }
 
-interface RegistroCompleto {
-  id: number;
-  resumo: string;
-  descricao: string | null;
-  tipo: string;
-  criado_em: Date;
-  user: {
-    nome: string;
-  };
-}
-
-// Criar um novo registro
 export async function criarRegistro(formData: FormData): Promise<void> {
   // Extrai dados básicos
   const resumo = formData.get('resumo') as string;
@@ -38,9 +60,9 @@ export async function criarRegistro(formData: FormData): Promise<void> {
     throw new Error('Resumo e tipo são obrigatórios');
   }
 
- if (isNaN(userId)) {
-  throw new Error('ID de usuário inválido');
-}
+  if (isNaN(userId)) {
+    throw new Error('ID de usuário inválido');
+  }
   if (isNaN(casoId)) throw new Error('ID de caso inválido');
 
   try {
@@ -59,25 +81,34 @@ export async function criarRegistro(formData: FormData): Promise<void> {
     const fileEntries = Array.from(formData.entries())
       .filter(([key]) => key.startsWith('file-'));
 
-    for (const [key, file] of fileEntries) {
+    // Processar cada arquivo em paralelo
+    const uploadPromises = fileEntries.map(async ([key, file]) => {
       if (file instanceof File) {
-        const uniqueName = `${uuidv4()}${path.extname(file.name)}`;
-        const uploadPath = path.join(process.cwd(), 'public', 'uploads', uniqueName);
-        
-        const bytes = await file.arrayBuffer();
-        await writeFile(uploadPath, Buffer.from(bytes));
+        try {
+          // Upload para Cloudinary
+          const { url, public_id } = await uploadToCloudinary(file);
 
-        await prisma.documento.create({
-          data: {
-            nome: file.name,
-            caminho: `/uploads/${uniqueName}`,
-            tipo: file.type,
-            tamanho: file.size,
-            registro_id: registro.id
-          }
-        });
+          // Salvar metadados no banco de dados
+          await prisma.documento.create({
+            data: {
+              nome: file.name,
+              caminho: url, // Agora armazenamos a URL do Cloudinary
+              tipo: file.type,
+              tamanho: file.size,
+              registro_id: registro.id,
+              public_id: public_id // Armazenamos o public_id para possível gerenciamento futuro
+            }
+          });
+        } catch (error) {
+          console.error(`Erro ao processar arquivo ${file.name}:`, error);
+          throw error;
+        }
       }
-    }
+    });
+
+    // Aguardar todos os uploads terminarem
+    await Promise.all(uploadPromises);
+
     revalidatePath(`/caso/${casoId}`);
     redirect(`/caso/${casoId}`);
 
@@ -85,33 +116,4 @@ export async function criarRegistro(formData: FormData): Promise<void> {
     console.error('Erro ao criar registro:', error);
     throw error;
   }
-}
-
-// Função auxiliar para validação
-function validarInputRegistro(formData: FormData, userId: string | number, casoId: string | number): RegistroInput {
-  const resumo = formData.get('resumo') as string;
-  const descricao = formData.get('descricao') as string | null; // Explicitamente string | null
-  const tipo = formData.get('tipo') as string;
-  const userIdNumber = typeof userId === 'string' ? parseInt(userId) : userId;
-  const casoIdNumber = typeof casoId === 'string' ? parseInt(casoId) : casoId;
-
-  if (!resumo?.trim() || !tipo?.trim()) {
-    throw new Error('Resumo e tipo são obrigatórios');
-  }
-
-  if (isNaN(userIdNumber)) {
-    throw new Error('ID de usuário inválido');
-  }
-
-  if (isNaN(casoIdNumber)) {
-    throw new Error('ID de caso inválido');
-  }
-
-  return {
-    resumo,
-    descricao: descricao || null, // Agora compatível com a interface
-    tipo,
-    casoId: casoIdNumber,
-    userId: userIdNumber
-  };
 }
