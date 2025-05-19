@@ -10,8 +10,51 @@ export async function enviarEmailNovoColaborador(nome: string, email: string, li
     template_params: {
       user: nome,
       email: email,
-      link: link, 
-       }
+      link: link,
+    }
+  };
+
+  try {
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': 'http://localhost' // Algumas APIs exigem header de origem
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error('Detalhes do erro:', errorDetails);
+      throw new Error(`Falha ao enviar email: ${response.statusText}`);
+    }
+
+  } catch (error) {
+    console.error('Erro ao enviar email:', error);
+    throw error;
+  }
+}
+
+
+
+export async function enviarEmailContactoAdmin(params: {
+  user: string;
+  title: string;
+  message: string;
+  adminEmail?: string; // Make optional since we'll hardcode it
+}) {
+  const payload = {
+    service_id: process.env.EMAILJS_SERVICE_ID,
+    template_id: process.env.EMAILJS_CONTACT_TEMPLATE_ID,
+    user_id: process.env.EMAILJS_PUBLIC_KEY,  // Note que mudamos de PUBLIC_KEY para USER_ID
+    accessToken: process.env.EMAILJS_ACCESS_TOKEN, // Adicione isso se estiver usando autenticação reforçada
+    template_params: {
+      name: params.user,
+      message: params.message,
+      title: params.title,
+      email: params.adminEmail
+    }
   };
 
   try {

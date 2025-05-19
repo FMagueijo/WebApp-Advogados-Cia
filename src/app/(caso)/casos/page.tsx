@@ -62,7 +62,8 @@ export default function ListarCasos() {
                 {casos.map((caso) => (
                   <tr key={caso.id} className="border-b border-[var(--secondary-color)]">
                     <td className="p-4">
-                      <X.Link className="inline-flex gap-2 hover:text-[var(--primary-color)]">
+                      <X.Link className="inline-flex gap-2 hover:text-[var(--primary-color)]"
+                      href={`/caso/${caso.id}`}>
                         <span>[{caso.id}]</span>
                         <span>{caso.processo}</span>
                       </X.Link>

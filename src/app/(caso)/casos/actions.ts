@@ -30,6 +30,7 @@ export async function fetchCasos(
         processo: true,
         resumo: true,
         criado_em: true,
+        estado:true,
         user_id: true,  // Mantemos o user_id para buscar depois
         cliente: {
           select: {
@@ -64,7 +65,7 @@ export async function fetchCasos(
       assunto: c.resumo,
       criadoPor: usuarioMap.get(c.user_id) || 'Desconhecido',
       cliente: c.cliente?.nome || 'Desconhecido',
-      estado: c.descricao?.includes("Fechado") ? "Fechado" : "Aberto",
+      estado: c.estado.nome_estado,
       dataCriacao: c.criado_em
     }));
 
