@@ -63,7 +63,7 @@ export default function ListarCasos() {
                   <tr key={caso.id} className="border-b border-[var(--secondary-color)]">
                     <td className="p-4">
                       <X.Link className="inline-flex gap-2 hover:text-[var(--primary-color)]"
-                      href={`/caso/${caso.id}`}>
+                        href={`/caso/${caso.id}`}>
                         <span>[{caso.id}]</span>
                         <span>{caso.processo}</span>
                       </X.Link>
@@ -74,23 +74,17 @@ export default function ListarCasos() {
                       </X.DataField>
                     </td>
                     <td className="p-4">
-                      <X.Link className="hover:text-[var(--primary-color)]">
-                        {caso.criadoPor}
+                      <X.Link href={`/perfil-terceiro/${caso.user.id}`}>
+                        {caso.user.nome}
                       </X.Link>
+
+
                     </td>
                     <td className="p-4">
-                      <X.DataField
-                        className="rounded-lg p-2"
-                        colorOverride={
-                          caso.estado === "Aberto"
-                            ? "--open-color"
-                            : caso.estado === "Fechado"
-                            ? "--error-color"
-                            : "--success-color"
-                        }
-                      >
-                        {caso.estado}
-                      </X.DataField>
+                      <X.DataField colorOverride="--open-color">
+  {caso.estado.nome_estado}
+</X.DataField>
+
                     </td>
                   </tr>
                 ))}
