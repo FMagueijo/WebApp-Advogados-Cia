@@ -76,6 +76,7 @@ const Suporte: FunctionComponent = () => {
       </X.Container>
     </>
   );
+}
 
 interface DadosFieldProps {
   titulo: string;
