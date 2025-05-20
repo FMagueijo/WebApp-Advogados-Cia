@@ -3,6 +3,8 @@ import { FilterData } from "@/types/types";
 import React, { useState } from "react";
 import { useRef } from "react";
 import { useEffect } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface BaseProps {
     className?: string;
@@ -29,7 +31,7 @@ const Container: React.FC<ContainerProps> = ({ children, className = "", directi
 };
 
 interface ToggleBoxProps {
-    label: string;
+    label?: string;
     checked: boolean;
     onChange: (checked: boolean) => void;
 }
@@ -140,7 +142,6 @@ const Textarea: React.FC<TextareaProps> = ({
         </div>
     );
 };
-
 interface FieldProps extends BaseProps {
     type?: string;
     name?: string;
@@ -152,8 +153,9 @@ interface FieldProps extends BaseProps {
     showHideToggle?: boolean;
     validationType?: "email" | "text" | "password";
     pattern?: RegExp;
+    min?: number;
+    max?: number;
 }
-
 const Field: React.FC<FieldProps> = ({
     className = "",
     type = "text",
@@ -165,53 +167,40 @@ const Field: React.FC<FieldProps> = ({
     errorMessage,
     showHideToggle = false,
     pattern,
+    min,
+    max,
 }) => {
     const [internalValue, setInternalValue] = useState<string>(value);
     const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
 
     const togglePasswordVisibility = () => {
         setPasswordVisible(!passwordVisible);
     };
 
-    const validateInput = (value: string) => {
-        let e_msg = "";
-
-        if (required && value.trim() === "") {
-            e_msg += `${name} é obrigatório.\n`;
-        }
-
-        if (type === "email" && value.trim() !== "" && !/\S+@\S+\.\S+/.test(value)) {
-            e_msg += "Please enter a valid email address.\n";
-        }
-
-        if (pattern && !pattern.test(value)) {
-            e_msg += `Invalid ${name}.\n`;
-        }
-
-        return e_msg;
-    };
-
     const handleInternalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = e.target.value;
+        let newValue = e.target.value;
+
+        if (type === "number") {
+            const numericValue = parseFloat(newValue);
+            if (!isNaN(numericValue)) {
+                if (min !== undefined && numericValue < min) {
+                    newValue = String(min);
+                }
+                if (max !== undefined && numericValue > max) {
+                    newValue = String(max);
+                }
+            } else {
+                newValue = "";
+            }
+        }
 
         if (onChange) {
             onChange(e);
-            setInternalValue(newValue);
-        } else {
-            setInternalValue(newValue);
         }
-
-        const validationError = validateInput(newValue);
-        setError(validationError);
-
-        if (errorMessage) {
-            setError(prev => (prev ? prev + "\n" + errorMessage : errorMessage));
-        }
+        setInternalValue(newValue);
     };
 
     const inputValue = internalValue;
-    const errorMessages = error ? error.split("\n").filter(Boolean) : [];
 
     return (
         <div className="bg-(--secondary-color) w-full p-4 rounded-lg font-light h-max flex flex-col gap-3">
@@ -224,6 +213,9 @@ const Field: React.FC<FieldProps> = ({
                 value={inputValue}
                 onChange={handleInternalChange}
                 className="text-lg w-full select-none focus:ring-0 focus:outline-none bg-transparent"
+                min={type === "number" ? min : undefined}
+                max={type === "number" ? max : undefined}
+                step={type === "number" ? "any" : undefined}
             />
             {showHideToggle && (
                 <ToggleBox
@@ -231,13 +223,6 @@ const Field: React.FC<FieldProps> = ({
                     label="Mostrar Password"
                     checked={passwordVisible}
                 />
-            )}
-            {errorMessages.length > 0 && (
-                <div className="text-(--error-color) font-semibold text-xs">
-                    {errorMessages.map((msg, idx) => (
-                        <p key={idx}>- {msg}</p>
-                    ))}
-                </div>
             )}
         </div>
     );
@@ -305,9 +290,17 @@ const Button: React.FC<ButtonProps> = ({ children, onClick, className = "", sele
         </button>
     );
 };
-
-const Divider: React.FC = () => {
-    return <div className="w-full h-px bg-(--secondary-color)" />;
+const Divider: React.FC<{ orientation?: "horizontal" | "vertical"; color?: string }> = ({
+    orientation = "horizontal",
+    color = "--secondary-color",
+}) => {
+    return (
+        <div
+            className={`${orientation === "horizontal" ? "w-full h-px" : "h-full w-px"
+                }`}
+            style={{ backgroundColor: `var(${color})` }}
+        />
+    );
 };
 
 interface LinkProps extends ChildProps {
@@ -392,13 +385,13 @@ const ButtonLink: React.FC<ButtonLinkProps> = ({
         </a>
     );
 };
-
-const Submit: React.FC<ButtonProps> = ({ children, onClick, className = "" }) => {
+const Submit: React.FC<ButtonProps & { disabled?: boolean }> = ({ children, onClick, className = "", disabled = false }) => {
     return (
         <button
             type="submit"
-            className={`p-4 w-full text-lg h-auto cursor-pointer rounded-lg font-semibold transition-all bg-(--submit-color) text-(--secondary-color) hover:bg-(--secondary-color) hover:text-(--submit-color) ${className}`}
-            onClick={onClick}
+            className={`p-4 w-full text-lg h-auto cursor-pointer rounded-lg font-semibold transition-all bg-(--submit-color) text-(--secondary-color) hover:bg-(--secondary-color) hover:text-(--submit-color) ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`}
+            onClick={disabled ? undefined : onClick}
+            disabled={disabled}
         >
             {children}
         </button>
@@ -758,9 +751,431 @@ const FilterBox: React.FC<FilterBoxProps> = ({ label, filters, onFilterChange })
     );
 };
 
+interface DateTimePickerProps extends BaseProps {
+    name: string;
+    value?: Date;
+    onChange?: (date: Date) => void;
+    showTimeSelect?: boolean;
+    required?: boolean;
+    hide_label?: boolean;
+    dateFormat?: string;
+}
+const DateTimePicker: React.FC<DateTimePickerProps & { showDayAdvanceButtons?: boolean }> = ({
+    name,
+    value = new Date(),
+    onChange,
+    showTimeSelect = false,
+    required = false,
+    dateFormat = "dd/MM/yyyy",
+    hide_label = true,
+    className = "",
+    showDayAdvanceButtons = false,
+}) => {
+    const [selectedDate, setSelectedDate] = useState<Date | null>(value);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+    const pickerRef = useRef<HTMLDivElement>(null);
 
+    const handleChange = (date: Date | null) => {
+        setSelectedDate(date);
+        if (onChange && date) {
+            onChange(date);
+        }
+    };
 
+    const handleClickOutside = (event: MouseEvent) => {
+        if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+            setIsCalendarOpen(false);
+        }
+    };
+
+    useEffect(() => {
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (selectedDate) {
+            const inputElement = document.querySelector(`[name="${name}"]`) as HTMLInputElement;
+            if (inputElement) {
+                inputElement.value = selectedDate.toISOString();
+            }
+        }
+    }, [selectedDate, name]);
+
+    const handleReset = () => {
+        const today = new Date();
+        setSelectedDate(today);
+        if (onChange) {
+            onChange(today);
+        }
+    };
+
+    const handleAdvanceDay = (days: number) => {
+        if (!selectedDate) return;
+        const newDate = new Date(selectedDate);
+        newDate.setDate(newDate.getDate() + days);
+        setSelectedDate(newDate);
+        if (onChange) {
+            onChange(newDate);
+        }
+    };
+
+    return (
+        <div className={`flex flex-row items-center gap-4 h-22  ${className}`}>
+            <div ref={pickerRef} className={`bg-(--secondary-color) p-4 rounded-lg font-light h-full flex flex-col gap-3 w-full items-center justify-center`}>
+                {!hide_label && <p className="font-semibold text-xs">{required ? "{*} " : ""}{name}</p>}
+                <div className="flex flex-row gap-4 w-full h-full items-center">
+                    {showDayAdvanceButtons && (
+                        <Button onClick={() => handleAdvanceDay(-1)} className="w-max h-full group items-center">
+                            <img
+                                src={"/images/icons/arrow_right.svg"}
+                                alt="Toggle calendar"
+                                className="w-6 h-6 rotate-180"
+                            />
+                        </Button>
+                    )}
+
+                    <button
+                        className="group font-semibold w-full h-full flex gap-2 items-center justify-center bg-transparent border-2 border-(--secondary-color) text-(--primary-color) rounded-lg hover:opacity-75 transition-all focus:outline-none cursor-pointer"
+                        onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                    >
+                        <img
+                            src={isCalendarOpen ? "/images/icons/close.svg" : "/images/icons/calendar.svg"}
+                            alt="Toggle calendar"
+                            className="w-7 h-7"
+                        />
+                        <p className="text-lg w-max font-light w-full select-none focus:ring-0 focus:outline-none bg-transparent border-2 border-(--secondary-color) rounded-lg">
+                            {selectedDate
+                                ? selectedDate.toLocaleDateString("PT-PT") +
+                                (showTimeSelect
+                                    ? ` ${selectedDate.toLocaleTimeString("PT-PT", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    })}`
+                                    : "")
+                                : ""}
+                        </p>
+                    </button>
+                    {showDayAdvanceButtons && (
+                        <Button onClick={() => handleAdvanceDay(1)} className="w-max h-full group items-center">
+                            <img
+                                src="/images/icons/arrow_right.svg"
+                                alt="Toggle calendar"
+                                className="w-7 h-7"
+                            />
+                        </Button>
+                    )}
+                </div>
+
+                <input type="hidden" name={name} value={selectedDate ? selectedDate.toISOString() : ""} />
+                <Popup isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} title="Selecionar Data">
+                    <Calendar onDateChange={handleChange} selectedDate={selectedDate} />
+                </Popup>
+            </div>
+            <button
+                className="group font-semibold w-max h-full flex gap-2 p-4 items-center justify-center border-2 bg-(--secondary-color) border-transparent text-(--primary-color) rounded-lg hover:opacity-75 transition-all focus:outline-none cursor-pointer"
+                onClick={() => handleReset()}
+            >
+                <img
+                    src={"/images/icons/calendar_today.svg"}
+                    alt="Reset date"
+                    className="w-7 h-7"
+                />
+                Agora
+            </button>
+        </div>
+    );
+};
+
+interface CalendarProps extends BaseProps {
+    selectedDate?: Date | null;
+    onDateChange?: (date: Date) => void;
+}
+
+const Calendar: React.FC<CalendarProps> = ({ selectedDate = new Date(), onDateChange, className = "" }) => {
+    const [currentDate, setCurrentDate] = useState<Date>(selectedDate);
+    const [viewMode, setViewMode] = useState<"days" | "months" | "years">("days");
+    const [selectedTime, setSelectedTime] = useState<{ hour: number; minute: number }>({
+        hour: selectedDate.getHours(),
+        minute: selectedDate.getMinutes(),
+    });
+
+    const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+
+    const startOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+
+    const handlePrev = () => {
+        if (viewMode === "days") {
+            setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+        } else if (viewMode === "months") {
+            setCurrentDate((prev) => new Date(prev.getFullYear() - 1, prev.getMonth(), 1));
+        } else {
+            setCurrentDate((prev) => new Date(prev.getFullYear() - 12, prev.getMonth(), 1));
+        }
+    };
+
+    const handleNext = () => {
+        if (viewMode === "days") {
+            setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+        } else if (viewMode === "months") {
+            setCurrentDate((prev) => new Date(prev.getFullYear() + 1, prev.getMonth(), 1));
+        } else {
+            setCurrentDate((prev) => new Date(prev.getFullYear() + 12, prev.getMonth(), 1));
+        }
+    };
+
+    const handleDateClick = (day: number) => {
+        const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day, selectedTime.hour, selectedTime.minute);
+        if (onDateChange) {
+            onDateChange(newDate);
+        }
+    };
+
+    const handleMonthClick = (month: number) => {
+        setCurrentDate((prev) => new Date(prev.getFullYear(), month, 1));
+        setViewMode("days");
+    };
+
+    const handleYearClick = (year: number) => {
+        setCurrentDate((prev) => new Date(year, prev.getMonth(), 1));
+        setViewMode("months");
+    };
+
+    const renderDays = () => {
+        const days = [];
+        const totalDays = daysInMonth(currentDate.getFullYear(), currentDate.getMonth());
+        const startDay = startOfMonth(currentDate.getFullYear(), currentDate.getMonth());
+
+        for (let i = 0; i < startDay; i++) {
+            days.push(<div key={`empty-${i}`} className="w-10 h-10"></div>);
+        }
+
+        for (let day = 1; day <= totalDays; day++) {
+            const isSelected =
+                selectedDate?.getFullYear() === currentDate.getFullYear() &&
+                selectedDate?.getMonth() === currentDate.getMonth() &&
+                selectedDate?.getDate() === day;
+
+            days.push(
+                <button
+                    key={day}
+                    className={`w-full h-10 flex items-center cursor-pointer justify-center rounded-lg transition-colors duration-200 ${isSelected
+                        ? "bg-(--submit-color) text-white"
+                        : "hover:bg-(--submit-color) hover:text-white"
+                        }`}
+                    onClick={() => handleDateClick(day)}
+                >
+                    {day}
+                </button>
+            );
+        }
+
+        return days;
+    };
+
+    const renderMonths = () => {
+        return Array.from({ length: 12 }, (_, i) => (
+            <button
+                key={i}
+                className="w-full h-10 flex items-center cursor-pointer justify-center rounded-lg transition-colors duration-200 hover:bg-(--submit-color) hover:text-white"
+                onClick={() => handleMonthClick(i)}
+            >
+                {new Date(0, i).toLocaleString("PT-PT", { month: "short" })}
+            </button>
+        ));
+    };
+
+    const renderYears = () => {
+        const startYear = Math.floor(currentDate.getFullYear() / 12) * 12;
+        return Array.from({ length: 12 }, (_, i) => (
+            <button
+                key={i}
+                className="w-full h-10 flex items-center cursor-pointer justify-center rounded-lg transition-colors duration-200 hover:bg-(--submit-color) hover:text-white"
+                onClick={() => handleYearClick(startYear + i)}
+            >
+                {startYear + i}
+            </button>
+        ));
+    };
+
+    const handleTimeChange = (type: "hour" | "minute", value: number) => {
+        setSelectedTime((prev) => {
+            const newTime = { ...prev, [type]: value };
+            const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), newTime.hour, newTime.minute);
+            if (onDateChange) {
+                onDateChange(newDate);
+            }
+            return newTime;
+        });
+    };
+
+    return (
+        <div>
+            <div className={`p-4 bg-(--secondary-color) rounded-lg ${className}`}>
+                <div className="flex justify-between items-center mb-4">
+                    <button
+                        className="text-(--primary-color) hover:opacity-75"
+                        onClick={handlePrev}
+                    >
+                        &lt;
+                    </button>
+                    <span
+                        className="font-semibold text-(--primary-color) cursor-pointer"
+                        onClick={() => setViewMode(viewMode === "days" ? "months" : "years")}
+                    >
+                        {viewMode === "days"
+                            ? currentDate.toLocaleString("PT-PT", { month: "long", year: "numeric" })
+                            : viewMode === "months"
+                                ? currentDate.getFullYear()
+                                : `${Math.floor(currentDate.getFullYear() / 12) * 12} - ${Math.floor(currentDate.getFullYear() / 12) * 12 + 11}`}
+                    </span>
+                    <button
+                        className="text-(--primary-color) hover:opacity-75"
+                        onClick={handleNext}
+                    >
+                        &gt;
+                    </button>
+                </div>
+                {viewMode === "days" && (
+                    <div className="grid grid-cols-7 gap-2 text-center">
+                        {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
+                            <div key={day} className="font-semibold text-(--primary-color) w-full">
+                                {day}
+                            </div>
+                        ))}
+                        {renderDays()}
+                    </div>
+                )}
+                {viewMode === "months" && <div className="grid grid-cols-3 gap-2">{renderMonths()}</div>}
+                {viewMode === "years" && <div className="grid grid-cols-3 gap-2">{renderYears()}</div>}
+
+            </div>
+            <div className="flex justify-between items-center mt-4">
+                <div className="flex items-center gap-2">
+                    <Field
+                        type="number"
+                        name="Hora"
+                        value={String(selectedTime.hour)}
+                        placeholder={String(selectedTime.hour)}
+                        onChange={(e) => handleTimeChange("hour", Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
+                        className="w-16 p-2 text-center rounded-lg bg-(--background-color) text-(--primary-color)"
+                        min={0}
+                        max={23}
+
+                    />
+                    <label className="text-(--primary-color) font-semibold">:</label>
+                    <Field
+                        type="number"
+                        name="Minuto"
+                        placeholder={String(selectedTime.minute)}
+                        value={String(selectedTime.minute)}
+                        onChange={(e) => handleTimeChange("minute", Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                        className="w-16 p-2 text-center rounded-lg bg-(--background-color) text-(--primary-color)"
+                        min={0}
+                        max={59}
+                    />
+
+                </div>
+            </div>
+        </div>
+    );
+};
+
+interface PopupProps extends ChildProps {
+    isOpen: boolean;
+    onClose?: () => void;
+    title?: string;
+}
+
+const Popup: React.FC<PopupProps> = ({ isOpen, onClose, children, title, className }) => {
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
+        }
+
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 p-8 flex items-center justify-center bg-(--background-color)/90 backdrop-blur-sm">
+            <div className="relative flex flex-col bg-(--background-color) max-h-full p-8 rounded-lg w-full gap-4 border-2 border-(--secondary-color)">
+                <div className="flex justify-between items-center">
+                    {title && <h2 className="text-lg font-semibold text-(--primary-color)">{title}</h2>}
+                    <button
+                        className="flex cursor-pointer items-center justify-center text-(--primary-color) hover:opacity-75"
+                        onClick={onClose}
+                        aria-label="Close"
+                    >
+                        <img src="/images/icons/close.svg" alt="Close" className="w-6 h-6" />
+                    </button>
+                </div>
+                <Divider color="--background-color"></Divider>
+                <div className="overflow-auto">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export { Popup };
+
+/*
+
+<div ref={dropdownRef} className="relative w-max">
+    <div className="flex flex-row items-center gap-4">
+        <div className="flex flex-row  rounded-lg items-center">
+            <button
+                className="group font-semibold w-max min-h-14 h-max flex items-center justify-between px-4 py-2 bg-(--secondary-color) text-(--primary-color) rounded-l-lg hover:opacity-75 transition-all focus:outline-none cursor-pointer"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span>{label}: {selectedOption}</span>
+                <img
+                    src="/images/icons/arrow_down.svg"
+                    alt="Dropdown arrow"
+                    className={`w-6 h-6 ml-2 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+            </button>
+
+            <button
+                className="group font-semibold w-max min-h-14 h-max flex items-center justify-center px-4 py-2 bg-transparent border-2 border-(--secondary-color) text-(--primary-color) rounded-r-lg hover:opacity-75 transition-all focus:outline-none cursor-pointer"
+                onClick={toggleInvert}
+            >
+                <img
+                    src="/images/icons/arrow_down.svg"
+                    alt="Dropdown arrow"
+                    className={`w-6 h-6 transition-transform ${!isInverted ? "rotate-180" : ""}`}
+                />
+            </button>
+        </div>
+    </div>
+
+    {isOpen && (
+        <div className="fixed min-w-3xs gap-4 flex flex-col p-2 max-h-40 overflow-y-auto overflow-x-hidden bg-(--background-color)/90 backdrop-blur-sm mt-2 w-max rounded-lg shadow-lg z-10">
+            {options.map((option, index) => (
+                <div
+                    key={index}
+                    className={`flex min-h-14 rounded-lg h-max p-4 text-(--primary-color) ${selectedOption === option ? 'bg-(--background-color)' : 'bg-(--secondary-color)'} items-center hover:opacity-75 cursor-pointer`}
+                    onClick={() => handleSelect(option)}
+                >
+                    {option}
+                </div>
+            ))}
+        </div>
+    )}
+
+</div>
+*/
 export {
+    DateTimePicker,
     Button,
     ButtonLink,
     HeaderLink,
