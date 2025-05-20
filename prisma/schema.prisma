@@ -53,7 +53,7 @@ model TokenPass {
 }
 
 model Registro {
-  id        Int      @id @default(autoincrement())
+  idRegisto         Int      @id @default(autoincrement())
   resumo    String   @db.VarChar(255)
   descricao String?  @db.Text
   tipo      String   @db.VarChar(50)

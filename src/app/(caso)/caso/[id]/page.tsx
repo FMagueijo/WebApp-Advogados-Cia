@@ -270,9 +270,9 @@ const PerfilCaso: FunctionComponent = () => {
               <tbody>
                 {registros.length > 0 ? (
                   registros.map((registro) => (
-                    <tr key={registro.id} className="border-b border-[var(--secondary-color)]">
+                    <tr key={registro.idRegisto} className="border-b border-[var(--secondary-color)]">
                       <td className="p-2">
-                        <X.Link href={`/caso/${id}/registo/${registro.id}`} className="group">
+                        <X.Link href={`/caso/${id}/registo/${registro.idRegisto}`} className="group">
                           <div>{registro.resumo}</div>
                         </X.Link>
                       </td>

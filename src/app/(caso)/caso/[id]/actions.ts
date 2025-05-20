@@ -141,7 +141,7 @@ export async function fetchRegistrosDoCaso(casoId: number, order: 'asc' | 'desc'
     const registros = await prisma.registro.findMany({
       where: { caso_id: casoId },
       select: {
-        id: true,
+        idRegisto: true,
         resumo: true,
         criado_em: true,
         tipo: true
