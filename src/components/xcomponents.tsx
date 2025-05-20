@@ -3,8 +3,6 @@ import { FilterData } from "@/types/types";
 import React, { useState } from "react";
 import { useRef } from "react";
 import { useEffect } from "react";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 
 interface BaseProps {
     className?: string;
