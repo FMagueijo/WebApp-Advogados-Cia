@@ -9,7 +9,8 @@ export async function fetchClientProfile(clientId: number) {
       include: {
         casos: {
           include: {
-            estado: true
+            estado: true,
+            dividas: true // Adiciona as dívidas associadas a cada caso
           },
           orderBy: {
             criado_em: 'desc'

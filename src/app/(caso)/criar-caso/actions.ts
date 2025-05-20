@@ -10,6 +10,7 @@ export async function criarCaso(formData: FormData, userId: string | number) {
     const resumo = formData.get('Resumo') as string;
     const descricao = formData.get('Descrição Detalhada') as string;
     const clienteId = formData.get('clienteId') as string;
+    const valorDivida = formData.get('valorDivida') as string; // Novo campo para o valor da dívida
 
     if (!processo || !resumo || !clienteId || !userId) {
       throw new Error('Processo, Resumo, Cliente e Utilizador são obrigatórios');
@@ -17,20 +18,39 @@ export async function criarCaso(formData: FormData, userId: string | number) {
 
     // Converter userId para número
     const userIdNumber = typeof userId === 'string' ? parseInt(userId) : userId;
+    const clienteIdNumber = parseInt(clienteId);
+    const valorDividaNumber = valorDivida ? parseFloat(valorDivida) : 0;
 
-    await prisma.caso.create({
-      data: {
-        processo,
-        resumo,
-        descricao: descricao || null,
-        cliente_id: parseInt(clienteId),
-        user_id: userIdNumber // Agora garantido ser um número
-      }
+    // Criar o caso e a dívida em uma transação
+    await prisma.$transaction(async (prisma) => {
+      // Criar o caso primeiro
+      const novoCaso = await prisma.caso.create({
+        data: {
+          processo,
+          resumo,
+          descricao: descricao || null,
+          cliente_id: clienteIdNumber,
+          user_id: userIdNumber,
+          estado_id: 1 // Assumindo que 1 é o estado padrão (por exemplo, "Aberto")
+        }
+      });
+
+      // Criar a dívida associada ao caso e cliente
+      await prisma.divida.create({
+        data: {
+          valor: valorDividaNumber,
+          cliente_id: clienteIdNumber,
+          caso_id: novoCaso.id,
+          pago: false
+        }
+      });
     });
 
   } catch (error) {
     console.error('Erro ao criar caso:', error);
-    return { error: error instanceof Error ? error.message : 'Ocorreu um erro' };
+    return { 
+      error: error instanceof Error ? error.message : 'Ocorreu um erro ao criar o caso e a dívida' 
+    };
   }
 
   revalidatePath('/casos');

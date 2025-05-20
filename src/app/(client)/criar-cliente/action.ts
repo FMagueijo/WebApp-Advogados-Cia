@@ -30,5 +30,4 @@ export async function criarCliente(data: ClienteData) {
   } catch (error) {
     console.error("Erro ao criar cliente:", error);
     throw new Error("Erro ao criar cliente.");
-  }
-}
+  }}

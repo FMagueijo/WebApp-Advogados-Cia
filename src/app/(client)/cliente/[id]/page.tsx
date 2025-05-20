@@ -163,25 +163,41 @@ export default function ClientDetailsPage() {
         </div>
       </X.Container>
 
-      <X.Container className="w-full">
-        <h2 className="text-lg font-semibold pb-4 border-b border-gray-700">
-          Casos do Cliente
-        </h2>
-        
-        {clientData.casos && clientData.casos.length > 0 ? (
-          <div className="space-y-6 mt-6">
-            {clientData.casos.map((caso: any) => (
-              <div key={caso.id} className="space-y-4">
-                <DadosField titulo="Processo" valor={caso.processo} />
-                <DadosField titulo="Resumo" valor={caso.resumo} />
-                <DadosField titulo="Estado" valor={caso.estado?.nome_estado} />
-              </div>
-            ))}
+<X.Container className="w-full">
+  <h2 className="text-lg font-semibold pb-4 border-b border-gray-700">
+    Casos do Cliente
+  </h2>
+  
+  {clientData.casos && clientData.casos.length > 0 ? (
+    <div className="space-y-6 mt-6">
+      {clientData.casos.map((caso: any) => (
+  <div
+    key={caso.id}
+    className="space-y-4 p-4 border border-gray-700 rounded-lg"
+  >
+          <DadosField titulo="Processo" valor={caso.processo} />
+          <DadosField titulo="Resumo" valor={caso.resumo} />
+          <DadosField titulo="Estado" valor={caso.estado?.nome_estado} />
+          {/* Adiciona a seção de dívidas */}
+          <div className="space-y-2 w-full">
+            <h2 className="text-base font-semibold text-white">Dívidas</h2>
+            {caso.dividas && caso.dividas.length > 0 ? (
+              caso.dividas.map((divida: any) => (
+                <div key={divida.id} className="text-lg text-gray-500 pb-4 border-b border-gray-700">
+                  Valor: {divida.valor.toFixed(2)}€ - Status: {divida.pago ? "Pago" : "Por Pagar"}
+                </div>
+              ))
+            ) : (
+              <p className="text-lg text-gray-500 pb-4 border-b border-gray-700">Nenhuma dívida registrada</p>
+            )}
           </div>
-        ) : (
-          <p className="mt-6">Nenhum caso encontrado</p>
-        )}
-      </X.Container>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <p className="mt-6 text-lg text-gray-500">Nenhum caso encontrado</p>
+  )}
+</X.Container>
     </div>
   );
 }

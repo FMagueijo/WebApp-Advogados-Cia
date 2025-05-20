@@ -38,13 +38,14 @@ model User {
 }
 
 model Cliente {
-  id           Int    @id @default(autoincrement())
-  nome         String @db.VarChar(100)
-  email        String @unique @db.VarChar(255)
-  telefone     String @db.VarChar(20)
-  codigoPostal String @db.VarChar(10)
-  endereco     String @db.VarChar(255)
+  id           Int      @id @default(autoincrement())
+  nome         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(255)
+  telefone     String   @db.VarChar(20)
+  codigoPostal String   @db.VarChar(10)
+  endereco     String   @db.VarChar(255)
   casos        Caso[]
+  dividas      Divida[]
 
   @@map("cliente")
 }
@@ -108,6 +109,7 @@ model Caso {
 
   registros Registro[]
   Evento    Evento[]   @relation("EventoCasos")
+  dividas   Divida[]
 
   @@map("caso")
   HorasTrabalhadas HorasTrabalhadas[]
@@ -152,4 +154,20 @@ enum TipoEvento {
   EVENTO
   COMPROMISSO
   PRAZO_PROCESSUAL
+}
+
+model Divida {
+  id            Int      @id @default(autoincrement())
+  valor         Float    @db.Float @default(0)
+  criado_em     DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+  pago          Boolean  @default(false)
+  
+  cliente_id    Int
+  cliente       Cliente  @relation(fields: [cliente_id], references: [id])
+  
+  caso_id       Int
+  caso          Caso     @relation(fields: [caso_id], references: [id])
+  
+  @@map("divida")
 }
