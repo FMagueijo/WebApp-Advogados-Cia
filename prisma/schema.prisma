@@ -125,7 +125,7 @@ model Documento {
   public_id   String?  @db.VarChar(255) // ID público do Cloudinary
   criado_em   DateTime @default(now())
   registro_id Int
-  registro    Registro @relation(fields: [registro_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  registro    Registro @relation(fields: [registro_id], references: [idRegisto], onDelete: Cascade, onUpdate: Cascade)
 
   @@map("documento")
 }

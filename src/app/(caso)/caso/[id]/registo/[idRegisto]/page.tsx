@@ -1,144 +1,155 @@
-"use client";
+'use client';
 
+import { useEffect, useState } from "react";
+import { fetchRegistroProfile, updateRegistroProfile } from "./actions";
+import { useParams } from "next/navigation";
 import * as X from "@/components/xcomponents";
+import SimpleSkeleton from "@/components/loading/simple_skeleton";
 
-const DadosField = ({
-  titulo,
-  valor,
-  editando = false,
-  tipo = "text",
-}: {
+export default function RegistroPerfil() {
+  const params = useParams();
+  const registroId = Number(params.idRegisto);
+  const casoId = Number(params.idcaso);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [registroData, setRegistroData] = useState({
+    tipo: "",
+    resumo: "",
+    descricao: "",
+  });
+
+  useEffect(() => {
+    const carregar = async () => {
+      try {
+        setIsLoading(true);
+        if (!registroId) throw new Error("ID do registo inválido");
+        const data = await fetchRegistroProfile(registroId);
+        setRegistroData(data);
+      } catch (e) {
+        console.error("Erro ao carregar registro:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (registroId) carregar();
+  }, [registroId]);
+
+  const handleFieldChange = (field: keyof typeof registroData) => (value: string) => {
+    setRegistroData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleEditMode = async () => {
+    if (isEditing) {
+      try {
+        setIsLoading(true);
+        const { tipo, ...updateData } = registroData;
+        const updated = await updateRegistroProfile(registroId, updateData);
+        setRegistroData(prev => ({ ...prev, ...updated }));
+      } catch (e) {
+        console.error("Erro ao atualizar:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    setIsEditing(!isEditing);
+  };
+
+  if (isLoading && !registroData.resumo) {
+    return <SimpleSkeleton />;
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      <X.Container className="w-full">
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-bold">Detalhes do Registro</h1>
+          <button
+  onClick={toggleEditMode}
+  className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+  disabled={isLoading}
+  aria-label={isEditing ? "Guardar alterações" : "Editar registro"}
+>
+  {isLoading ? (
+    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+  ) : isEditing ? (
+    <img src="/images/icons/check.svg" className="h-5 w-5" alt="Guardar" />
+  ) : (
+    <img src="/images/icons/edit.svg" className="h-5 w-5" alt="Editar" />
+  )}
+</button>
+
+        </div>
+        
+        <X.Divider />
+        
+        <div className="space-y-4">
+          <DadosField
+            titulo="Tipo"
+            valor={registroData.tipo}
+            editando={false}
+            disabled
+          />
+          
+          <DadosField
+            titulo="Resumo"
+            valor={registroData.resumo}
+            editando={isEditing}
+            onMudanca={handleFieldChange("resumo")}
+          />
+          
+          <DadosField
+            titulo="Descrição"
+            valor={registroData.descricao}
+            editando={isEditing}
+            onMudanca={handleFieldChange("descricao")}
+            textarea
+          />
+        </div>
+      </X.Container>
+    </div>
+  );
+}
+
+interface DadosFieldProps {
   titulo: string;
   valor: string;
   editando?: boolean;
-  tipo?: "text" | "textarea";
+  onMudanca?: (novoValor: string) => void;
+  disabled?: boolean;
+  textarea?: boolean;
+}
+
+const DadosField: React.FC<DadosFieldProps> = ({
+  titulo,
+  valor,
+  editando = false,
+  onMudanca,
+  disabled = false,
+  textarea = false
 }) => (
   <X.Container className="w-full">
     <div className="space-y-2">
       <h2 className="text-base font-semibold text-white">{titulo}</h2>
-      {editando ? (
-        tipo === "textarea" ? (
+      {editando && !disabled ? (
+        textarea ? (
           <textarea
-            readOnly
             value={valor}
-            className="text-lg text-gray-300 bg-gray-700 p-1 rounded w-full border border-gray-600 focus:border-blue-500 focus:outline-none min-h-[100px]"
+            onChange={(e) => onMudanca && onMudanca(e.target.value)}
+            className="text-lg text-gray-300 bg-gray-700 p-2 rounded w-full border border-gray-600 focus:border-blue-500 focus:outline-none min-h-[100px]"
           />
         ) : (
           <input
-            readOnly
             type="text"
             value={valor}
-            className="text-lg text-gray-300 bg-gray-700 p-1 rounded w-full border border-gray-600 focus:border-blue-500 focus:outline-none"
+            onChange={(e) => onMudanca && onMudanca(e.target.value)}
+            className="text-lg text-gray-300 bg-gray-700 p-2 rounded w-full border border-gray-600 focus:border-blue-500 focus:outline-none"
           />
         )
       ) : (
-        <p className="text-lg text-gray-500">{valor || "Não definido"}</p>
+        <p className="text-lg text-gray-300 whitespace-pre-wrap">{valor || "Não definido"}</p>
       )}
     </div>
   </X.Container>
 );
-
-const PerfilRegisto = () => {
-  const casoId = "123";
-  const registoId = "456";
-
-  const profileData = {
-    tipo: "Tipo Exemplo",
-    resumo: "Este é um resumo do registo.",
-    descricao:
-      "Descrição detalhada do registo que pode ser bastante longa e explicativa.",
-    criado_por: "João Silva",
-    criado_em: "2025-05-20T15:30:00Z",
-  };
-
-  const isEditing = false;
-  const isLoading = false;
-
-  return (
-    <div className="flex flex-row gap-8">
-      <div className="flex flex-col gap-8 w-2/3">
-        <X.Container className="w-full">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold">Perfil do Registo</h1>
-            <button
-              disabled={isLoading}
-              aria-label={isEditing ? "Salvar alterações" : "Editar perfil"}
-              className="p-2 rounded-full hover:bg-gray-700 transition-colors"
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
-              ) : isEditing ? (
-                <img
-                  src="/images/icons/check.svg"
-                  className="h-5 w-5"
-                  alt="Salvar"
-                />
-              ) : (
-                <img
-                  src="/images/icons/edit.svg"
-                  className="h-5 w-5"
-                  alt="Editar"
-                />
-              )}
-            </button>
-          </div>
-
-          <X.Divider />
-
-          <X.Container className="w-full">
-            <p className="text-lg font-semibold">[ID] Registo</p>
-            <p>
-              [{registoId}] #{profileData.tipo}
-            </p>
-          </X.Container>
-
-          <DadosField
-            titulo="Resumo"
-            valor={profileData.resumo}
-            editando={isEditing}
-            tipo="text"
-          />
-
-          <DadosField
-            titulo="Descrição detalhada"
-            valor={profileData.descricao}
-            editando={isEditing}
-            tipo="textarea"
-          />
-        </X.Container>
-      </div>
-
-      <div className="flex flex-col gap-8 w-1/3">
-        {/* Informações do Registo */}
-        <X.Container className="w-full">
-          <p className="font-semibold">Informações do Registo</p>
-          <X.Divider />
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-gray-400">Tipo</p>
-              <p>{profileData.tipo}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-400">Criado por</p>
-              <p>{profileData.criado_por}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-400">Data de criação</p>
-              <p>
-                {new Date(profileData.criado_em).toLocaleDateString("pt-PT", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
-          </div>
-        </X.Container>
-      </div>
-    </div>
-  );
-};
-
-export default PerfilRegisto;
