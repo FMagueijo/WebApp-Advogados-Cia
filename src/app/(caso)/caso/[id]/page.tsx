@@ -403,9 +403,6 @@ const PerfilCaso: FunctionComponent = () => {
             <X.Button  onClick={() => setMostrarModalColaborador(true)}>
               Associar Colaborador
             </X.Button>
-            <X.ButtonLink href={`/caso/${id}/registar-horas`}>
-              Registar Horas
-            </X.ButtonLink>
           </div>
           <X.Divider />
           {isLoading ? (

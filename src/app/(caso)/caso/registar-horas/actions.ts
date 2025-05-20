@@ -37,10 +37,6 @@ export async function submitRegistroHoras(data: {
       return { error: 'Data inválida' };
     }
 
-    if (!data.descricao || data.descricao.trim().length < 5) {
-      return { error: 'Descrição deve ter pelo menos 5 caracteres' };
-    }
-
     // Verificar existência do caso e usuário
     const [casoExists, userExists] = await Promise.all([
       prisma.caso.findUnique({ where: { id: data.casoId } }),

@@ -22,7 +22,7 @@ const RegistrarHorasForm: FunctionComponent<RegistrarHorasFormProps> = ({
       .toISOString()
       .slice(0, 16),
     horas: "1",
-    minutos: "0",
+    minutos: "00",
     descricao: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,7 +141,6 @@ const RegistrarHorasForm: FunctionComponent<RegistrarHorasFormProps> = ({
               }
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
               rows={3}
-              required
             />
           </div>
 
