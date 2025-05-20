@@ -14,10 +14,69 @@ import {
   fetchRegistrosDoCaso,
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
+import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page"; // Corrected the path
 
 const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
 );
+
+const Suporte: FunctionComponent = () => {
+  const params = useParams();
+  const id = params?.id;
+  return (
+    <>
+      <X.Container className="w-full">
+        <p className="font-semibold">Lista Registos</p>
+        <X.Divider></X.Divider>
+        <div className="flex flex-row">
+          <X.ButtonLink href={`/caso/${id}/criar-registo`}>Adicionar registo</X.ButtonLink>
+        </div>
+        <div className="flex flex-row gap-4">
+          <X.Dropdown
+            label="Filtros"
+            options={["", ""]}
+            onSelect={(selectedOption) => console.log("Opção selecionada:", selectedOption)}
+          />
+          <X.Dropdown
+            label="Ordenar"
+            options={["Data Ascendente ", "Data Desscendente"]}
+            onSelect={(selectedOption) => console.log("Opção selecionada:", selectedOption)}
+          />
+        </div>
+        <X.Divider></X.Divider>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-left ">
+                <th className="p-3">Resumo</th>
+                <th className="p-3">Data Criada</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-[var(--secondary-color)]">
+                <td className="p-2"><X.Link className="group"><div>Reuniao  (TEMP)</div> </X.Link></td>
+                <td className="p-2"><X.DataField className="group"><div>14/02/2025 17:20 </div> </X.DataField></td>
+              </tr>
+              <tr className="border-b border-[var(--secondary-color)]">
+                <td className="p-2"><X.Link className="group"><div>Ev - Ida Tribunal  (TEMP)</div> </X.Link></td>
+                <td className="p-2"><X.DataField className="group"><div>10/02/2025 14:20 </div> </X.DataField></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </X.Container>
+      <X.Container className="w-full">
+        <p className="font-semibold">Colaboradores Associados </p>
+        <X.Divider></X.Divider>
+        <div className="flex flex-row">
+          <X.ButtonLink>Associar colaborador</X.ButtonLink>
+        </div>
+        <X.Divider></X.Divider>
+        <X.Link>[23] Nuno Pinho (TEMP)</X.Link>
+      </X.Container>
+    </>
+  );
+}
 
 interface DadosFieldProps {
   titulo: string;
@@ -62,14 +121,16 @@ const DadosField: React.FC<DadosFieldProps> = ({
 const PerfilCaso: FunctionComponent = () => {
   const params = useParams();
   const id = params?.id;
+  const [isRegistroHorasOpen, setIsRegistroHorasOpen] = useState(false); // Estado movido para cá
 
   if (!id || isNaN(Number(id))) {
     notFound();
   }
 
   const { data: session } = useSession();
-  const [isLoading, setIsLoading] = useState(true);
+  const [estado, setEstado] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [mostrarModalColaborador, setMostrarModalColaborador] = useState(false);
   const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState<any | null>(null);
@@ -181,6 +242,13 @@ const PerfilCaso: FunctionComponent = () => {
     );
   }
 
+  if(isLoading) {
+    return <SimpleSkeleton></SimpleSkeleton>;
+  }
+  if(!profileData) {
+    return <X.ErrorBox visible hideCloseButton>Caso não encontrado.</X.ErrorBox>;
+  }
+
   return (
     <div className="flex flex-row gap-8">
       <div className="flex flex-col gap-8 w-2/3">
@@ -235,6 +303,27 @@ const PerfilCaso: FunctionComponent = () => {
             onMudanca={handleFieldChange("descricao")}
             tipo="textarea"
           />
+        </X.Container>
+        <X.Container className="w-full">
+          <div className="flex justify-between items-center">
+            <p className="text-lg font-semibold">Info geral</p>
+          </div>
+          <X.Divider></X.Divider>
+          <X.Button onClick={() => setIsRegistroHorasOpen(true)} className="w-max">
+            Registar Horas
+          </X.Button>
+          <X.Container className="w-full">
+            <p className="text-lg font-semibold"> [ID] Processo </p>
+            <p> [{id}] #{profileData.processo}</p>
+          </X.Container>
+          <X.Container className="w-full">
+            <p className="text-lg font-semibold"> Resumo </p>
+            <p> {profileData.resumo}</p>
+          </X.Container>
+          <X.Container className="w-full">
+            <p className="text-lg font-semibold"> Descrição detalhada </p>
+            {profileData.descricao}
+          </X.Container>
         </X.Container>
       </div>
 
@@ -311,12 +400,9 @@ const PerfilCaso: FunctionComponent = () => {
           <p className="font-semibold">Colaboradores Associados</p>
           <X.Divider />
           <div className="flex flex-row gap-4">
-            <X.Button type="button" onClick={() => setMostrarModalColaborador(true)}>
+            <X.Button  onClick={() => setMostrarModalColaborador(true)}>
               Associar Colaborador
             </X.Button>
-            <X.ButtonLink href={`/caso/${id}/registar-horas`}>
-              Registar Horas
-            </X.ButtonLink>
           </div>
           <X.Divider />
           {isLoading ? (
@@ -387,6 +473,13 @@ const PerfilCaso: FunctionComponent = () => {
           </div>
         )}
       </div>
+
+      <RegistrarHorasForm
+        isOpen={isRegistroHorasOpen}
+        onClose={() => setIsRegistroHorasOpen(false)}
+        casoId={Number(id)}
+      
+      />
     </div>
   );
 };

@@ -46,6 +46,13 @@ export default function ListarColab() {
         loadData(); // Reload data after toggling
       });
   };
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [filters, order]);
 
   if(colaboradores == undefined) return <SimpleSkeleton />
 

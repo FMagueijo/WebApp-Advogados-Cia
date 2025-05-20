@@ -3,8 +3,12 @@
 import * as X from "@/components/xcomponents";
 import { useEffect, useState } from "react";
 import { fetchCasos } from "./actions";
+import RegistrarHorasForm from "../caso/registar-horas/page";
 
 export default function ListarCasos() {
+  const [registarHoras, setRegistarHoras] = useState(false);
+  const [casoAtual, setCasoAtual] = useState(-1);
+
   const [casos, setCasos] = useState<any[]>([]);
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [order, setOrder] = useState<Record<string, boolean>>({});
@@ -56,6 +60,7 @@ export default function ListarCasos() {
                   <th className="p-4">Assunto</th>
                   <th className="p-4">Criado por</th>
                   <th className="p-4">Estado</th>
+                  <th className="w-[100px] px-2">{" "}</th> {/* Novo Registo Horas */}
                 </tr>
               </thead>
               <tbody>
@@ -63,7 +68,7 @@ export default function ListarCasos() {
                   <tr key={caso.id} className="border-b border-[var(--secondary-color)]">
                     <td className="p-4">
                       <X.Link className="inline-flex gap-2 hover:text-[var(--primary-color)]"
-                      href={`/caso/${caso.id}`}>
+                        href={`/caso/${caso.id}`}>
                         <span>[{caso.id}]</span>
                         <span>{caso.processo}</span>
                       </X.Link>
@@ -85,17 +90,27 @@ export default function ListarCasos() {
                           caso.estado === "Aberto"
                             ? "--open-color"
                             : caso.estado === "Fechado"
-                            ? "--error-color"
-                            : "--success-color"
+                              ? "--error-color"
+                              : "--success-color"
                         }
                       >
                         {caso.estado}
                       </X.DataField>
                     </td>
+                    <td className="px-2 whitespace-nowrap">
+                      <X.Button className="group h-full" onClick={() => { setRegistarHoras(true); setCasoAtual(caso.id); } }>
+                        <span className="text-sm text-[var(--primary-color)] group-hover:text-[var(--secondary-color)] transition-colors">
+                          Registar Horas
+                        </span>
+                      </X.Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {registarHoras && (
+              <RegistrarHorasForm casoId={casoAtual} isOpen={registarHoras} onClose={() => setRegistarHoras(false)}/>
+            )}
             {casos.length === 0 && <p className="p-4">0 resultados</p>}
           </div>
         </X.Container>

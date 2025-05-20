@@ -30,17 +30,22 @@ model User {
   registros      Registro[]
   casos          Caso[]
 
+  Evento  Evento[]
+  Eventos Evento[] @relation("EventoColaboradores")
+
   @@map("utilizador")
+  HorasTrabalhadas HorasTrabalhadas[]
 }
 
 model Cliente {
-  id           Int    @id @default(autoincrement())
-  nome         String @db.VarChar(100)
-  email        String @unique @db.VarChar(255)
-  telefone     String @db.VarChar(20)
-  codigoPostal String @db.VarChar(10)
-  endereco     String @db.VarChar(255)
+  id           Int      @id @default(autoincrement())
+  nome         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(255)
+  telefone     String   @db.VarChar(20)
+  codigoPostal String   @db.VarChar(10)
+  endereco     String   @db.VarChar(255)
   casos        Caso[]
+  dividas      Divida[]
 
   @@map("cliente")
 }
@@ -62,16 +67,28 @@ model Registro {
   caso_id   Int
   user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   caso      Caso     @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
+ documentos  Documento[] // Adicione esta linha para a relação inversa
   @@map("registro")
 }
 
 model CasoEstado {
-  id Int    @id @default(autoincrement())
-  nome_estado    String @unique @map("nome_role") @db.VarChar(50)
-  casos          Caso[]
+  id          Int    @id @default(autoincrement())
+  nome_estado String @unique @map("nome_role") @db.VarChar(50)
+  casos       Caso[]
 
   @@map("casoestado")
+}
+
+model HorasTrabalhadas {
+  id          Int      @id @default(autoincrement())
+  horas       Float    @db.Float
+  data        DateTime @default(now())
+  caso_id     Int
+  caso        Caso     @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id     Int
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("horas_trabalhadas")
 }
 
 model Caso {
@@ -87,10 +104,70 @@ model Caso {
   user_id Int
   user    User @relation(fields: [user_id], references: [id])
 
-  estado_id Int @default(1)
+  estado_id Int        @default(1)
   estado    CasoEstado @relation(fields: [estado_id], references: [id])
 
   registros Registro[]
+  Evento    Evento[]   @relation("EventoCasos")
+  dividas   Divida[]
 
   @@map("caso")
+  HorasTrabalhadas HorasTrabalhadas[]
+}
+
+
+model Documento {
+  id          Int      @id @default(autoincrement())
+  nome        String   @db.VarChar(255)
+  caminho     String   @db.VarChar(512) // URL do Cloudinary
+  tipo        String   @db.VarChar(50)  // Tipo MIME do arquivo
+  tamanho     Int                      // Tamanho em bytes
+  public_id   String?  @db.VarChar(255) // ID público do Cloudinary
+  criado_em   DateTime @default(now())
+  registro_id Int
+  registro    Registro @relation(fields: [registro_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("documento")
+}
+
+model Evento {
+  id            String     @id @default(cuid())
+  tipo          TipoEvento @default(EVENTO)
+  titulo        String     @db.VarChar(64)
+  descricao     String?    @db.Text
+  data          DateTime   @default(now()) // data do evento/agendamento
+  criado_em     DateTime   @default(now())
+  atualizado_em DateTime   @updatedAt
+
+  local          String? @db.VarChar(255)
+
+  // Relacionamentos
+  user_id Int
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  casos   Caso[] @relation("EventoCasos")
+  users   User[] @relation("EventoColaboradores")
+
+  @@map("evento")
+}
+
+enum TipoEvento {
+  EVENTO
+  COMPROMISSO
+  PRAZO_PROCESSUAL
+}
+
+model Divida {
+  id            Int      @id @default(autoincrement())
+  valor         Float    @db.Float @default(0)
+  criado_em     DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+  pago          Boolean  @default(false)
+  
+  cliente_id    Int
+  cliente       Cliente  @relation(fields: [cliente_id], references: [id])
+  
+  caso_id       Int
+  caso          Caso     @relation(fields: [caso_id], references: [id])
+  
+  @@map("divida")
 }
