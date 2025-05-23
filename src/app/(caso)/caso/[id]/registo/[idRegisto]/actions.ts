@@ -3,11 +3,21 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
+interface Documento {
+  id: number;
+  nome: string;
+  caminho: string;
+  tipo: string;
+  tamanho: number;
+  public_id: string;
+}
+
 interface RegistroProfile {
   id?: number;
   tipo: string;
   resumo: string;
   descricao: string;
+  documentos: Documento[];
 }
 
 interface UpdateRegistroData {
@@ -24,6 +34,16 @@ export async function fetchRegistroProfile(registroId: number): Promise<Registro
         tipo: true,
         resumo: true,
         descricao: true,
+        documentos: {
+          select: {
+            id: true,
+            nome: true,
+            caminho: true,
+            tipo: true,
+            tamanho: true,
+            public_id: true,
+          },
+        },
       },
     });
 
@@ -34,6 +54,7 @@ export async function fetchRegistroProfile(registroId: number): Promise<Registro
       tipo: registro.tipo,
       resumo: registro.resumo,
       descricao: registro.descricao || '',
+      documentos: registro.documentos,
     };
   } catch (error) {
     console.error('Erro ao carregar registro:', error);
