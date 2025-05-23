@@ -1,175 +1,150 @@
-"use client"
-import { useSession } from "next-auth/react";
-import * as X from "../components/xcomponents";
+import { getDashboardData } from "@/app/dashboard/actions.ts";
 import { FunctionComponent } from "react";
-import { sys_users, UserRoles } from "@/types/roles";
+import { Container, Divider, DataField, HeaderLink, ButtonLink, Link } from "../components/xcomponents";
+import { getServerSession } from "next-auth";
 
-const Casos: FunctionComponent = () => {
-  return (
-    <X.Container className="w-full">
-      <X.HeaderLink no_padding href="/casos">Casos</X.HeaderLink>
-      <X.Divider></X.Divider>
-      <X.DataField colorOverride="--open-color">
-        <div className="flex flex-row gap-4 w-full items-center ">
-          <div className="flex-1">Em Aberto</div>
-          <div className="flex-auto text-right">9</div>
-        </div>
-      </X.DataField>
-      <X.DataField colorOverride="--error-color">
-        <div className="flex flex-row gap-4 w-full items-center ">
-          <div className="flex-1">Fechados</div>
-          <div className="flex-auto text-right">9</div>
-        </div>
-      </X.DataField>
-      <X.DataField colorOverride="--success-color">
-        <div className="flex flex-row gap-4 w-full items-center ">
-          <div className="flex-1">Terminados</div>
-          <div className="flex-auto text-right">9</div>
-        </div>
-      </X.DataField>
-      <X.DataField>
-        <div className="flex flex-row gap-4 w-full items-center ">
-          <div className="flex-1">Total</div>
-          <div className="flex-auto text-right">31</div>
-        </div>
-      </X.DataField>
-    </X.Container>
-  );
+export default async function Home() {
+  const data = await getDashboardData();
 
-}
-
-const AcoesRapidas: FunctionComponent = () => {
-
-  const { data: session } = useSession();
-  const role = session?.user.role;
-
-  const acoes = [
-    { link: "/criar-colaborador", roles: [1], label:"Criar Colaborador" },
-    { link: "/criar-caso", roles: [2], label:"Criar Caso" },
-    { link: "/criar-cliente", roles: [2], label:"Criar Cliente" },
-    { link: "/criar-evento", roles: [2], label:"Criar Evento" },
-
-  ].filter((acao) => acao.roles.includes(role as number) || acao.roles.length == 0);
-
-  return (
-    <X.Container className="w-full">
-      <p className="font-semibold">Ações Rápidas</p>
-      <X.Divider></X.Divider>
-      {acoes.map((acao) => (
-        <X.ButtonLink href={acao.link}>{acao.label}</X.ButtonLink>
-      ))}
-    </X.Container>
-  );
-}
-const Notificacoes: FunctionComponent = () => {
-  return (
-    <X.Container className="w-full">
-      <X.HeaderLink no_padding href="/notificacoes">Notificações</X.HeaderLink>
-      <X.Divider></X.Divider>
-      <X.Link> Novo Caso<br></br>
-        <small style={{ color: "#999" }}>
-          Novo caso criado para...
-        </small></X.Link>
-      <X.Link> Caso Encerrado <br></br>
-        <small style={{ color: "#999" }}>
-          O caso #43 foi fechado...
-        </small></X.Link>
-
-    </X.Container>
-  );
-}
-export default function Home() {
-
-  const { data: session } = useSession();
+  const { casos, colaboradores, clientes, faturamento, maiorDivida, topColaborador, topCliente, session } = data;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 w-full gap-8">
-      {/* Column 1: Casos */}
-      <div className="flex flex-col grow min-w-auto gap-8"> {/* Takes 2 vertical spaces */}
-        <Casos />
+      {/* Casos */}
+      <div className="flex flex-col gap-8"> 
+        <Container className="w-full">
+          <HeaderLink no_padding href="/casos">Casos</HeaderLink>
+          <Divider />
+          <DataField colorOverride="--open-color">
+            <div className="flex justify-between">
+              <div>Em Aberto</div>
+              <div>{casos.abertos}</div>
+            </div>
+          </DataField>
+          <DataField colorOverride="--error-color">
+            <div className="flex justify-between">
+              <div>Fechados</div>
+              <div>{casos.fechados}</div>
+            </div>
+          </DataField>
+          <DataField colorOverride="--success-color">
+            <div className="flex justify-between">
+              <div>Terminados</div>
+              <div>{casos.terminados}</div>
+            </div>
+          </DataField>
+          <DataField>
+            <div className="flex justify-between">
+              <div>Total</div>
+              <div>{casos.total}</div>
+            </div>
+          </DataField>
+        </Container>
       </div>
 
-      <div className="flex flex-col grow min-w-auto gap-8">
-
-        <X.Container className="w-full">
-          <X.HeaderLink no_padding href="/colaboradores">Colaboradores</X.HeaderLink>
-          <X.Divider></X.Divider>
-          <X.DataField>
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-1">Total</div>
-              <div className="flex-auto text-right">9</div>
+      {/* Colaboradores, Clientes, Top Casos */}
+      <div className="flex flex-col gap-8">
+        <Container className="w-full">
+          <HeaderLink no_padding href="/colaboradores">Colaboradores</HeaderLink>
+          <Divider />
+          <DataField>
+            <div className="flex justify-between">
+              <div>Total</div>
+              <div>{colaboradores}</div>
             </div>
-          </X.DataField>
-        </X.Container>
+          </DataField>
+        </Container>
 
-        <X.Container className="w-full">
-          <X.HeaderLink no_padding href="/clientes">Clientes</X.HeaderLink>
-          <X.Divider></X.Divider>
-          <X.DataField>
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-1">Total</div>
-              <div className="flex-auto text-right">9</div>
+        <Container className="w-full">
+          <HeaderLink no_padding href="/clientes">Clientes</HeaderLink>
+          <Divider />
+          <DataField>
+            <div className="flex justify-between">
+              <div>Total</div>
+              <div>{clientes}</div>
             </div>
-          </X.DataField>
-        </X.Container>
+          </DataField>
+        </Container>
 
-        <X.Container className="w-full">
-          <X.HeaderLink no_padding href="/casos">Top Casos</X.HeaderLink>
-          <X.Divider></X.Divider>
+        <Container className="w-full">
+          <HeaderLink no_padding href="/casos">Top Casos</HeaderLink>
+          <Divider />
           <p className="font-semibold">Colaborador:</p>
-          <X.Link>[4] Telmo Maia</X.Link>
-          <X.DataField>
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-1">Total</div>
-              <div className="flex-auto text-right">13</div>
+          <Link>[{topColaborador?.id}] {topColaborador?.nome}</Link>
+          <DataField>
+            <div className="flex justify-between">
+              <div>Total</div>
+              <div>{topColaborador?.casos.length}</div>
             </div>
-          </X.DataField>
+          </DataField>
           <p className="font-semibold">Cliente:</p>
-          <X.Link>[23] Nuno Pinho</X.Link>
-          <X.DataField>
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-1">Total</div>
-              <div className="flex-auto text-right">7</div>
+          <Link>[{topCliente?.id}] {topCliente?.nome}</Link>
+          <DataField>
+            <div className="flex justify-between">
+              <div>Total</div>
+              <div>{topCliente?.casos.length}</div>
             </div>
-          </X.DataField>
-        </X.Container>
-
+          </DataField>
+        </Container>
       </div>
 
-      <div className="flex flex-col grow min-w-auto gap-8">
-
-        <X.Container className="w-full">
+      {/* Faturamento, Divida */}
+      <div className="flex flex-col gap-8">
+        <Container className="w-full">
           <p className="font-semibold">Faturamento</p>
-          <X.Divider></X.Divider>
-          <X.DataField colorOverride="--submit-color">
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-1">A Receber</div>
-              <div className="flex-auto text-right">€ 500</div>
+          <Divider />
+          <DataField colorOverride="--submit-color">
+            <div className="flex justify-between">
+              <div>A Receber</div>
+              <div>€ {faturamento.aReceber}</div>
             </div>
-          </X.DataField>
-          <X.DataField colorOverride="--submit-color">
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-1">Total Pago</div>
-              <div className="flex-auto text-right">€ 34.5m</div>
+          </DataField>
+          <DataField colorOverride="--submit-color">
+            <div className="flex justify-between">
+              <div>Total Pago</div>
+              <div>€ {faturamento.total}</div>
             </div>
-          </X.DataField>
-        </X.Container>
+          </DataField>
+        </Container>
 
-        <X.Container className="w-full">
-          <p className="font-semibold">Maior Divida</p>
-          <X.Divider></X.Divider>
-          <X.Link>[23] Nuno Pinho</X.Link>
-          <X.DataField colorOverride="--submit-color">
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-auto text-right">€ 500</div>
-            </div>
-          </X.DataField>
-        </X.Container>
+        <Container className="w-full">
+          <p className="font-semibold">Maior Dívida</p>
+          <Divider />
+          {maiorDivida && (
+            <>
+              <Link>[{maiorDivida.cliente.id}] {maiorDivida.cliente.nome}</Link>
+              <DataField colorOverride="--submit-color">
+                <div className="flex justify-end">€ {maiorDivida.valor}</div>
+              </DataField>
+            </>
+          )}
+        </Container>
       </div>
 
-      <div className="flex flex-col grow min-w-auto gap-8 row-start-1 lg:col-end-4 xl:col-end-5">
-        <AcoesRapidas />
-        {session?.user.role == 2 && <Notificacoes />}
+      {/* Ações Rápidas + Notificações */}
+      <div className="flex flex-col gap-8 row-start-1 lg:col-end-4 xl:col-end-5">
+        <Container className="w-full">
+          <p className="font-semibold">Ações Rápidas</p>
+          <Divider />
+          {[
+            { link: "/criar-colaborador", roles: [1], label: "Criar Colaborador" },
+            { link: "/criar-caso", roles: [2], label: "Criar Caso" },
+            { link: "/criar-cliente", roles: [2], label: "Criar Cliente" },
+            { link: "/criar-evento", roles: [2], label: "Criar Evento" },
+          ]
+            .filter((acao) => acao.roles.includes(session?.user.role) || acao.roles.length === 0)
+            .map((acao) => <ButtonLink key={acao.link} href={acao.link}>{acao.label}</ButtonLink>)
+          }
+        </Container>
+
+        {session?.user.role === 2 && (
+          <Container className="w-full">
+            <HeaderLink no_padding href="/notificacoes">Notificações</HeaderLink>
+            <Divider />
+            <Link>Novo Caso<br /><small style={{ color: "#999" }}>Novo caso criado para...</small></Link>
+            <Link>Caso Encerrado<br /><small style={{ color: "#999" }}>O caso #43 foi fechado...</small></Link>
+          </Container>
+        )}
       </div>
     </div>
   );
