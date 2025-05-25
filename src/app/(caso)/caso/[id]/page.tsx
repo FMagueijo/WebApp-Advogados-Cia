@@ -20,6 +20,8 @@ const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
 );
 
+
+
 const Suporte: FunctionComponent = () => {
   const params = useParams();
   const id = params?.id;
@@ -136,6 +138,10 @@ const PerfilCaso: FunctionComponent = () => {
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState<any | null>(null);
   const [colaboradoresDoCaso, setColaboradoresDoCaso] = useState<any[]>([]);
   const [registros, setRegistros] = useState<any[]>([]);
+  const [mostrarModalHonorario, setMostrarModalHonorario] = useState(false);
+const [mostrarModalPagamento, setMostrarModalPagamento] = useState(false);
+const [valorHonorario, setValorHonorario] = useState("");
+const [valorPagamento, setValorPagamento] = useState("");
 
   const [profileData, setProfileData] = useState({
     id: "",
@@ -242,10 +248,10 @@ const PerfilCaso: FunctionComponent = () => {
     );
   }
 
-  if(isLoading) {
+  if (isLoading) {
     return <SimpleSkeleton></SimpleSkeleton>;
   }
-  if(!profileData) {
+  if (!profileData) {
     return <X.ErrorBox visible hideCloseButton>Caso não encontrado.</X.ErrorBox>;
   }
 
@@ -341,7 +347,7 @@ const PerfilCaso: FunctionComponent = () => {
             <X.Dropdown
               label="Ordenar"
               options={["Data Descendente", "Data Ascendente"]}
-              onSelect={(selectedOption) => 
+              onSelect={(selectedOption) =>
                 handleSortRegistros(selectedOption === "Data Ascendente" ? 'asc' : 'desc')
               }
             />
@@ -400,7 +406,7 @@ const PerfilCaso: FunctionComponent = () => {
           <p className="font-semibold">Colaboradores Associados</p>
           <X.Divider />
           <div className="flex flex-row gap-4">
-            <X.Button  onClick={() => setMostrarModalColaborador(true)}>
+            <X.Button onClick={() => setMostrarModalColaborador(true)}>
               Associar Colaborador
             </X.Button>
           </div>
@@ -424,17 +430,109 @@ const PerfilCaso: FunctionComponent = () => {
           )}
         </X.Container>
 
+        {/* Nova seção de Honorários */}
+        <X.Container className="w-full">
+          <p className="font-semibold">Honorários</p>
+          <X.Divider />
+          <div className="flex flex-row gap-4">
+            <X.Button
+              onClick={() => setMostrarModalHonorario(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Registar Honorário
+            </X.Button>
+            <X.Button
+              onClick={() => setMostrarModalPagamento(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Pagar Honorário
+            </X.Button>
+          </div>
+          <X.Divider />
+          {/* Aqui você pode adicionar a lista de honorários se necessário */}
+          <p className="text-gray-500">Nenhum honorário registado</p>
+        </X.Container>
+
+        {/* Modal Registar Honorário */}
+        {mostrarModalHonorario && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <X.Container className="w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold">Registar Honorário</p>
+                <button
+                  onClick={() => setMostrarModalHonorario(false)}
+                  className="text-gray-500 hover:text-gray-800 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+              <X.Divider />
+              <textarea
+                className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
+                rows={4}
+                placeholder="€"
+                value={valorHonorario}
+                onChange={(e) => setValorHonorario(e.target.value)}
+              />
+              <div className="mt-4 flex justify-end">
+                <X.Button onClick={() => {
+                  console.log("Honorário registado:", valorHonorario);
+                  setMostrarModalHonorario(false);
+                  setValorHonorario("");
+                }}>
+                  Confirmar
+                </X.Button>
+              </div>
+            </X.Container>
+          </div>
+        )}
+
+        {/* Modal Pagar Honorário */}
+        {mostrarModalPagamento && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <X.Container className="w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold">Pagar Honorário</p>
+                <button
+                  onClick={() => setMostrarModalPagamento(false)}
+                  className="text-gray-500 hover:text-gray-800 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+              <X.Divider />
+              <textarea
+                className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
+                rows={4}
+                placeholder="€"
+                value={valorPagamento}
+                onChange={(e) => setValorPagamento(e.target.value)}
+              />
+              <div className="mt-4 flex justify-end">
+                <X.Button onClick={() => {
+                  console.log("Pagamento realizado:", valorPagamento);
+                  setMostrarModalPagamento(false);
+                  setValorPagamento("");
+                }}>
+                  Confirmar
+                </X.Button>
+              </div>
+            </X.Container>
+          </div>
+        )}
+
+
         {/* Modal de Seleção de Colaborador */}
         {mostrarModalColaborador && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
               <div className="flex justify-between items-center mb-4">
                 <p className="text-lg font-semibold">Selecionar Colaborador</p>
-                <button 
+                <button
                   onClick={() => {
                     setMostrarModalColaborador(false);
                     setColaboradorSelecionado(null);
-                  }} 
+                  }}
                   className="text-gray-500 hover:text-gray-800 text-2xl"
                 >
                   &times;
@@ -449,9 +547,8 @@ const PerfilCaso: FunctionComponent = () => {
                     {colaboradores.map(colaborador => (
                       <div
                         key={colaborador.id}
-                        className={`p-2 rounded cursor-pointer hover:bg-green-100 ${
-                          colaboradorSelecionado?.id === colaborador.id ? 'bg-green-100' : ''
-                        }`}
+                        className={`p-2 rounded cursor-pointer hover:bg-green-100 ${colaboradorSelecionado?.id === colaborador.id ? 'bg-green-100' : ''
+                          }`}
                         onClick={() => setColaboradorSelecionado(colaborador)}
                       >
                         <div className="font-medium">{colaborador.nome}</div>
@@ -460,7 +557,7 @@ const PerfilCaso: FunctionComponent = () => {
                     ))}
                   </div>
                   <div className="mt-4 flex justify-end">
-                    <X.Button 
+                    <X.Button
                       onClick={handleAdicionarColaborador}
                       disabled={!colaboradorSelecionado || isLoading}
                     >
@@ -478,7 +575,6 @@ const PerfilCaso: FunctionComponent = () => {
         isOpen={isRegistroHorasOpen}
         onClose={() => setIsRegistroHorasOpen(false)}
         casoId={Number(id)}
-      
       />
     </div>
   );
