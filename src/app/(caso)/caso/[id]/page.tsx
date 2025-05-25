@@ -13,6 +13,8 @@ import {
   listarColaboradores,
   fetchRegistrosDoCaso,
   fetchDividasDoCaso,
+  registrarHonorario,
+  pagarHonorario,
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
 import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page";
@@ -120,7 +122,7 @@ const DadosField: React.FC<DadosFieldProps> = ({
 );
 
 const PerfilCaso: FunctionComponent = () => {
-   const { data: session } = useSession();
+  const { data: session } = useSession();
   const params = useParams();
   const id = params?.id;
   const [isRegistroHorasOpen, setIsRegistroHorasOpen] = useState(false);
@@ -137,6 +139,8 @@ const PerfilCaso: FunctionComponent = () => {
   const [mostrarModalPagamento, setMostrarModalPagamento] = useState(false);
   const [valorHonorario, setValorHonorario] = useState("");
   const [valorPagamento, setValorPagamento] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [profileData, setProfileData] = useState({
     id: "",
@@ -237,11 +241,87 @@ const PerfilCaso: FunctionComponent = () => {
     // Implementação existente
   };
 
+  const handleRegistrarHonorario = async () => {
+    const valorNumerico = parseFloat(valorHonorario);
+    if (isNaN(valorNumerico)) {
+      setErrorMessage('Por favor insira um valor numérico válido');
+      return;
+    }
+
+    if (valorNumerico <= 0) {
+      setErrorMessage('O valor deve ser maior que zero');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      const resultado = await registrarHonorario(Number(id), valorNumerico);
+      
+      if (resultado.success) {
+        setSuccessMessage(resultado.message);
+        setValorHonorario('');
+        setMostrarModalHonorario(false);
+        // Atualiza a lista de dívidas
+        const dividasCaso = await fetchDividasDoCaso(Number(id));
+        setDividas(dividasCaso);
+      } else {
+        setErrorMessage(resultado.message);
+      }
+    } catch (error) {
+      setErrorMessage('Erro ao registrar honorário');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setErrorMessage(null);
+      }, 5000);
+    }
+  };
+
+  const handlePagarHonorario = async () => {
+    const valorNumerico = parseFloat(valorPagamento);
+    if (isNaN(valorNumerico)) {
+      setErrorMessage('Por favor insira um valor numérico válido');
+      return;
+    }
+
+    if (valorNumerico <= 0) {
+      setErrorMessage('O valor deve ser maior que zero');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      const resultado = await pagarHonorario(Number(id), valorNumerico);
+      
+      if (resultado.success) {
+        setSuccessMessage(resultado.message);
+        setValorPagamento('');
+        setMostrarModalPagamento(false);
+        // Atualiza a lista de dívidas
+        const dividasCaso = await fetchDividasDoCaso(Number(id));
+        setDividas(dividasCaso);
+      } else {
+        setErrorMessage(resultado.message);
+      }
+    } catch (error) {
+      setErrorMessage('Erro ao processar pagamento');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setErrorMessage(null);
+      }, 5000);
+    }
+  };
+
   if (!id || isNaN(Number(id))) {
     notFound();
   }
-
- 
 
   if (isLoading && !profileData.processo) {
     return <SimpleSkeleton />;
@@ -434,45 +514,44 @@ const PerfilCaso: FunctionComponent = () => {
         </X.Container>
 
         {/* Seção de Dívidas */}
-<X.Container className="w-full">
-  <p className="font-semibold">Honorários</p>
-  <X.Divider />
-  <div className="overflow-x-auto">
-    <table className="w-full">
-      <thead>
-        <tr className="text-left">
-          <th className="p-3">Valor</th>
-          <th className="p-3">Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        {dividas.length > 0 ? (
-          dividas.map((divida) => (
-            <tr key={divida.id} className="border-b border-[var(--secondary-color)]">
-              <td className="p-2">
-                {divida.valor.toFixed(2)}€
-              </td>
-              <td className="p-2">
-                {divida.pago ? (
-                  <span className="text-green-500">Pago</span>
+        <X.Container className="w-full">
+          <p className="font-semibold">Honorários</p>
+          <X.Divider />
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-3">Valor</th>
+                  <th className="p-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dividas.length > 0 ? (
+                  dividas.map((divida) => (
+                    <tr key={divida.id} className="border-b border-[var(--secondary-color)]">
+                      <td className="p-2">
+                        {divida.valor.toFixed(2)}€
+                      </td>
+                      <td className="p-2">
+                        {divida.pago ? (
+                          <span className="text-green-500">Pago</span>
+                        ) : (
+                          <span className="text-red-500">Por pagar</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
                 ) : (
-                  <span className="text-red-500">Por pagar</span>
+                  <tr>
+                    <td colSpan={2} className="p-4 text-center text-gray-500">
+                      Nenhuma dívida registada
+                    </td>
+                  </tr>
                 )}
-              </td>
-            </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan={2} className="p-4 text-center text-gray-500">
-              Nenhuma dívida registada
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-</X.Container>
-
+              </tbody>
+            </table>
+          </div>
+        </X.Container>
 
         {/* Honorários */}
         <X.Container className="w-full">
@@ -480,89 +559,103 @@ const PerfilCaso: FunctionComponent = () => {
           <X.Divider />
           <div className="flex flex-row gap-4">
             <X.Button
-              onClick={() => setMostrarModalHonorario(true)}
+              onClick={() => {
+                setMostrarModalHonorario(true);
+                setErrorMessage(null);
+                setSuccessMessage(null);
+              }}
               className="bg-green-600 hover:bg-green-700"
             >
               Registar Honorário
             </X.Button>
             <X.Button
-              onClick={() => setMostrarModalPagamento(true)}
+              onClick={() => {
+                setMostrarModalPagamento(true);
+                setErrorMessage(null);
+                setSuccessMessage(null);
+              }}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Pagar Honorário
             </X.Button>
           </div>
           <X.Divider />
-          <p className="text-gray-500">Nenhum honorário registado</p>
+          {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
+          {successMessage && <p className="text-green-500 text-sm">{successMessage}</p>}
         </X.Container>
 
-        {/* Modais (mantidos da implementação anterior) */}
+        {/* Modal Registrar Honorário */}
         {mostrarModalHonorario && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-md">
               <div className="flex justify-between items-center mb-4">
                 <p className="text-lg font-semibold">Registar Honorário</p>
                 <button
-                  onClick={() => setMostrarModalHonorario(false)}
+                  onClick={() => {
+                    setMostrarModalHonorario(false);
+                    setErrorMessage(null);
+                  }}
                   className="text-gray-500 hover:text-gray-800 text-2xl"
                 >
                   &times;
                 </button>
               </div>
               <X.Divider />
-              <textarea
+              <input
+                type="number"
+                step="0.01"
                 className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
-                rows={4}
-                placeholder="€"
+                placeholder="Valor em €"
                 value={valorHonorario}
                 onChange={(e) => setValorHonorario(e.target.value)}
               />
+              {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
               <div className="mt-4 flex justify-end">
-                <X.Button onClick={() => {
-                  console.log("Honorário registado:", valorHonorario);
-                  setMostrarModalHonorario(false);
-                  setValorHonorario("");
-                }}>
-                  Confirmar
+                <X.Button onClick={handleRegistrarHonorario} disabled={isLoading}>
+                  {isLoading ? <LoadingSpinner /> : "Confirmar"}
                 </X.Button>
               </div>
             </X.Container>
           </div>
         )}
 
+        {/* Modal Pagar Honorário */}
         {mostrarModalPagamento && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-md">
               <div className="flex justify-between items-center mb-4">
                 <p className="text-lg font-semibold">Pagar Honorário</p>
                 <button
-                  onClick={() => setMostrarModalPagamento(false)}
+                  onClick={() => {
+                    setMostrarModalPagamento(false);
+                    setErrorMessage(null);
+                  }}
                   className="text-gray-500 hover:text-gray-800 text-2xl"
                 >
                   &times;
                 </button>
               </div>
               <X.Divider />
-              <textarea
+              <input
+                type="number"
+                step="0.01"
                 className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
-                rows={4}
-                placeholder="€"
+                placeholder="Valor em €"
                 value={valorPagamento}
                 onChange={(e) => setValorPagamento(e.target.value)}
               />
+              {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
+              {successMessage && <p className="text-green-500 text-sm mt-2">{successMessage}</p>}
               <div className="mt-4 flex justify-end">
-                <X.Button onClick={() => {
-                  console.log("Pagamento realizado:", valorPagamento);
-                  setMostrarModalPagamento(false);
-                  setValorPagamento("");
-                }}>
-                  Confirmar
+                <X.Button onClick={handlePagarHonorario} disabled={isLoading}>
+                  {isLoading ? <LoadingSpinner /> : "Confirmar"}
                 </X.Button>
               </div>
             </X.Container>
           </div>
         )}
 
+        {/* Modal Colaborador */}
         {mostrarModalColaborador && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
