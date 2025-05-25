@@ -59,3 +59,73 @@ export async function getCasosStats(): Promise<CasosStats> {
     throw new Error("Erro ao buscar estatísticas de casos");
   }
 }
+export async function getTotalColaboradores(): Promise<number> {
+  try {
+    const total = await prisma.user.count({
+      where: {
+        role_id: 2 // Filtra apenas usuários com role_id = 2 (colaboradores)
+      }
+    });
+    return total;
+  } catch (error) {
+    console.error("Erro ao contar colaboradores:", error);
+    throw new Error("Erro ao contar colaboradores");
+  }
+}
+export async function getTotalClientes(): Promise<number> {
+  try {
+    const total = await prisma.cliente.count();
+    return total;
+  } catch (error) {
+    console.error("Erro ao contar clientes:", error);
+    throw new Error("Erro ao contar clientes");
+  }
+}
+export type TopColaborador = {
+  user_id: number;
+  nome: string;
+  count: number;
+};
+
+export type TopCliente = {
+  cliente_id: number;
+  nome: string;
+  count: number;
+};
+
+export async function getTopColaborador(): Promise<TopColaborador> {
+  try {
+    const result = await prisma.$queryRaw`
+      SELECT u.id as user_id, u.nome, COUNT(c.id) as count
+      FROM utilizador u
+      JOIN caso c ON u.id = c.user_id
+      GROUP BY u.id, u.nome
+      ORDER BY count DESC
+      LIMIT 1
+    `;
+    
+    return result[0] || { user_id: 0, nome: "Nenhum", count: 0 };
+  } catch (error) {
+    console.error("Erro ao buscar top colaborador:", error);
+    throw new Error("Erro ao buscar top colaborador");
+  }
+}
+
+export async function getTopCliente(): Promise<TopCliente> {
+  try {
+    const result = await prisma.$queryRaw`
+      SELECT cl.id as cliente_id, cl.nome, COUNT(c.id) as count
+      FROM cliente cl
+      JOIN caso c ON cl.id = c.cliente_id
+      GROUP BY cl.id, cl.nome
+      ORDER BY count DESC
+      LIMIT 1
+    `;
+    
+    return result[0] || { cliente_id: 0, nome: "Nenhum", count: 0 };
+  } catch (error) {
+    console.error("Erro ao buscar top cliente:", error);
+    throw new Error("Erro ao buscar top cliente");
+  }
+}
+
