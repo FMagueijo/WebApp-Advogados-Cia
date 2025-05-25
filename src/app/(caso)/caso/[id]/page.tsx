@@ -2,7 +2,7 @@
 
 import * as X from "@/components/xcomponents";
 import { useSession } from "next-auth/react";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
 import { useEffect, useState, type FunctionComponent } from "react";
 import {
   fetchCasoProfile,
@@ -12,87 +12,23 @@ import {
   updateCasoDescricao,
   listarColaboradores,
   fetchRegistrosDoCaso,
+  adicionarColaboradorAoCaso,
+  removerColaboradorDoCaso,
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
-import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page"; // Corrected the path
+import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page";
 
 const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
 );
 
-const Suporte: FunctionComponent = () => {
-  const params = useParams();
-  const id = params?.id;
-  return (
-    <>
-      <X.Container className="w-full">
-        <p className="font-semibold">Lista Registos</p>
-        <X.Divider></X.Divider>
-        <div className="flex flex-row">
-          <X.ButtonLink href={`/caso/${id}/criar-registo`}>Adicionar registo</X.ButtonLink>
-        </div>
-        <div className="flex flex-row gap-4">
-          <X.Dropdown
-            label="Filtros"
-            options={["", ""]}
-            onSelect={(selectedOption) => console.log("Opção selecionada:", selectedOption)}
-          />
-          <X.Dropdown
-            label="Ordenar"
-            options={["Data Ascendente ", "Data Desscendente"]}
-            onSelect={(selectedOption) => console.log("Opção selecionada:", selectedOption)}
-          />
-        </div>
-        <X.Divider></X.Divider>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left ">
-                <th className="p-3">Resumo</th>
-                <th className="p-3">Data Criada</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-[var(--secondary-color)]">
-                <td className="p-2"><X.Link className="group"><div>Reuniao  (TEMP)</div> </X.Link></td>
-                <td className="p-2"><X.DataField className="group"><div>14/02/2025 17:20 </div> </X.DataField></td>
-              </tr>
-              <tr className="border-b border-[var(--secondary-color)]">
-                <td className="p-2"><X.Link className="group"><div>Ev - Ida Tribunal  (TEMP)</div> </X.Link></td>
-                <td className="p-2"><X.DataField className="group"><div>10/02/2025 14:20 </div> </X.DataField></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </X.Container>
-      <X.Container className="w-full">
-        <p className="font-semibold">Colaboradores Associados </p>
-        <X.Divider></X.Divider>
-        <div className="flex flex-row">
-          <X.ButtonLink>Associar colaborador</X.ButtonLink>
-        </div>
-        <X.Divider></X.Divider>
-        <X.Link>[23] Nuno Pinho (TEMP)</X.Link>
-      </X.Container>
-    </>
-  );
-}
-
-interface DadosFieldProps {
+const DadosField: React.FC<{
   titulo: string;
   valor: string;
   editando?: boolean;
   onMudanca?: (novoValor: string) => void;
   tipo?: "text" | "textarea";
-}
-
-const DadosField: React.FC<DadosFieldProps> = ({
-  titulo,
-  valor,
-  editando = false,
-  onMudanca,
-  tipo = "text",
-}) => (
+}> = ({ titulo, valor, editando = false, onMudanca, tipo = "text" }) => (
   <X.Container className="w-full">
     <div className="space-y-2">
       <h2 className="text-base font-semibold text-white">{titulo}</h2>
@@ -121,14 +57,14 @@ const DadosField: React.FC<DadosFieldProps> = ({
 const PerfilCaso: FunctionComponent = () => {
   const params = useParams();
   const id = params?.id;
-  const [isRegistroHorasOpen, setIsRegistroHorasOpen] = useState(false); // Estado movido para cá
+  const router = useRouter();
+  const [isRegistroHorasOpen, setIsRegistroHorasOpen] = useState(false);
 
   if (!id || isNaN(Number(id))) {
     notFound();
   }
 
   const { data: session } = useSession();
-  const [estado, setEstado] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mostrarModalColaborador, setMostrarModalColaborador] = useState(false);
@@ -213,10 +149,9 @@ const PerfilCaso: FunctionComponent = () => {
     setIsEditing(!isEditing);
   };
 
-  const handleFieldChange =
-    (field: keyof typeof profileData) => (value: string) => {
-      setProfileData((prev) => ({ ...prev, [field]: value }));
-    };
+  const handleFieldChange = (field: keyof typeof profileData) => (value: string) => {
+    setProfileData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSortRegistros = async (order: 'asc' | 'desc') => {
     try {
@@ -225,6 +160,42 @@ const PerfilCaso: FunctionComponent = () => {
       setRegistros(registrosOrdenados);
     } catch (error) {
       console.error("Erro ao ordenar registros:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdicionarColaborador = async () => {
+    if (!colaboradorSelecionado) return;
+
+    try {
+      setIsLoading(true);
+      const success = await adicionarColaboradorAoCaso(Number(id), colaboradorSelecionado.id);
+      
+      if (success) {
+        const updatedColaboradores = await fetchColaboradoresDoCaso(Number(id));
+        setColaboradoresDoCaso(updatedColaboradores);
+        setMostrarModalColaborador(false);
+        setColaboradorSelecionado(null);
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar colaborador:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoverColaborador = async (colaboradorId: number) => {
+    try {
+      setIsLoading(true);
+      const success = await removerColaboradorDoCaso(Number(id), colaboradorId);
+      
+      if (success) {
+        const updatedColaboradores = await fetchColaboradoresDoCaso(Number(id));
+        setColaboradoresDoCaso(updatedColaboradores);
+      }
+    } catch (error) {
+      console.error('Erro ao remover colaborador:', error);
     } finally {
       setIsLoading(false);
     }
@@ -240,13 +211,6 @@ const PerfilCaso: FunctionComponent = () => {
         Caso não encontrado.
       </X.ErrorBox>
     );
-  }
-
-  if(isLoading) {
-    return <SimpleSkeleton></SimpleSkeleton>;
-  }
-  if(!profileData) {
-    return <X.ErrorBox visible hideCloseButton>Caso não encontrado.</X.ErrorBox>;
   }
 
   return (
@@ -304,31 +268,9 @@ const PerfilCaso: FunctionComponent = () => {
             tipo="textarea"
           />
         </X.Container>
-        <X.Container className="w-full">
-          <div className="flex justify-between items-center">
-            <p className="text-lg font-semibold">Info geral</p>
-          </div>
-          <X.Divider></X.Divider>
-          <X.Button onClick={() => setIsRegistroHorasOpen(true)} className="w-max">
-            Registar Horas
-          </X.Button>
-          <X.Container className="w-full">
-            <p className="text-lg font-semibold"> [ID] Processo </p>
-            <p> [{id}] #{profileData.processo}</p>
-          </X.Container>
-          <X.Container className="w-full">
-            <p className="text-lg font-semibold"> Resumo </p>
-            <p> {profileData.resumo}</p>
-          </X.Container>
-          <X.Container className="w-full">
-            <p className="text-lg font-semibold"> Descrição detalhada </p>
-            {profileData.descricao}
-          </X.Container>
-        </X.Container>
       </div>
 
       <div className="flex flex-col gap-8 w-1/3">
-        {/* Lista de Registos */}
         <X.Container className="w-full">
           <p className="font-semibold">Lista Registos</p>
           <X.Divider />
@@ -395,12 +337,11 @@ const PerfilCaso: FunctionComponent = () => {
           </div>
         </X.Container>
 
-        {/* Colaboradores Associados */}
         <X.Container className="w-full">
           <p className="font-semibold">Colaboradores Associados</p>
           <X.Divider />
           <div className="flex flex-row gap-4">
-            <X.Button  onClick={() => setMostrarModalColaborador(true)}>
+            <X.Button onClick={() => setMostrarModalColaborador(true)}>
               Associar Colaborador
             </X.Button>
           </div>
@@ -410,13 +351,23 @@ const PerfilCaso: FunctionComponent = () => {
           ) : colaboradoresDoCaso.length > 0 ? (
             <div className="flex flex-col gap-2">
               {colaboradoresDoCaso.map((colaborador) => (
-                <X.Link
-                  key={colaborador.id}
-                  href={`/perfil-terceiro/${colaborador.id}`}
-                  className="hover:text-[var(--primary-color)]"
-                >
-                  [{colaborador.id}] {colaborador.nome}
-                </X.Link>
+                <div key={colaborador.id} className="flex justify-between items-center">
+                  <X.Link
+                    href={`/perfil-terceiro/${colaborador.id}`}
+                    className="hover:text-[var(--primary-color)]"
+                  >
+                    [{colaborador.id}] {colaborador.nome} ({colaborador.role?.nome_role})
+                  </X.Link>
+                  {colaborador.id !== session?.user?.id && (
+                    <button 
+                      onClick={() => handleRemoverColaborador(colaborador.id)}
+                      className="text-red-500 hover:text-red-700 text-sm"
+                      disabled={isLoading}
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           ) : (
@@ -424,7 +375,6 @@ const PerfilCaso: FunctionComponent = () => {
           )}
         </X.Container>
 
-        {/* Modal de Seleção de Colaborador */}
         {mostrarModalColaborador && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
@@ -446,18 +396,29 @@ const PerfilCaso: FunctionComponent = () => {
               ) : (
                 <>
                   <div className="space-y-2 mt-4">
-                    {colaboradores.map(colaborador => (
-                      <div
-                        key={colaborador.id}
-                        className={`p-2 rounded cursor-pointer hover:bg-green-100 ${
-                          colaboradorSelecionado?.id === colaborador.id ? 'bg-green-100' : ''
-                        }`}
-                        onClick={() => setColaboradorSelecionado(colaborador)}
-                      >
-                        <div className="font-medium">{colaborador.nome}</div>
-                        <div className="text-xs text-gray-500">{colaborador.email}</div>
-                      </div>
-                    ))}
+                    {colaboradores.map(colaborador => {
+                      const jaAssociado = colaboradoresDoCaso.some(c => c.id === colaborador.id);
+                      
+                      return (
+                        <div
+                          key={colaborador.id}
+                          className={`p-2 rounded cursor-pointer ${
+                            colaboradorSelecionado?.id === colaborador.id 
+                              ? 'bg-green-100' 
+                              : jaAssociado 
+                                ? 'bg-gray-100 cursor-not-allowed' 
+                                : 'hover:bg-green-100'
+                          }`}
+                          onClick={!jaAssociado ? () => setColaboradorSelecionado(colaborador) : undefined}
+                        >
+                          <div className="font-medium">
+                            {colaborador.nome} 
+                            {jaAssociado && <span className="text-xs text-gray-500 ml-2">(já associado)</span>}
+                          </div>
+                          <div className="text-xs text-gray-500">{colaborador.email} ({colaborador.role?.nome_role})</div>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="mt-4 flex justify-end">
                     <X.Button 
@@ -478,7 +439,6 @@ const PerfilCaso: FunctionComponent = () => {
         isOpen={isRegistroHorasOpen}
         onClose={() => setIsRegistroHorasOpen(false)}
         casoId={Number(id)}
-      
       />
     </div>
   );

@@ -32,9 +32,12 @@ model User {
 
   Evento  Evento[]
   Eventos Evento[] @relation("EventoColaboradores")
+  casos_colaborando Caso[] @relation("ColaboradoresDoCaso")
+    HorasTrabalhadas HorasTrabalhadas[]
+
 
   @@map("utilizador")
-  HorasTrabalhadas HorasTrabalhadas[]
+
 }
 
 model Cliente {
@@ -110,9 +113,10 @@ model Caso {
   registros Registro[]
   Evento    Evento[]   @relation("EventoCasos")
   dividas   Divida[]
-
-  @@map("caso")
   HorasTrabalhadas HorasTrabalhadas[]
+  colaboradores User[] @relation("ColaboradoresDoCaso")
+   @@map("caso")
+
 }
 
 
