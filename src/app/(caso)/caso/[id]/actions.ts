@@ -156,3 +156,30 @@ export async function fetchRegistrosDoCaso(casoId: number, order: 'asc' | 'desc'
     throw error;
   }
 }
+
+export async function fetchDividasDoCaso(casoId: number) {
+  try {
+    const dividas = await prisma.divida.findMany({
+      where: { caso_id: casoId },
+      select: {
+        id: true,
+        valor: true,
+        criado_em: true,
+        pago: true,
+        cliente: {
+          select: {
+            id: true,
+            nome: true
+          }
+        }
+      },
+      orderBy: {
+        criado_em: 'desc'
+      }
+    });
+    return dividas;
+  } catch (error) {
+    console.error("Erro ao buscar dívidas do caso:", error);
+    throw error;
+  }
+}

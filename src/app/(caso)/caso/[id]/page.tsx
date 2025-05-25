@@ -12,15 +12,14 @@ import {
   updateCasoDescricao,
   listarColaboradores,
   fetchRegistrosDoCaso,
+  fetchDividasDoCaso,
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
-import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page"; // Corrected the path
+import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page";
 
 const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
 );
-
-
 
 const Suporte: FunctionComponent = () => {
   const params = useParams();
@@ -121,15 +120,10 @@ const DadosField: React.FC<DadosFieldProps> = ({
 );
 
 const PerfilCaso: FunctionComponent = () => {
+   const { data: session } = useSession();
   const params = useParams();
   const id = params?.id;
-  const [isRegistroHorasOpen, setIsRegistroHorasOpen] = useState(false); // Estado movido para cá
-
-  if (!id || isNaN(Number(id))) {
-    notFound();
-  }
-
-  const { data: session } = useSession();
+  const [isRegistroHorasOpen, setIsRegistroHorasOpen] = useState(false);
   const [estado, setEstado] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,10 +132,11 @@ const PerfilCaso: FunctionComponent = () => {
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState<any | null>(null);
   const [colaboradoresDoCaso, setColaboradoresDoCaso] = useState<any[]>([]);
   const [registros, setRegistros] = useState<any[]>([]);
+  const [dividas, setDividas] = useState<any[]>([]);
   const [mostrarModalHonorario, setMostrarModalHonorario] = useState(false);
-const [mostrarModalPagamento, setMostrarModalPagamento] = useState(false);
-const [valorHonorario, setValorHonorario] = useState("");
-const [valorPagamento, setValorPagamento] = useState("");
+  const [mostrarModalPagamento, setMostrarModalPagamento] = useState(false);
+  const [valorHonorario, setValorHonorario] = useState("");
+  const [valorPagamento, setValorPagamento] = useState("");
 
   const [profileData, setProfileData] = useState({
     id: "",
@@ -178,6 +173,8 @@ const [valorPagamento, setValorPagamento] = useState("");
         setColaboradoresDoCaso(colaboradoresCaso);
         const registrosCaso = await fetchRegistrosDoCaso(casoId);
         setRegistros(registrosCaso);
+        const dividasCaso = await fetchDividasDoCaso(casoId);
+        setDividas(dividasCaso);
       } catch (error) {
         console.error("Failed to load profile:", error);
       } finally {
@@ -236,6 +233,16 @@ const [valorPagamento, setValorPagamento] = useState("");
     }
   };
 
+  const handleAdicionarColaborador = async () => {
+    // Implementação existente
+  };
+
+  if (!id || isNaN(Number(id))) {
+    notFound();
+  }
+
+ 
+
   if (isLoading && !profileData.processo) {
     return <SimpleSkeleton />;
   }
@@ -248,16 +255,10 @@ const [valorPagamento, setValorPagamento] = useState("");
     );
   }
 
-  if (isLoading) {
-    return <SimpleSkeleton></SimpleSkeleton>;
-  }
-  if (!profileData) {
-    return <X.ErrorBox visible hideCloseButton>Caso não encontrado.</X.ErrorBox>;
-  }
-
   return (
     <div className="flex flex-row gap-8">
       <div className="flex flex-col gap-8 w-2/3">
+        {/* Seção principal do perfil do caso */}
         <X.Container className="w-full">
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-bold">Perfil do Caso</h1>
@@ -310,6 +311,8 @@ const [valorPagamento, setValorPagamento] = useState("");
             tipo="textarea"
           />
         </X.Container>
+
+        {/* Seção de informações gerais */}
         <X.Container className="w-full">
           <div className="flex justify-between items-center">
             <p className="text-lg font-semibold">Info geral</p>
@@ -430,7 +433,48 @@ const [valorPagamento, setValorPagamento] = useState("");
           )}
         </X.Container>
 
-        {/* Nova seção de Honorários */}
+        {/* Seção de Dívidas */}
+<X.Container className="w-full">
+  <p className="font-semibold">Honorários</p>
+  <X.Divider />
+  <div className="overflow-x-auto">
+    <table className="w-full">
+      <thead>
+        <tr className="text-left">
+          <th className="p-3">Valor</th>
+          <th className="p-3">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {dividas.length > 0 ? (
+          dividas.map((divida) => (
+            <tr key={divida.id} className="border-b border-[var(--secondary-color)]">
+              <td className="p-2">
+                {divida.valor.toFixed(2)}€
+              </td>
+              <td className="p-2">
+                {divida.pago ? (
+                  <span className="text-green-500">Pago</span>
+                ) : (
+                  <span className="text-red-500">Por pagar</span>
+                )}
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan={2} className="p-4 text-center text-gray-500">
+              Nenhuma dívida registada
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</X.Container>
+
+
+        {/* Honorários */}
         <X.Container className="w-full">
           <p className="font-semibold">Honorários</p>
           <X.Divider />
@@ -449,11 +493,10 @@ const [valorPagamento, setValorPagamento] = useState("");
             </X.Button>
           </div>
           <X.Divider />
-          {/* Aqui você pode adicionar a lista de honorários se necessário */}
           <p className="text-gray-500">Nenhum honorário registado</p>
         </X.Container>
 
-        {/* Modal Registar Honorário */}
+        {/* Modais (mantidos da implementação anterior) */}
         {mostrarModalHonorario && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-md">
@@ -487,7 +530,6 @@ const [valorPagamento, setValorPagamento] = useState("");
           </div>
         )}
 
-        {/* Modal Pagar Honorário */}
         {mostrarModalPagamento && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-md">
@@ -521,8 +563,6 @@ const [valorPagamento, setValorPagamento] = useState("");
           </div>
         )}
 
-
-        {/* Modal de Seleção de Colaborador */}
         {mostrarModalColaborador && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
