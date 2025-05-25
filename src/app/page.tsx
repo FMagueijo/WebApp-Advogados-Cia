@@ -181,7 +181,7 @@ const TopCasos: FunctionComponent = () => {
           getTopColaborador(),
           getTopCliente()
         ]);
-        
+
         setTopColaborador(colaborador);
         setTopCliente(cliente);
       } catch (err) {
@@ -219,7 +219,7 @@ const TopCasos: FunctionComponent = () => {
     <X.Container className="w-full">
       <X.HeaderLink no_padding href="/casos">Top Casos</X.HeaderLink>
       <X.Divider></X.Divider>
-      
+
       <p className="font-semibold">Colaborador:</p>
       <X.Link href={`/colaboradores/${topColaborador?.user_id}`}>
         [{topColaborador?.user_id}] {topColaborador?.nome}
@@ -230,7 +230,7 @@ const TopCasos: FunctionComponent = () => {
           <div className="flex-auto text-right">{topColaborador?.count || 0}</div>
         </div>
       </X.DataField>
-      
+
       <p className="font-semibold">Cliente:</p>
       <X.Link href={`/clientes/${topCliente?.cliente_id}`}>
         [{topCliente?.cliente_id}] {topCliente?.nome}
@@ -323,8 +323,8 @@ export default function Home() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 w-full gap-8">
-      {/* Column 1: Casos */}
-      <div className="flex flex-col grow min-w-auto gap-8"> {/* Takes 2 vertical spaces */}
+
+      <div className="flex flex-col grow min-w-auto gap-8">
         <Casos />
       </div>
 
@@ -333,14 +333,13 @@ export default function Home() {
 
         <div className="flex flex-col grow min-w-auto gap-8">
           <ClientesStats />
-          
+
         </div>
         <div className="flex flex-col grow min-w-auto gap-8">
-                  <TopCasos /> 
-          
+          <TopCasos />
         </div>
 
-        
+
 
       </div>
 
