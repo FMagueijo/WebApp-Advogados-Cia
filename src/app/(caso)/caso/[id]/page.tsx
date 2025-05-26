@@ -257,7 +257,7 @@ const PerfilCaso: FunctionComponent = () => {
       setIsLoading(true);
       setErrorMessage(null);
       const resultado = await registrarHonorario(Number(id), valorNumerico);
-      
+
       if (resultado.success) {
         setSuccessMessage(resultado.message);
         setValorHonorario('');
@@ -296,7 +296,7 @@ const PerfilCaso: FunctionComponent = () => {
       setIsLoading(true);
       setErrorMessage(null);
       const resultado = await pagarHonorario(Number(id), valorNumerico);
-      
+
       if (resultado.success) {
         setSuccessMessage(resultado.message);
         setValorPagamento('');
@@ -533,11 +533,11 @@ const PerfilCaso: FunctionComponent = () => {
                         {divida.valor.toFixed(2)}€
                       </td>
                       <td className="p-2">
-                        {divida.pago ? (
-                          <span className="text-green-500">Pago</span>
-                        ) : (
-                          <span className="text-red-500">Por pagar</span>
-                        )}
+                        {divida.valor === 0
+                          ? null
+                          : divida.pago
+                            ? <span className="text-green-500">Pago</span>
+                            : <span className="text-red-500">Por pagar</span>}
                       </td>
                     </tr>
                   ))
