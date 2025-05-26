@@ -17,7 +17,6 @@ import {
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
 import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page";
-import { ColabList } from "@/components/lists/listar_colab";
 
 const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
@@ -376,32 +375,64 @@ const PerfilCaso: FunctionComponent = () => {
           )}
         </X.Container>
 
-        <X.Popup 
-          isOpen={mostrarModalColaborador} 
-          title="Selecionar Colaboradores" 
-          onClose={() => {
-            setMostrarModalColaborador(false);
-            setColaboradorSelecionado(null);
-          }} 
-          className="w-full h-full"
-        >
-          <ColabList
-            mode="select"
-            selectedCaseIds={colaboradoresDoCaso.map(colab => colab.id)}
-            onSelect={(selectedColabs) => {
-              // Seleciona apenas o primeiro colaborador (para seleção única)
-              setColaboradorSelecionado(selectedColabs[0] || null);
-            }}
-          />
-          <div className="mt-4 flex justify-end">
-            <X.Button 
-              onClick={handleAdicionarColaborador}
-              disabled={!colaboradorSelecionado || isLoading}
-            >
-              {isLoading ? <LoadingSpinner /> : "Confirmar"}
-            </X.Button>
+        {mostrarModalColaborador && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold">Selecionar Colaborador</p>
+                <button 
+                  onClick={() => {
+                    setMostrarModalColaborador(false);
+                    setColaboradorSelecionado(null);
+                  }} 
+                  className="text-gray-500 hover:text-gray-800 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+              <X.Divider />
+              {colaboradores.length === 0 ? (
+                <p className="text-sm text-gray-500 mt-4">Nenhum colaborador encontrado.</p>
+              ) : (
+                <>
+                  <div className="space-y-2 mt-4">
+                    {colaboradores.map(colaborador => {
+                      const jaAssociado = colaboradoresDoCaso.some(c => c.id === colaborador.id);
+                      
+                      return (
+                        <div
+                          key={colaborador.id}
+                          className={`p-2 rounded cursor-pointer ${
+                            colaboradorSelecionado?.id === colaborador.id 
+                              ? 'bg-green-100' 
+                              : jaAssociado 
+                                ? 'bg-gray-100 cursor-not-allowed' 
+                                : 'hover:bg-green-100'
+                          }`}
+                          onClick={!jaAssociado ? () => setColaboradorSelecionado(colaborador) : undefined}
+                        >
+                          <div className="font-medium">
+                            {colaborador.nome} 
+                            {jaAssociado && <span className="text-xs text-gray-500 ml-2">(já associado)</span>}
+                          </div>
+                          <div className="text-xs text-gray-500">{colaborador.email} ({colaborador.role?.nome_role})</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <X.Button 
+                      onClick={handleAdicionarColaborador}
+                      disabled={!colaboradorSelecionado || isLoading}
+                    >
+                      {isLoading ? <LoadingSpinner /> : "Confirmar"}
+                    </X.Button>
+                  </div>
+                </>
+              )}
+            </X.Container>
           </div>
-        </X.Popup>
+        )}
       </div>
 
       <RegistrarHorasForm
