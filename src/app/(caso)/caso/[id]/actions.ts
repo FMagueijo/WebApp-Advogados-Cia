@@ -136,63 +136,64 @@ export async function listarColaboradores() {
   }
 }
 
-export async function registrarHonorario(casoId: number, valor: number) {
+export async function registrarHonorario(casoId: number, valor: number, assunto: string) {
   try {
-    // Verifica se já existe uma dívida não paga para este caso
-    const dividaExistente = await prisma.divida.findFirst({
-      where: {
-        caso_id: casoId,
-        pago: false
+    // Primeiro, buscar o caso para obter o ID do cliente associado
+    const caso = await prisma.caso.findUnique({
+      where: { id: casoId },
+      select: {
+        cliente_id: true
       }
     });
 
-    if (dividaExistente) {
-      // Atualiza a dívida existente somando o novo valor
-      const updatedDivida = await prisma.divida.update({
-        where: { id: dividaExistente.id },
-        data: { 
-          valor: dividaExistente.valor + valor 
-        }
-      });
-      revalidatePath(`/caso/${casoId}`);
-      return { success: true, message: 'Valor adicionado à dívida existente' };
-    } else {
-      // Cria uma nova dívida
-      const novaDivida = await prisma.divida.create({
-        data: {
-          valor: valor,
-          pago: false,
-          caso: {
-            connect: { id: casoId }
-          },
-          cliente: {
-            connect: { id: 1 } // Substitua pelo ID do cliente real ou obtenha dinamicamente
-          }
-        }
-      });
-      revalidatePath(`/caso/${casoId}`);
-      return { success: true, message: 'Nova dívida criada' };
+    if (!caso) {
+      return { success: false, message: 'Caso não encontrado' };
     }
+
+    if (!caso.cliente_id) {
+      return { success: false, message: 'Nenhum cliente associado a este caso' };
+    }
+
+    // Cria uma nova dívida com os dados fornecidos
+    const novaDivida = await prisma.divida.create({
+      data: {
+        valor: valor,
+        assunto: assunto, // Adiciona o campo assunto
+        pago: false,
+        caso: {
+          connect: { id: casoId }
+        },
+        cliente: {
+          connect: { id: caso.cliente_id } // Usa o ID do cliente obtido dinamicamente
+        }
+      }
+    });
+    
+    revalidatePath(`/caso/${casoId}`);
+    return { success: true, message: 'Novo honorário registrado com sucesso' };
   } catch (error) {
     console.error('Erro ao registrar honorário:', error);
     return { success: false, message: 'Erro ao registrar honorário' };
   }
 }
 
-export async function pagarHonorario(casoId: number, valorPagamento: number) {
+export async function pagarDivida(dividaId: number, valorPagamento: number) {
   try {
-    // Encontra a dívida não paga para este caso
-    const divida = await prisma.divida.findFirst({
-      where: {
-        caso_id: casoId,
-        pago: false
-      }
+    const divida = await prisma.divida.findUnique({
+      where: { id: dividaId }
     });
 
     if (!divida) {
       return { 
         success: false, 
-        message: 'Não há dívidas pendentes para este caso' 
+        message: 'Dívida não encontrada' 
+      };
+    }
+
+    if (divida.pago) {
+      return { 
+        success: false, 
+        message: 'Esta dívida já foi paga' 
       };
     }
 
@@ -206,23 +207,68 @@ export async function pagarHonorario(casoId: number, valorPagamento: number) {
     if (valorPagamento === divida.valor) {
       // Pagamento total - marca como pago
       await prisma.divida.update({
-        where: { id: divida.id },
+        where: { id: dividaId },
         data: { pago: true }
       });
-      revalidatePath(`/caso/${casoId}`);
-      return { success: true, message: 'Dívida paga integralmente' };
     } else {
-      // Pagamento parcial - atualiza o valor da dívida
-      await prisma.divida.update({
-        where: { id: divida.id },
-        data: { valor: divida.valor - valorPagamento }
+      // Cria uma nova dívida com o valor restante
+      await prisma.divida.create({
+        data: {
+          valor: divida.valor - valorPagamento,
+          assunto: divida.assunto,
+          pago: false,
+          caso: { connect: { id: divida.caso_id } },
+          cliente: { connect: { id: divida.cliente_id } }
+        }
       });
-      revalidatePath(`/caso/${casoId}`);
-      return { success: true, message: 'Pagamento parcial realizado' };
+      
+      // Atualiza a dívida original com o valor pago e marca como paga
+      await prisma.divida.update({
+        where: { id: dividaId },
+        data: { 
+          pago: true,
+          valor: valorPagamento 
+        }
+      });
     }
+    
+    return { success: true, message: 'Pagamento realizado com sucesso' };
   } catch (error) {
     console.error('Erro ao processar pagamento:', error);
     return { success: false, message: 'Erro ao processar pagamento' };
+  }
+}
+
+export async function pagarDividaTotal(dividaId: number) {
+  try {
+    const divida = await prisma.divida.findUnique({
+      where: { id: dividaId }
+    });
+
+    if (!divida) {
+      return { 
+        success: false, 
+        message: 'Dívida não encontrada' 
+      };
+    }
+
+    if (divida.pago) {
+      return { 
+        success: false, 
+        message: 'Esta dívida já foi paga' 
+      };
+    }
+
+    // Marca a dívida como paga
+    await prisma.divida.update({
+      where: { id: dividaId },
+      data: { pago: true }
+    });
+
+    return { success: true, message: 'Dívida paga integralmente' };
+  } catch (error) {
+    console.error('Erro ao pagar dívida:', error);
+    return { success: false, message: 'Erro ao pagar dívida' };
   }
 }
 
@@ -254,6 +300,7 @@ export async function fetchDividasDoCaso(casoId: number) {
       select: {
         id: true,
         valor: true,
+        assunto: true, // Adicione esta linha
         criado_em: true,
         pago: true,
         cliente: {

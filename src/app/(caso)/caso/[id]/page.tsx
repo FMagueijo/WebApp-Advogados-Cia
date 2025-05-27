@@ -14,7 +14,8 @@ import {
   fetchRegistrosDoCaso,
   fetchDividasDoCaso,
   registrarHonorario,
-  pagarHonorario,
+  pagarDivida,
+  pagarDividaTotal,
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
 import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page";
@@ -137,10 +138,12 @@ const PerfilCaso: FunctionComponent = () => {
   const [dividas, setDividas] = useState<any[]>([]);
   const [mostrarModalHonorario, setMostrarModalHonorario] = useState(false);
   const [mostrarModalPagamento, setMostrarModalPagamento] = useState(false);
+  const [dividaSelecionada, setDividaSelecionada] = useState<number | null>(null);
   const [valorHonorario, setValorHonorario] = useState("");
   const [valorPagamento, setValorPagamento] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [assuntoHonorario, setAssuntoHonorario] = useState("");
 
   const [profileData, setProfileData] = useState({
     id: "",
@@ -242,6 +245,11 @@ const PerfilCaso: FunctionComponent = () => {
   };
 
   const handleRegistrarHonorario = async () => {
+    if (!assuntoHonorario.trim()) {
+      setErrorMessage('Por favor insira um assunto');
+      return;
+    }
+
     const valorNumerico = parseFloat(valorHonorario);
     if (isNaN(valorNumerico)) {
       setErrorMessage('Por favor insira um valor numérico válido');
@@ -256,10 +264,15 @@ const PerfilCaso: FunctionComponent = () => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const resultado = await registrarHonorario(Number(id), valorNumerico);
+      const resultado = await registrarHonorario(
+        Number(id),
+        valorNumerico,
+        assuntoHonorario
+      );
 
       if (resultado.success) {
         setSuccessMessage(resultado.message);
+        setAssuntoHonorario('');
         setValorHonorario('');
         setMostrarModalHonorario(false);
         // Atualiza a lista de dívidas
@@ -280,7 +293,9 @@ const PerfilCaso: FunctionComponent = () => {
     }
   };
 
-  const handlePagarHonorario = async () => {
+  const handlePagarDivida = async () => {
+    if (!dividaSelecionada) return;
+
     const valorNumerico = parseFloat(valorPagamento);
     if (isNaN(valorNumerico)) {
       setErrorMessage('Por favor insira um valor numérico válido');
@@ -295,7 +310,7 @@ const PerfilCaso: FunctionComponent = () => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const resultado = await pagarHonorario(Number(id), valorNumerico);
+      const resultado = await pagarDivida(dividaSelecionada, valorNumerico);
 
       if (resultado.success) {
         setSuccessMessage(resultado.message);
@@ -309,6 +324,32 @@ const PerfilCaso: FunctionComponent = () => {
       }
     } catch (error) {
       setErrorMessage('Erro ao processar pagamento');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setErrorMessage(null);
+      }, 5000);
+    }
+  };
+
+  const handlePagarDividaTotal = async (dividaId: number) => {
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      const resultado = await pagarDividaTotal(dividaId);
+
+      if (resultado.success) {
+        setSuccessMessage(resultado.message);
+        // Atualiza a lista de dívidas
+        const dividasCaso = await fetchDividasDoCaso(Number(id));
+        setDividas(dividasCaso);
+      } else {
+        setErrorMessage(resultado.message);
+      }
+    } catch (error) {
+      setErrorMessage('Erro ao processar pagamento total');
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -517,46 +558,6 @@ const PerfilCaso: FunctionComponent = () => {
         <X.Container className="w-full">
           <p className="font-semibold">Honorários</p>
           <X.Divider />
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left">
-                  <th className="p-3">Valor</th>
-                  <th className="p-3">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dividas.length > 0 ? (
-                  dividas.map((divida) => (
-                    <tr key={divida.id} className="border-b border-[var(--secondary-color)]">
-                      <td className="p-2">
-                        {divida.valor.toFixed(2)}€
-                      </td>
-                      <td className="p-2">
-                        {divida.valor === 0
-                          ? null
-                          : divida.pago
-                            ? <span className="text-green-500">Pago</span>
-                            : <span className="text-red-500">Por pagar</span>}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={2} className="p-4 text-center text-gray-500">
-                      Nenhuma dívida registada
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </X.Container>
-
-        {/* Honorários */}
-        <X.Container className="w-full">
-          <p className="font-semibold">Honorários</p>
-          <X.Divider />
           <div className="flex flex-row gap-4">
             <X.Button
               onClick={() => {
@@ -568,23 +569,71 @@ const PerfilCaso: FunctionComponent = () => {
             >
               Registar Honorário
             </X.Button>
-            <X.Button
-              onClick={() => {
-                setMostrarModalPagamento(true);
-                setErrorMessage(null);
-                setSuccessMessage(null);
-              }}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Pagar Honorário
-            </X.Button>
           </div>
           <X.Divider />
           {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
           {successMessage && <p className="text-green-500 text-sm">{successMessage}</p>}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-3">Assunto</th>
+                  <th className="p-3">Valor</th>
+                  <th className="p-3">Data</th>
+                  <th className="p-3">Estado</th>
+                  <th className="p-3">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dividas.length > 0 ? (
+                  dividas.map((divida) => (
+                    <tr key={divida.id} className="border-b border-[var(--secondary-color)]">
+                      <td className="p-2">{divida.assunto || "Sem assunto"}</td> {/* Adicionado fallback */}
+                      <td className="p-2">{divida.valor.toFixed(2)}€</td>
+                      <td className="p-2">{new Date(divida.criado_em).toLocaleDateString('pt-PT')}</td>
+                      <td className="p-2">
+                        {divida.pago ? (
+                          <span className="text-green-500">Pago</span>
+                        ) : (
+                          <span className="text-red-500">Por pagar</span>
+                        )}
+                      </td>
+                      <td className="p-2 flex gap-2">
+                        {!divida.pago && (
+                          <>
+                            <X.Button
+                              size="sm"
+                              onClick={() => {
+                                setDividaSelecionada(divida.id);
+                                setMostrarModalPagamento(true);
+                              }}
+                            >
+                              Pagar
+                            </X.Button>
+                            <X.Button
+                              size="sm"
+                              onClick={() => handlePagarDividaTotal(divida.id)}
+                              disabled={isLoading}
+                            >
+                              Pagar Tudo
+                            </X.Button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-gray-500">
+                      Nenhuma dívida registada
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </X.Container>
 
-        {/* Modal Registrar Honorário */}
         {mostrarModalHonorario && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-md">
@@ -594,6 +643,8 @@ const PerfilCaso: FunctionComponent = () => {
                   onClick={() => {
                     setMostrarModalHonorario(false);
                     setErrorMessage(null);
+                    setAssuntoHonorario("");
+                    setValorHonorario("");
                   }}
                   className="text-gray-500 hover:text-gray-800 text-2xl"
                 >
@@ -601,6 +652,13 @@ const PerfilCaso: FunctionComponent = () => {
                 </button>
               </div>
               <X.Divider />
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
+                placeholder="Assunto"
+                value={assuntoHonorario}
+                onChange={(e) => setAssuntoHonorario(e.target.value)}
+              />
               <input
                 type="number"
                 step="0.01"
@@ -619,16 +677,17 @@ const PerfilCaso: FunctionComponent = () => {
           </div>
         )}
 
-        {/* Modal Pagar Honorário */}
+        {/* Modal Pagar Dívida */}
         {mostrarModalPagamento && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-md">
               <div className="flex justify-between items-center mb-4">
-                <p className="text-lg font-semibold">Pagar Honorário</p>
+                <p className="text-lg font-semibold">Pagar Dívida</p>
                 <button
                   onClick={() => {
                     setMostrarModalPagamento(false);
                     setErrorMessage(null);
+                    setDividaSelecionada(null);
                   }}
                   className="text-gray-500 hover:text-gray-800 text-2xl"
                 >
@@ -647,7 +706,7 @@ const PerfilCaso: FunctionComponent = () => {
               {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
               {successMessage && <p className="text-green-500 text-sm mt-2">{successMessage}</p>}
               <div className="mt-4 flex justify-end">
-                <X.Button onClick={handlePagarHonorario} disabled={isLoading}>
+                <X.Button onClick={handlePagarDivida} disabled={isLoading}>
                   {isLoading ? <LoadingSpinner /> : "Confirmar"}
                 </X.Button>
               </div>

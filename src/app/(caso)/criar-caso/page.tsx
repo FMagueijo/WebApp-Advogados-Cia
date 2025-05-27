@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react';
 export default function CriarCaso() {
   const { data: session } = useSession();
   const user = session?.user;
-  
+
   const [clientes, setClientes] = useState<Array<{ id: number, nome: string, email: string, telefone: string, codigoPostal: string, endereco: string }>>([]);
   const [clienteSelecionado, setClienteSelecionado] = useState<{ id: number, nome: string, email: string, telefone: string, codigoPostal: string, endereco: string } | null>(null);
   const [carregando, setCarregando] = useState(false);
@@ -41,17 +41,17 @@ export default function CriarCaso() {
 
   const handleSubmitCaso = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!user?.id) {
       setErro('Utilizador não autenticado');
       return;
     }
-    
+
     const form = new FormData(e.currentTarget);
     if (clienteSelecionado) {
       form.append('clienteId', clienteSelecionado.id.toString());
     }
-    
+
     try {
       // Garantir que o user.id seja passado como string (será convertido para número na ação)
       await criarCaso(form, user.id.toString());
@@ -68,12 +68,12 @@ export default function CriarCaso() {
       setClientes([...clientes, clienteCriado]);
       setClienteSelecionado(clienteCriado);
       setMostrarModalCriacao(false);
-      setNovoCliente({ 
-        nome: '', 
-        email: '', 
-        telefone: '', 
-        codigoPostal: '', 
-        endereco: '' 
+      setNovoCliente({
+        nome: '',
+        email: '',
+        telefone: '',
+        codigoPostal: '',
+        endereco: ''
       });
     } catch (error) {
       setErro('Erro ao criar cliente');
@@ -179,9 +179,8 @@ export default function CriarCaso() {
               {clientes.map(cliente => (
                 <div
                   key={cliente.id}
-                  className={`p-2 rounded cursor-pointer hover:bg-blue-100 ${
-                    clienteSelecionado?.id === cliente.id ? 'bg-blue-100' : ''
-                  }`}
+                  className={`p-2 rounded cursor-pointer hover:bg-blue-100 ${clienteSelecionado?.id === cliente.id ? 'bg-blue-100' : ''
+                    }`}
                   onClick={(e) => handleModalClick(e, cliente)}
                 >
                   <div>
@@ -215,42 +214,42 @@ export default function CriarCaso() {
             <X.Divider />
 
             <form onSubmit={handleSubmitCliente} className="space-y-4">
-              <X.Field 
-                required 
-                type="text" 
-                placeholder="Nome Completo" 
+              <X.Field
+                required
+                type="text"
+                placeholder="Nome Completo"
                 name="nome"
                 value={novoCliente.nome}
                 onChange={handleInputChange}
               />
-              <X.Field 
-                required 
-                type="email" 
-                placeholder="Email" 
+              <X.Field
+                required
+                type="email"
+                placeholder="Email"
                 name="email"
                 value={novoCliente.email}
                 onChange={handleInputChange}
               />
-              <X.Field 
-                required 
-                type="tel" 
-                placeholder="Telefone" 
+              <X.Field
+                required
+                type="tel"
+                placeholder="Telefone"
                 name="telefone"
                 value={novoCliente.telefone}
                 onChange={handleInputChange}
               />
-              <X.Field 
-                required 
-                type="text" 
-                placeholder="Código Postal" 
+              <X.Field
+                required
+                type="text"
+                placeholder="Código Postal"
                 name="codigoPostal"
                 value={novoCliente.codigoPostal}
                 onChange={handleInputChange}
               />
-              <X.Field 
-                required 
-                type="text" 
-                placeholder="Endereço Completo" 
+              <X.Field
+                required
+                type="text"
+                placeholder="Endereço Completo"
                 name="endereco"
                 value={novoCliente.endereco}
                 onChange={handleInputChange}
