@@ -39,13 +39,13 @@ model User {
 }
 
 model Cliente {
-  id           Int      @id @default(autoincrement())
-  nome         String   @db.VarChar(100)
-  email        String   @unique @db.VarChar(255)
-  telefone     String   @db.VarChar(20)
-  codigoPostal String   @db.VarChar(10)
-  endereco     String   @db.VarChar(255)
-  casos        Caso[]
+  id           Int            @id @default(autoincrement())
+  nome         String         @db.VarChar(100)
+  email        String         @unique @db.VarChar(255)
+  telefone     String         @db.VarChar(20)
+  codigoPostal String         @db.VarChar(10)
+  endereco     String         @db.VarChar(255)
+  casos        ClienteDoCaso[] // Relação através da tabela de junção
   dividas      Divida[]
 
   @@map("cliente")
@@ -99,10 +99,7 @@ model Caso {
   resumo            String             @db.VarChar(100)
   descricao         String?            @db.Text
   criado_em         DateTime           @default(now())
-
-  cliente_id        Int
-  cliente           Cliente            @relation(fields: [cliente_id], references: [id])
-
+  
   user_id           Int
   user              User               @relation(fields: [user_id], references: [id])
 
@@ -114,8 +111,21 @@ model Caso {
   dividas           Divida[]
   HorasTrabalhadas  HorasTrabalhadas[]
   colaboradores     ColaboradorDoCaso[]
+  clientes          ClienteDoCaso[]    // Relação muitos-para-muitos
 
   @@map("caso")
+}
+
+model ClienteDoCaso {
+  cliente_id    Int
+  caso_id       Int
+  data_associado DateTime @default(now())
+
+  cliente       Cliente   @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+  caso          Caso      @relation(fields: [caso_id], references: [id], onDelete: Cascade)
+
+  @@id([cliente_id, caso_id])
+  @@map("cliente_do_caso")
 }
 
 model ColaboradorDoCaso {

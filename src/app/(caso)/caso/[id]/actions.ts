@@ -78,13 +78,17 @@ export async function fetchColaboradoresDoCaso(casoId: number) {
           }
         },
         colaboradores: {
-          select: {
-            id: true,
-            nome: true,
-            email: true,
-            role: {
+          include: {
+            user: {
               select: {
-                nome_role: true
+                id: true,
+                nome: true,
+                email: true,
+                role: {
+                  select: {
+                    nome_role: true
+                  }
+                }
               }
             }
           }
@@ -95,7 +99,9 @@ export async function fetchColaboradoresDoCaso(casoId: number) {
     if (!caso) return [];
     
     // Combina o criador do caso com os colaboradores adicionais, removendo duplicados
-    const todosColaboradores = [caso.user, ...caso.colaboradores];
+    const colaboradoresAdicionais = caso.colaboradores.map(c => c.user);
+    const todosColaboradores = [caso.user, ...colaboradoresAdicionais];
+    
     return todosColaboradores.filter((colab, index, self) =>
       index === self.findIndex((t) => t.id === colab.id)
     );
@@ -182,12 +188,10 @@ export async function fetchRegistrosDoCaso(casoId: number, order: 'asc' | 'desc'
 
 export async function adicionarColaboradorAoCaso(casoId: number, colaboradorId: number): Promise<boolean> {
   try {
-    await prisma.caso.update({
-      where: { id: casoId },
+    await prisma.colaboradorDoCaso.create({
       data: {
-        colaboradores: {
-          connect: { id: colaboradorId }
-        }
+        user_id: colaboradorId,
+        caso_id: casoId
       }
     });
     
@@ -201,11 +205,11 @@ export async function adicionarColaboradorAoCaso(casoId: number, colaboradorId: 
 
 export async function removerColaboradorDoCaso(casoId: number, colaboradorId: number): Promise<boolean> {
   try {
-    await prisma.caso.update({
-      where: { id: casoId },
-      data: {
-        colaboradores: {
-          disconnect: { id: colaboradorId }
+    await prisma.colaboradorDoCaso.delete({
+      where: {
+        user_id_caso_id: {
+          user_id: colaboradorId,
+          caso_id: casoId
         }
       }
     });
