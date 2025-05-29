@@ -14,6 +14,10 @@ import {
   fetchRegistrosDoCaso,
   adicionarColaboradorAoCaso,
   removerColaboradorDoCaso,
+  fetchClientesDoCaso,
+  listarClientes,
+  adicionarClienteAoCaso,
+  removerClienteDoCaso,
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
 import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page";
@@ -67,10 +71,19 @@ const PerfilCaso: FunctionComponent = () => {
   const { data: session } = useSession();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Estados para colaboradores
   const [mostrarModalColaborador, setMostrarModalColaborador] = useState(false);
   const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState<any | null>(null);
   const [colaboradoresDoCaso, setColaboradoresDoCaso] = useState<any[]>([]);
+  
+  // Estados para clientes
+  const [mostrarModalCliente, setMostrarModalCliente] = useState(false);
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [clienteSelecionado, setClienteSelecionado] = useState<any | null>(null);
+  const [clientesDoCaso, setClientesDoCaso] = useState<any[]>([]);
+  
   const [registros, setRegistros] = useState<any[]>([]);
 
   const [profileData, setProfileData] = useState({
@@ -82,15 +95,19 @@ const PerfilCaso: FunctionComponent = () => {
   });
 
   useEffect(() => {
-    const carregarColaboradores = async () => {
+    const carregarDadosIniciais = async () => {
       try {
-        const resultado = await listarColaboradores();
-        setColaboradores(resultado);
+        const [resultadoColabs, resultadoClientes] = await Promise.all([
+          listarColaboradores(),
+          listarClientes()
+        ]);
+        setColaboradores(resultadoColabs);
+        setClientes(resultadoClientes);
       } catch (error) {
-        console.error("Erro ao carregar colaboradores", error);
+        console.error("Erro ao carregar dados iniciais", error);
       }
     };
-    carregarColaboradores();
+    carregarDadosIniciais();
   }, []);
 
   useEffect(() => {
@@ -104,9 +121,15 @@ const PerfilCaso: FunctionComponent = () => {
         if (data) {
           setProfileData(data);
         }
-        const colaboradoresCaso = await fetchColaboradoresDoCaso(casoId);
+        
+        const [colaboradoresCaso, clientesCaso, registrosCaso] = await Promise.all([
+          fetchColaboradoresDoCaso(casoId),
+          fetchClientesDoCaso(casoId),
+          fetchRegistrosDoCaso(casoId)
+        ]);
+        
         setColaboradoresDoCaso(colaboradoresCaso);
-        const registrosCaso = await fetchRegistrosDoCaso(casoId);
+        setClientesDoCaso(clientesCaso);
         setRegistros(registrosCaso);
       } catch (error) {
         console.error("Failed to load profile:", error);
@@ -134,8 +157,10 @@ const PerfilCaso: FunctionComponent = () => {
       try {
         setIsLoading(true);
         const casoId = Number(id);
-        await updateCasoResumo(casoId, profileData.resumo);
-        await updateCasoDescricao(casoId, profileData.descricao);
+        await Promise.all([
+          updateCasoResumo(casoId, profileData.resumo),
+          updateCasoDescricao(casoId, profileData.descricao)
+        ]);
         const updatedData = await fetchCasoProfile(casoId);
         if (updatedData) {
           setProfileData(updatedData);
@@ -165,6 +190,7 @@ const PerfilCaso: FunctionComponent = () => {
     }
   };
 
+  // Funções para colaboradores
   const handleAdicionarColaborador = async () => {
     if (!colaboradorSelecionado) return;
 
@@ -196,6 +222,43 @@ const PerfilCaso: FunctionComponent = () => {
       }
     } catch (error) {
       console.error('Erro ao remover colaborador:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Funções para clientes
+  const handleAdicionarCliente = async () => {
+    if (!clienteSelecionado) return;
+
+    try {
+      setIsLoading(true);
+      const success = await adicionarClienteAoCaso(Number(id), clienteSelecionado.id);
+      
+      if (success) {
+        const updatedClientes = await fetchClientesDoCaso(Number(id));
+        setClientesDoCaso(updatedClientes);
+        setMostrarModalCliente(false);
+        setClienteSelecionado(null);
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar cliente:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoverCliente = async (clienteId: number) => {
+    try {
+      setIsLoading(true);
+      const success = await removerClienteDoCaso(Number(id), clienteId);
+      
+      if (success) {
+        const updatedClientes = await fetchClientesDoCaso(Number(id));
+        setClientesDoCaso(updatedClientes);
+      }
+    } catch (error) {
+      console.error('Erro ao remover cliente:', error);
     } finally {
       setIsLoading(false);
     }
@@ -375,6 +438,43 @@ const PerfilCaso: FunctionComponent = () => {
           )}
         </X.Container>
 
+        <X.Container className="w-full">
+          <p className="font-semibold">Clientes Associados</p>
+          <X.Divider />
+          <div className="flex flex-row gap-4">
+            <X.Button onClick={() => setMostrarModalCliente(true)}>
+              Associar Cliente
+            </X.Button>
+          </div>
+          <X.Divider />
+          {isLoading ? (
+            <SimpleSkeleton />
+          ) : clientesDoCaso.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {clientesDoCaso.map((cliente) => (
+                <div key={cliente.id} className="flex justify-between items-center">
+                  <X.Link
+                    href={`/perfil-cliente/${cliente.id}`}
+                    className="hover:text-[var(--primary-color)]"
+                  >
+                    [{cliente.id}] {cliente.nome} ({cliente.email})
+                  </X.Link>
+                  <button 
+                    onClick={() => handleRemoverCliente(cliente.id)}
+                    className="text-red-500 hover:text-red-700 text-sm"
+                    disabled={isLoading}
+                  >
+                    Remover
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>Nenhum cliente associado a este caso</p>
+          )}
+        </X.Container>
+
+        {/* Modal para selecionar colaborador */}
         {mostrarModalColaborador && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
@@ -424,6 +524,66 @@ const PerfilCaso: FunctionComponent = () => {
                     <X.Button 
                       onClick={handleAdicionarColaborador}
                       disabled={!colaboradorSelecionado || isLoading}
+                    >
+                      {isLoading ? <LoadingSpinner /> : "Confirmar"}
+                    </X.Button>
+                  </div>
+                </>
+              )}
+            </X.Container>
+          </div>
+        )}
+
+        {/* Modal para selecionar cliente */}
+        {mostrarModalCliente && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold">Selecionar Cliente</p>
+                <button 
+                  onClick={() => {
+                    setMostrarModalCliente(false);
+                    setClienteSelecionado(null);
+                  }} 
+                  className="text-gray-500 hover:text-gray-800 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+              <X.Divider />
+              {clientes.length === 0 ? (
+                <p className="text-sm text-gray-500 mt-4">Nenhum cliente encontrado.</p>
+              ) : (
+                <>
+                  <div className="space-y-2 mt-4">
+                    {clientes.map(cliente => {
+                      const jaAssociado = clientesDoCaso.some(c => c.id === cliente.id);
+                      
+                      return (
+                        <div
+                          key={cliente.id}
+                          className={`p-2 rounded cursor-pointer ${
+                            clienteSelecionado?.id === cliente.id 
+                              ? 'bg-green-100' 
+                              : jaAssociado 
+                                ? 'bg-gray-100 cursor-not-allowed' 
+                                : 'hover:bg-green-100'
+                          }`}
+                          onClick={!jaAssociado ? () => setClienteSelecionado(cliente) : undefined}
+                        >
+                          <div className="font-medium">
+                            {cliente.nome} 
+                            {jaAssociado && <span className="text-xs text-gray-500 ml-2">(já associado)</span>}
+                          </div>
+                          <div className="text-xs text-gray-500">{cliente.email} ({cliente.telefone})</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <X.Button 
+                      onClick={handleAdicionarCliente}
+                      disabled={!clienteSelecionado || isLoading}
                     >
                       {isLoading ? <LoadingSpinner /> : "Confirmar"}
                     </X.Button>

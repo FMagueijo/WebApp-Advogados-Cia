@@ -18,7 +18,11 @@ export async function fetchCasoProfile(casoId: number): Promise<CasoProfile | nu
       select: {
         id: true,
         processo: true,
-        estado: true,
+        estado: {
+          select: {
+            nome_estado: true
+          }
+        },
         resumo: true,
         descricao: true,
       }
@@ -98,7 +102,6 @@ export async function fetchColaboradoresDoCaso(casoId: number) {
     
     if (!caso) return [];
     
-    // Combina o criador do caso com os colaboradores adicionais, removendo duplicados
     const colaboradoresAdicionais = caso.colaboradores.map(c => c.user);
     const todosColaboradores = [caso.user, ...colaboradoresAdicionais];
     
@@ -107,6 +110,35 @@ export async function fetchColaboradoresDoCaso(casoId: number) {
     );
   } catch (error) {
     console.error("Erro ao buscar colaboradores do caso:", error);
+    throw error;
+  }
+}
+
+export async function fetchClientesDoCaso(casoId: number) {
+  try {
+    const caso = await prisma.caso.findUnique({
+      where: { id: casoId },
+      include: {
+        clientes: {
+          include: {
+            cliente: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                telefone: true
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!caso) return [];
+    
+    return caso.clientes.map(c => c.cliente);
+  } catch (error) {
+    console.error("Erro ao buscar clientes do caso:", error);
     throw error;
   }
 }
@@ -165,6 +197,23 @@ export async function listarColaboradores() {
   }
 }
 
+export async function listarClientes() {
+  try {
+    const clientes = await prisma.cliente.findMany({
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        telefone: true
+      }
+    });
+    return clientes;
+  } catch (error) {
+    console.error("Erro ao listar clientes:", error);
+    throw error;
+  }
+}
+
 export async function fetchRegistrosDoCaso(casoId: number, order: 'asc' | 'desc' = 'desc') {
   try {
     const registros = await prisma.registro.findMany({
@@ -218,6 +267,42 @@ export async function removerColaboradorDoCaso(casoId: number, colaboradorId: nu
     return true;
   } catch (error) {
     console.error('Erro ao remover colaborador:', error);
+    return false;
+  }
+}
+
+export async function adicionarClienteAoCaso(casoId: number, clienteId: number): Promise<boolean> {
+  try {
+    await prisma.clienteDoCaso.create({
+      data: {
+        cliente_id: clienteId,
+        caso_id: casoId
+      }
+    });
+    
+    revalidatePath(`/caso/${casoId}`);
+    return true;
+  } catch (error) {
+    console.error('Erro ao adicionar cliente:', error);
+    return false;
+  }
+}
+
+export async function removerClienteDoCaso(casoId: number, clienteId: number): Promise<boolean> {
+  try {
+    await prisma.clienteDoCaso.delete({
+      where: {
+        cliente_id_caso_id: {
+          cliente_id: clienteId,
+          caso_id: casoId
+        }
+      }
+    });
+    
+    revalidatePath(`/caso/${casoId}`);
+    return true;
+  } catch (error) {
+    console.error('Erro ao remover cliente:', error);
     return false;
   }
 }
