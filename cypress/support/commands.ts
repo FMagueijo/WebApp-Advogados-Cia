@@ -1,14 +1,12 @@
-describe('Testes de Login', () => {
-  beforeEach(() => {
-    cy.visit('/login')
-  })
+Cypress.Commands.add('login', () => {
+  cy.visit('/auth/login');
 
-  it('Deve fazer login com sucesso', () => {
-    cy.get('input[placeholder="Email"]').type('davidvieira51756@gmail.com')
-    cy.get('input[placeholder="Password"]').type('123joao')
-    cy.contains('button', 'Login').click()
+  const email = 'davidvieira51756@gmail.com';
+  const password = '123joao';
 
-    // Verifica se o redirecionamento foi para a homepage
-    cy.url().should('eq', 'http://localhost:3000/') // ou use `include` com `.should('include', '/')`
-  })
-})
+  cy.get('input[placeholder="Email"]').type(email);
+  cy.get('input[placeholder="Password"]').type(password);
+  cy.contains('button', 'Login').click();
+
+  cy.url().should('eq', 'http://localhost:3000/'); // Ajusta se tiveres outro domínio
+});
