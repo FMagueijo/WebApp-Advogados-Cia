@@ -4,14 +4,14 @@ import * as X from "../components/xcomponents";
 import { FunctionComponent } from "react";
 import { sys_users, UserRoles } from "@/types/roles";
 import { useEffect, useState } from "react";
-import { getCasosStats } from "./dashboard/actions";
-import { CasoCount, CasosStats } from "./dashboard/actions";
+import { getCasosStats, CasosStats, CasoCount } from "./dashboard/actions";
 import { getTotalColaboradores } from "./dashboard/actions";
 import { getTopColaborador } from "./dashboard/actions";
-import { TopCliente } from "./dashboard/actions";
-import { TopColaborador } from "./dashboard/actions";
+import { TopCliente, TopColaborador } from "./dashboard/actions";
 import { getTotalClientes } from "./dashboard/actions";
 import { getTopCliente } from "./dashboard/actions";
+import { getMaiorDivida, MaiorDivida as MaiorDividaType } from "./dashboard/actions";
+import { getFaturamentoStats, FaturamentoStats } from "./dashboard/actions";
 
 const Casos: FunctionComponent = () => {
   const [casosData, setCasosData] = useState<CasosStats | null>(null);
@@ -34,7 +34,6 @@ const Casos: FunctionComponent = () => {
     fetchData();
   }, []);
 
-  // Mapeia os nomes dos estados para as cores e labels
   const estadoConfig: Record<string, { color: string; label: string }> = {
     "Aberto": { color: "--open-color", label: "Aberto" },
     "Fechado": { color: "--error-color", label: "Fechados" },
@@ -91,7 +90,6 @@ const Casos: FunctionComponent = () => {
 };
 
 const AcoesRapidas: FunctionComponent = () => {
-
   const { data: session } = useSession();
   const role = session?.user.role;
 
@@ -100,7 +98,6 @@ const AcoesRapidas: FunctionComponent = () => {
     { link: "/criar-caso", roles: [2], label: "Criar Caso" },
     { link: "/criar-cliente", roles: [2], label: "Criar Cliente" },
     { link: "/criar-evento", roles: [2], label: "Criar Evento" },
-
   ].filter((acao) => acao.roles.includes(role as number) || acao.roles.length == 0);
 
   return (
@@ -108,7 +105,7 @@ const AcoesRapidas: FunctionComponent = () => {
       <p className="font-semibold">Ações Rápidas</p>
       <X.Divider></X.Divider>
       {acoes.map((acao) => (
-        <X.ButtonLink href={acao.link}>{acao.label}</X.ButtonLink>
+        <X.ButtonLink key={acao.link} href={acao.link}>{acao.label}</X.ButtonLink>
       ))}
     </X.Container>
   );
@@ -168,6 +165,7 @@ const ColaboradoresStats: FunctionComponent = () => {
     </X.Container>
   );
 };
+
 const TopCasos: FunctionComponent = () => {
   const [topColaborador, setTopColaborador] = useState<TopColaborador | null>(null);
   const [topCliente, setTopCliente] = useState<TopCliente | null>(null);
@@ -261,6 +259,7 @@ const Notificacoes: FunctionComponent = () => {
     </X.Container>
   );
 };
+
 const ClientesStats: FunctionComponent = () => {
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -316,62 +315,153 @@ const ClientesStats: FunctionComponent = () => {
   );
 };
 
+const FaturamentoStats: FunctionComponent = () => {
+  const [faturamentoData, setFaturamentoData] = useState<FaturamentoStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getFaturamentoStats();
+        setFaturamentoData(data);
+      } catch (err) {
+        setError("Erro ao carregar dados de faturamento");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <X.Container className="w-full">
+        <p className="font-semibold">Faturamento</p>
+        <X.Divider></X.Divider>
+        <X.DataField>Carregando...</X.DataField>
+      </X.Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <X.Container className="w-full">
+        <p className="font-semibold">Faturamento</p>
+        <X.Divider></X.Divider>
+        <X.DataField colorOverride="--error-color">{error}</X.DataField>
+      </X.Container>
+    );
+  }
+
+  return (
+    <X.Container className="w-full">
+      <p className="font-semibold">Faturamento</p>
+      <X.Divider></X.Divider>
+      <X.DataField colorOverride="--error-color">
+        <div className="flex flex-row gap-4 w-full items-center">
+          <div className="flex-1">A Receber</div>
+          <div className="flex-auto text-right">€ {faturamentoData?.valor_a_receber.toFixed(2) || '0.00'}</div>
+        </div>
+      </X.DataField>
+      <X.DataField colorOverride="--success-color">
+        <div className="flex flex-row gap-4 w-full items-center">
+          <div className="flex-1">Total Pago</div>
+          <div className="flex-auto text-right">€ {faturamentoData?.total_pago.toFixed(2) || '0.00'}</div>
+        </div>
+      </X.DataField>
+    </X.Container>
+  );
+};
+
+const MaiorDivida: FunctionComponent = () => {
+  const [maiorDivida, setMaiorDivida] = useState<MaiorDividaType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getMaiorDivida();
+        setMaiorDivida(data);
+      } catch (err) {
+        setError("Erro ao carregar dados da maior dívida");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <X.Container className="w-full">
+        <p className="font-semibold">Maior Dívida</p>
+        <X.Divider></X.Divider>
+        <X.DataField>Carregando...</X.DataField>
+      </X.Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <X.Container className="w-full">
+        <p className="font-semibold">Maior Dívida</p>
+        <X.Divider></X.Divider>
+        <X.DataField colorOverride="--error-color">{error}</X.DataField>
+      </X.Container>
+    );
+  }
+
+  if (!maiorDivida) {
+    return (
+      <X.Container className="w-full">
+        <p className="font-semibold">Maior Dívida</p>
+        <X.Divider></X.Divider>
+        <X.DataField>Nenhuma dívida pendente</X.DataField>
+      </X.Container>
+    );
+  }
+
+  return (
+    <X.Container className="w-full">
+      <p className="font-semibold">Maior Dívida</p>
+      <X.Divider></X.Divider>
+      <X.Link href={`/caso/${maiorDivida.caso_id}`}>
+        Caso [{maiorDivida.caso_id}]{maiorDivida.titulo_caso} 
+      </X.Link>
+      <X.DataField colorOverride="--error-color">
+        <div className="flex flex-row gap-4 w-full items-center">
+          <div className="flex-1">Valor em dívida</div>
+          <div className="flex-auto text-right">€ {maiorDivida.valor_divida.toFixed(2)}</div>
+        </div>
+      </X.DataField>
+    </X.Container>
+  );
+};
 
 export default function Home() {
-
   const { data: session } = useSession();
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 w-full gap-8">
-
       <div className="flex flex-col grow min-w-auto gap-8">
         <Casos />
       </div>
 
       <div className="flex flex-col grow min-w-auto gap-8">
         <ColaboradoresStats />
-
-        <div className="flex flex-col grow min-w-auto gap-8">
-          <ClientesStats />
-
-        </div>
-        <div className="flex flex-col grow min-w-auto gap-8">
-          <TopCasos />
-        </div>
-
-
-
+        <ClientesStats />
+        <TopCasos />
       </div>
 
       <div className="flex flex-col grow min-w-auto gap-8">
-
-        <X.Container className="w-full">
-          <p className="font-semibold">Faturamento</p>
-          <X.Divider></X.Divider>
-          <X.DataField colorOverride="--submit-color">
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-1">A Receber</div>
-              <div className="flex-auto text-right">€ 500</div>
-            </div>
-          </X.DataField>
-          <X.DataField colorOverride="--submit-color">
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-1">Total Pago</div>
-              <div className="flex-auto text-right">€ 34.5m</div>
-            </div>
-          </X.DataField>
-        </X.Container>
-
-        <X.Container className="w-full">
-          <p className="font-semibold">Maior Divida</p>
-          <X.Divider></X.Divider>
-          <X.Link>[23] Nuno Pinho</X.Link>
-          <X.DataField colorOverride="--submit-color">
-            <div className="flex flex-row gap-4 w-full items-center ">
-              <div className="flex-auto text-right">€ 500</div>
-            </div>
-          </X.DataField>
-        </X.Container>
+        <FaturamentoStats />
+        <MaiorDivida />
       </div>
 
       <div className="flex flex-col grow min-w-auto gap-8 row-start-1 lg:col-end-4 xl:col-end-5">
