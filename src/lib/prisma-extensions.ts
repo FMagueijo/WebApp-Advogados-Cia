@@ -1,4 +1,4 @@
-// lib/prisma.ts
+// lib/prisma-extensions.ts
 import { PrismaClient } from '@prisma/client';
 import { getCurrentUserId } from './context';
 
@@ -22,19 +22,16 @@ async function createNotification(
             },
         });
 
-        if (!(receptorIds == null || receptorIds.length == 0)) {     
-            // Criar registros para cada receptor
-            const notificacoesRecebidas = receptorIds.map(receptorId => ({
-                user_id: receptorId,
-                notificacao_id: notificacao.id,
-            }));
-            
-            await prisma.notificacaoRecebida.createMany({
-                data: notificacoesRecebidas,
-                skipDuplicates: true,
-            });
-        }
-        //senao e publica
+        // Criar registros para cada receptor
+        const notificacoesRecebidas = receptorIds.map(receptorId => ({
+            user_id: receptorId,
+            notificacao_id: notificacao.id,
+        }));
+
+        await prisma.notificacaoRecebida.createMany({
+            data: notificacoesRecebidas,
+            skipDuplicates: true,
+        });
 
         return notificacao;
     } catch (error) {
@@ -74,26 +71,35 @@ export const prisma = new PrismaClient().$extends({
         cliente: {
             async create({ args, query }) {
                 const result = await query(args);
-                const userId = await getCurrentUserId();
-                
-                if (!userId) {
-                    return result;
-                }
+                const userId = getCurrentUserId();
+                if (!userId) return result;
 
-                try {
-                    const receptores = await getAllUsersExcept(prisma, userId);
-                    
-                    await createNotification(
-                        prisma,
-                        'Novo Cliente Cadastrado',
-                        `Um novo cliente "${result.nome}" foi cadastrado no sistema.`,
-                        'SISTEMA',
-                        userId,
-                        receptores
-                    );
-                } catch (error) {
-                    console.error('❌ Error in notification process:', error);
-                }
+                const receptores = await getAllUsersExcept(prisma, userId);
+                await createNotification(
+                    prisma,
+                    'Novo Cliente Cadastrado',
+                    `Um novo cliente "${result.nome}" foi cadastrado no sistema.`,
+                    'SISTEMA',
+                    userId,
+                    receptores
+                );
+
+                return result;
+            },
+            async update({ args, query }) {
+                const result = await query(args);
+                const userId = getCurrentUserId();
+                if (!userId) return result;
+
+                const receptores = await getAllUsersExcept(prisma, userId);
+                await createNotification(
+                    prisma,
+                    'Cliente Atualizado',
+                    `As informações do cliente "${result.nome}" foram atualizadas.`,
+                    'SISTEMA',
+                    userId,
+                    receptores
+                );
 
                 return result;
             },
@@ -103,7 +109,7 @@ export const prisma = new PrismaClient().$extends({
         caso: {
             async create({ args, query }) {
                 const result = await query(args);
-                const userId = await getCurrentUserId();
+                const userId = getCurrentUserId();
                 if (!userId) return result;
 
                 // Buscar informações do cliente para a notificação
@@ -126,7 +132,7 @@ export const prisma = new PrismaClient().$extends({
             },
             async update({ args, query }) {
                 const result = await query(args);
-                const userId = await getCurrentUserId();
+                const userId = getCurrentUserId();
                 if (!userId) return result;
 
                 const casoCompleto = await prisma.caso.findUnique({
@@ -152,7 +158,7 @@ export const prisma = new PrismaClient().$extends({
         registro: {
             async create({ args, query }) {
                 const result = await query(args);
-                const userId = await getCurrentUserId();
+                const userId = getCurrentUserId();
                 if (!userId) return result;
 
                 // Buscar informações do caso e cliente
@@ -179,7 +185,7 @@ export const prisma = new PrismaClient().$extends({
             },
             async update({ args, query }) {
                 const result = await query(args);
-                const userId = await getCurrentUserId();
+                const userId = getCurrentUserId();
                 if (!userId) return result;
 
                 const registroCompleto = await prisma.registro.findUnique({
@@ -209,7 +215,7 @@ export const prisma = new PrismaClient().$extends({
         evento: {
             async create({ args, query }) {
                 const result = await query(args);
-                const userId = await getCurrentUserId();
+                const userId = getCurrentUserId();
                 if (!userId) return result;
 
                 // Determinar receptores baseado nos colaboradores do evento
@@ -241,7 +247,7 @@ export const prisma = new PrismaClient().$extends({
             },
             async update({ args, query }) {
                 const result = await query(args);
-                const userId = await getCurrentUserId();
+                const userId = getCurrentUserId();
                 if (!userId) return result;
 
                 // Obter colaboradores atuais do evento
@@ -270,7 +276,7 @@ export const prisma = new PrismaClient().$extends({
         divida: {
             async create({ args, query }) {
                 const result = await query(args);
-                const userId = await getCurrentUserId();
+                const userId = getCurrentUserId();
                 if (!userId) return result;
 
                 // Buscar informações do cliente e caso
@@ -296,7 +302,7 @@ export const prisma = new PrismaClient().$extends({
             },
             async update({ args, query }) {
                 const result = await query(args);
-                const userId = await getCurrentUserId();
+                const userId = getCurrentUserId();
                 if (!userId) return result;
 
                 const dividaCompleta = await prisma.divida.findUnique({
@@ -397,5 +403,3 @@ export async function getNotificacoesUsuario(
         take: limit,
     });
 }
-
-export default prisma;

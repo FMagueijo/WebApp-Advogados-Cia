@@ -1,5 +1,6 @@
 "use client"
 import { FilterData } from "@/types/types";
+import { Notificacao } from "@prisma/client";
 import React, { useState } from "react";
 import { useRef } from "react";
 import { useEffect } from "react";
@@ -310,10 +311,10 @@ const Link: React.FC<LinkProps> = ({ children, className = "", href = "", no_pad
     return (
         <a
             href={href}
-            className={`min-h-14 h-max min-w-max  content-center group flex items-center rounded-lg border-2 border-(--primary-color) no-underline font-semibold hover:bg-(--primary-color) gap-4 hover:text-(--secondary-color) ${no_padding ? "" : "p-4"
-                } ${className}`}
+            className={`min-h-14 min-w-max h-max content-center group flex items-center rounded-lg border-2 border-[var(--primary-color)] no-underline font-semibold hover:bg-[var(--primary-color)] gap-4 hover:text-[var(--secondary-color)] ${no_padding ? "" : "p-4"} ${className}`}
+            style={{ maxWidth: '100%' }} // Only effective if parent has constrained width
         >
-            <div className="flex-shrink-0 align-middle">
+            <div className="flex-1 break-all whitespace-normal overflow-hidden">
                 {children}
             </div>
             <button
@@ -321,11 +322,13 @@ const Link: React.FC<LinkProps> = ({ children, className = "", href = "", no_pad
                     e.preventDefault();
                     window.open(href, "_blank");
                 }}
-                className="align-middle ml-auto inline-flex group-hover:invert cursor-pointer hover:opacity-50"
-                aria-label="Open in new tab">
+                className="ml-auto inline-flex group-hover:invert cursor-pointer hover:opacity-50"
+                aria-label="Open in new tab"
+            >
                 <img src="/images/icons/open_in_new.svg" alt="Open link" className="w-4 h-4" />
             </button>
         </a>
+
     );
 };
 
@@ -1081,6 +1084,67 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate = new Date(), onDateCh
     );
 };
 
+interface NotificationProps extends BaseProps {
+    notificacao?: Notificacao;
+    lida?: boolean;
+}
+
+const Notification: React.FC<NotificationProps> = ({ notificacao = null, lida = false, className = "" }) => {
+    if (notificacao == null) return null;
+    
+    return (
+        <a
+            href={""}
+            className={`min-h-14 max-h-32 content-center group flex flex-col items-center rounded-lg border-2 border-[var(--primary-color)] no-underline font-semibold hover:bg-[var(--primary-color)] gap-2 hover:text-[var(--secondary-color)] p-4 overflow-hidden ${className}`}
+            style={{ maxWidth: '100%' }}
+        >
+            <div className="flex flex-row w-full items-center gap-2 ">
+                {!lida && (
+                    <span className="h-2 w-2 rounded-full bg-blue-500 aspect-square"></span>
+                )}
+                <div className="w-full truncate">
+                    {notificacao.titulo}
+                </div>
+                <div className="w-max min-w-max font-extralight">
+                    {timeAgo(notificacao.criado_em)}
+                </div>
+            </div>
+            <div className="w-full">
+                <p className="truncate w-full font-light">
+                    {notificacao.mensagem}
+                </p>
+            </div>
+        </a>
+
+
+
+    );
+};
+
+export function timeAgo(dateTime: Date): string {
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - dateTime.getTime()) / 1000);
+
+    const intervals = {
+        ano: { seconds: 31536000, singular: "ano", plural: "anos" },
+        mês: { seconds: 2592000, singular: "mês", plural: "meses" }, // "mês" → "meses" (plural)
+        semana: { seconds: 604800, singular: "semana", plural: "semanas" },
+        dia: { seconds: 86400, singular: "dia", plural: "dias" },
+        hora: { seconds: 3600, singular: "hora", plural: "horas" },
+        minuto: { seconds: 60, singular: "minuto", plural: "minutos" },
+        segundo: { seconds: 1, singular: "segundo", plural: "segundos" },
+    };
+
+    for (const [unit, data] of Object.entries(intervals)) {
+        const interval = Math.floor(seconds / data.seconds);
+        if (interval >= 1) {
+            return `${interval} ${interval === 1 ? data.singular : data.plural} atrás`;
+        }
+    }
+
+    return "agora mesmo";
+}
+
 interface PopupProps extends ChildProps {
     isOpen: boolean;
     onClose?: () => void;
@@ -1191,4 +1255,5 @@ export {
     FilterBox,
     Dados,
     SortBox,
+    Notification
 };

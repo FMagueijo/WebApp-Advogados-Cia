@@ -1,8 +1,11 @@
 "use client"
 import { useSession } from "next-auth/react";
 import * as X from "../components/xcomponents";
-import { FunctionComponent } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
 import { sys_users, UserRoles } from "@/types/roles";
+import { fetchNotificacoes } from "./(notificacoes)/notificacoes/actions";
+import { NotificacaoRecebida } from "@prisma/client";
+import SimpleSkeleton from "@/components/loading/simple_skeleton";
 
 const Casos: FunctionComponent = () => {
   return (
@@ -44,10 +47,10 @@ const AcoesRapidas: FunctionComponent = () => {
   const role = session?.user.role;
 
   const acoes = [
-    { link: "/criar-colaborador", roles: [1], label:"Criar Colaborador" },
-    { link: "/criar-caso", roles: [2], label:"Criar Caso" },
-    { link: "/criar-cliente", roles: [2], label:"Criar Cliente" },
-    { link: "/criar-evento", roles: [2], label:"Criar Evento" },
+    { link: "/criar-colaborador", roles: [1], label: "Criar Colaborador" },
+    { link: "/criar-caso", roles: [2], label: "Criar Caso" },
+    { link: "/criar-cliente", roles: [2], label: "Criar Cliente" },
+    { link: "/criar-evento", roles: [2], label: "Criar Evento" },
 
   ].filter((acao) => acao.roles.includes(role as number) || acao.roles.length == 0);
 
@@ -62,22 +65,42 @@ const AcoesRapidas: FunctionComponent = () => {
   );
 }
 const Notificacoes: FunctionComponent = () => {
+
+  const { data: session } = useSession();
+  const [notificacoes, setNotificacoes] = useState<any[]>([]);
+
+  const loadData = async () => {
+    try {
+      const data = await fetchNotificacoes(Number(session?.user.id), 3);
+      setNotificacoes(data);
+    } catch (err) {
+      console.error("Erro ao carregar notificacoes:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    loadData();
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [session?.user?.id]);
+
+  if (notificacoes == undefined) return <SimpleSkeleton></SimpleSkeleton>;
+
   return (
     <X.Container className="w-full">
       <X.HeaderLink no_padding href="/notificacoes">Notificações</X.HeaderLink>
       <X.Divider></X.Divider>
-      <X.Link> Novo Caso<br></br>
-        <small style={{ color: "#999" }}>
-          Novo caso criado para...
-        </small></X.Link>
-      <X.Link> Caso Encerrado <br></br>
-        <small style={{ color: "#999" }}>
-          O caso #43 foi fechado...
-        </small></X.Link>
-
+      {notificacoes.map((noti) => (
+        <X.Notification key={noti.id} className="w-full" notificacao={noti.notificacao} lida={noti.lida} >
+        </X.Notification>
+      ))}
     </X.Container>
   );
 }
+
 export default function Home() {
 
   const { data: session } = useSession();

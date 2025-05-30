@@ -30,11 +30,14 @@ model User {
   registros      Registro[]
   casos          Caso[]
 
-  Evento  Evento[]
-  Eventos Evento[] @relation("EventoColaboradores")
+  Evento                 Evento[]
+  Eventos                Evento[]              @relation("EventoColaboradores")
+  HorasTrabalhadas       HorasTrabalhadas[]
+  notificacoes_recebidas NotificacaoRecebida[]
+  notificacoes_criadas   Notificacao[]         @relation("NotificacaoCriador")
+  Notificacao Notificacao[]
 
   @@map("utilizador")
-  HorasTrabalhadas HorasTrabalhadas[]
 }
 
 model Cliente {
@@ -58,16 +61,17 @@ model TokenPass {
 }
 
 model Registro {
-  id        Int      @id @default(autoincrement())
-  resumo    String   @db.VarChar(255)
-  descricao String?  @db.Text
-  tipo      String   @db.VarChar(50)
-  criado_em DateTime @default(now())
-  user_id   Int
-  caso_id   Int
-  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  caso      Caso     @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
- documentos  Documento[] // Adicione esta linha para a relação inversa
+  id         Int         @id @default(autoincrement())
+  resumo     String      @db.VarChar(255)
+  descricao  String?     @db.Text
+  tipo       String      @db.VarChar(50)
+  criado_em  DateTime    @default(now())
+  user_id    Int
+  caso_id    Int
+  user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  caso       Caso        @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  documentos Documento[] // Adicione esta linha para a relação inversa
+
   @@map("registro")
 }
 
@@ -80,13 +84,13 @@ model CasoEstado {
 }
 
 model HorasTrabalhadas {
-  id          Int      @id @default(autoincrement())
-  horas       Float    @db.Float
-  data        DateTime @default(now())
-  caso_id     Int
-  caso        Caso     @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  user_id     Int
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id      Int      @id @default(autoincrement())
+  horas   Float    @db.Float
+  data    DateTime @default(now())
+  caso_id Int
+  caso    Caso     @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id Int
+  user    User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@map("horas_trabalhadas")
 }
@@ -107,21 +111,20 @@ model Caso {
   estado_id Int        @default(1)
   estado    CasoEstado @relation(fields: [estado_id], references: [id])
 
-  registros Registro[]
-  Evento    Evento[]   @relation("EventoCasos")
-  dividas   Divida[]
+  registros        Registro[]
+  Evento           Evento[]           @relation("EventoCasos")
+  dividas          Divida[]
+  HorasTrabalhadas HorasTrabalhadas[]
 
   @@map("caso")
-  HorasTrabalhadas HorasTrabalhadas[]
 }
-
 
 model Documento {
   id          Int      @id @default(autoincrement())
   nome        String   @db.VarChar(255)
   caminho     String   @db.VarChar(512) // URL do Cloudinary
-  tipo        String   @db.VarChar(50)  // Tipo MIME do arquivo
-  tamanho     Int                      // Tamanho em bytes
+  tipo        String   @db.VarChar(50) // Tipo MIME do arquivo
+  tamanho     Int // Tamanho em bytes
   public_id   String?  @db.VarChar(255) // ID público do Cloudinary
   criado_em   DateTime @default(now())
   registro_id Int
@@ -139,7 +142,7 @@ model Evento {
   criado_em     DateTime   @default(now())
   atualizado_em DateTime   @updatedAt
 
-  local          String? @db.VarChar(255)
+  local String? @db.VarChar(255)
 
   // Relacionamentos
   user_id Int
@@ -158,16 +161,57 @@ enum TipoEvento {
 
 model Divida {
   id            Int      @id @default(autoincrement())
-  valor         Float    @db.Float @default(0)
+  valor         Float    @default(0) @db.Float
   criado_em     DateTime @default(now())
   atualizado_em DateTime @updatedAt
   pago          Boolean  @default(false)
-  
-  cliente_id    Int
-  cliente       Cliente  @relation(fields: [cliente_id], references: [id])
-  
-  caso_id       Int
-  caso          Caso     @relation(fields: [caso_id], references: [id])
-  
+
+  cliente_id Int
+  cliente    Cliente @relation(fields: [cliente_id], references: [id])
+
+  caso_id Int
+  caso    Caso @relation(fields: [caso_id], references: [id])
+
   @@map("divida")
+}
+
+model Notificacao {
+  id        Int             @id @default(autoincrement())
+  titulo    String          @db.VarChar(255)
+  mensagem  String          @db.Text
+  tipo      TipoNotificacao @default(GERAL)
+  criado_em DateTime        @default(now())
+
+  criador_id Int?
+  criador    User? @relation("NotificacaoCriador", fields: [criador_id], references: [id])
+
+  receptores NotificacaoRecebida[]
+  User       User?                 @relation(fields: [userId], references: [id])
+  userId     Int?
+
+  @@map("notificacao")
+}
+
+model NotificacaoRecebida {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  notificacao_id Int
+  lida           Boolean  @default(false)
+  recebida_em    DateTime @default(now())
+
+  user        User        @relation(fields: [user_id], references: [id])
+  notificacao Notificacao @relation(fields: [notificacao_id], references: [id])
+
+  @@unique([user_id, notificacao_id])
+  @@map("notificacao_recebida")
+}
+
+enum TipoNotificacao {
+  GERAL
+  SISTEMA
+  EVENTO
+  PRAZO
+  ALERTA
+  FINANCEIRO
+  USUARIO
 }
