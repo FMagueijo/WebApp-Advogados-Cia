@@ -15,7 +15,7 @@ const utilLinks = [
 
 export default function ListarColab() {
 
-  
+
 
   const [colaboradores, setColaboradores] = useState<any[]>([]);
 
@@ -46,7 +46,7 @@ export default function ListarColab() {
         loadData(); // Reload data after toggling
       });
   };
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       loadData();
@@ -54,7 +54,7 @@ export default function ListarColab() {
     return () => clearInterval(interval);
   }, [filters, order]);
 
-  if(colaboradores == undefined) return <SimpleSkeleton />
+  if (colaboradores == undefined) return <SimpleSkeleton />
 
 
   return (
@@ -72,7 +72,7 @@ export default function ListarColab() {
               <img
                 src="/images/icons/sync.svg"
                 alt="Refresh"
-                className={`w-6 h-6  group-hover:animate-spin ${status === "loading" ? "animate-spin" : ""}`} 
+                className={`w-6 h-6  group-hover:animate-spin ${status === "loading" ? "animate-spin" : ""}`}
               />
             </X.Button>
             <X.SortBox
@@ -92,7 +92,7 @@ export default function ListarColab() {
               }}
               label="Filtros"
             />
-            
+
           </div>
           <X.Divider></X.Divider>
           {status === "loading" ? <SimpleSkeleton /> :

@@ -1,10 +1,11 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import * as X from "@/components/xcomponents";
 import { signOut, useSession } from "next-auth/react";
 import Skeleton from "./skeleton";
+import { hasNotification } from "./actions";
 
 const ROLES = {
     ADMIN: 1,
@@ -44,12 +45,10 @@ const utilLinks: UtilLink[] = [
     },
 ];
 
-
-
 const NO_NAV_BAR_PAGES: (string | RegExp)[] = [
     "/_error",
     "/login",
-    /^\/definir-password\/.+$/, // Matches `/definir-password/[anything]`
+    /^\/definir-password\/.+$/,
     "/logout",
     "/goodbye",
     "/forbidden",
@@ -61,13 +60,18 @@ const hasRequiredRole = (userRole: number | undefined, requiredRoles?: number[])
     return requiredRoles.includes(userRole);
 };
 
-
-
 const BurgerNav: React.FC = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [hasNotif, setHasNotif] = useState(false);
     const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
     const pathname = usePathname();
     const { data: session, status } = useSession();
+
+    useEffect(() => {
+        if (session?.user?.id) {
+            hasNotification(session.user.id).then(result => setHasNotif(result));
+        }
+    }, [session]);
 
     if (status === "loading") return null;
 
@@ -75,7 +79,15 @@ const BurgerNav: React.FC = () => {
         hasRequiredRole(session?.user?.role, link.roles)
     );
 
-    const filteredUtilLinks = utilLinks.filter(link =>
+    const filteredUtilLinks = utilLinks.map(link => {
+        if (link.href === "/notificacoes") {
+            return {
+                ...link,
+                ico: `/images/icons/${hasNotif ? "b_" : ""}notification.svg`
+            };
+        }
+        return link;
+    }).filter(link =>
         hasRequiredRole(session?.user?.role, link.roles)
     );
 
@@ -152,14 +164,21 @@ interface NavProps {
 const Navbar: React.FC<NavProps> = ({ className = "" }) => {
     const pathname = usePathname();
     const { data: session, status } = useSession();
-    
+    const [hasNotif, setHasNotif] = useState(false);
+
+    useEffect(() => {
+        if (session?.user?.id) {
+            hasNotification(session.user.id).then(result => setHasNotif(result));
+        }
+    }, [session]);
+
     if (NO_NAV_BAR_PAGES.includes(pathname)) return null;
-    
+
     const shouldHideNavbar = NO_NAV_BAR_PAGES.some((page) => {
         if (typeof page === "string") {
-            return pathname === page; // Exact match
+            return pathname === page;
         } else if (page instanceof RegExp) {
-            return page.test(pathname); // Regex test
+            return page.test(pathname);
         }
         return false;
     });
@@ -172,7 +191,15 @@ const Navbar: React.FC<NavProps> = ({ className = "" }) => {
         hasRequiredRole(session?.user?.role, link.roles)
     );
 
-    const filteredUtilLinks = utilLinks.filter(link =>
+    const filteredUtilLinks = utilLinks.map(link => {
+        if (link.href === "/notificacoes") {
+            return {
+                ...link,
+                ico: `/images/icons/${hasNotif ? "b_" : ""}notification.svg`
+            };
+        }
+        return link;
+    }).filter(link =>
         hasRequiredRole(session?.user?.role, link.roles)
     );
 

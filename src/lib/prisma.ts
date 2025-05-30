@@ -34,7 +34,6 @@ async function createNotification(
                 skipDuplicates: true,
             });
         }
-        //senao e publica
 
         return notificacao;
     } catch (error) {
@@ -43,14 +42,21 @@ async function createNotification(
 }
 
 // Função para obter todos os usuários (exceto o criador)
-async function getAllUsersExcept(prisma: any, excludeUserId: number): Promise<number[]> {
+async function getAllUsers(prisma: any): Promise<number[]> {
     const users = await prisma.user.findMany({
         where: {
-            id: { not: excludeUserId },
             esta_bloqueado: false,
+            NOT: {
+                role: {
+                    nome_role: {
+                        in: ['admin'],
+                    },
+                },
+            },
         },
         select: { id: true },
     });
+      
     return users.map((user: any) => user.id);
 }
 
@@ -81,7 +87,7 @@ export const prisma = new PrismaClient().$extends({
                 }
 
                 try {
-                    const receptores = await getAllUsersExcept(prisma, userId);
+                    const receptores = await getAllUsers(prisma);
                     
                     await createNotification(
                         prisma,
@@ -112,7 +118,7 @@ export const prisma = new PrismaClient().$extends({
                     include: { cliente: true },
                 });
 
-                const receptores = await getAllUsersExcept(prisma, userId);
+                const receptores = await getAllUsers(prisma);
                 await createNotification(
                     prisma,
                     'Novo Caso Criado',
@@ -134,7 +140,7 @@ export const prisma = new PrismaClient().$extends({
                     include: { cliente: true, estado: true },
                 });
 
-                const receptores = await getAllUsersExcept(prisma, userId);
+                const receptores = await getAllUsers(prisma);
                 await createNotification(
                     prisma,
                     'Caso Atualizado',
@@ -165,7 +171,7 @@ export const prisma = new PrismaClient().$extends({
                     },
                 });
 
-                const receptores = await getAllUsersExcept(prisma, userId);
+                const receptores = await getAllUsers(prisma);
                 await createNotification(
                     prisma,
                     'Novo Registro Adicionado',
@@ -191,7 +197,7 @@ export const prisma = new PrismaClient().$extends({
                     },
                 });
 
-                const receptores = await getAllUsersExcept(prisma, userId);
+                const receptores = await getAllUsers(prisma);
                 await createNotification(
                     prisma,
                     'Registro Atualizado',
@@ -214,17 +220,7 @@ export const prisma = new PrismaClient().$extends({
 
                 // Determinar receptores baseado nos colaboradores do evento
                 let receptores: number[] = [];
-
-                if (args.data.users && args.data.users.connect) {
-                    // Se há colaboradores específicos, notificar apenas eles
-                    const colaboradorIds = Array.isArray(args.data.users.connect)
-                        ? args.data.users.connect.map((user: any) => user.id)
-                        : [args.data.users.connect.id];
-                    receptores = colaboradorIds.filter(id => id !== userId);
-                } else {
-                    // Se não há colaboradores específicos, notificar todos os usuários
-                    receptores = await getAllUsersExcept(prisma, userId);
-                }
+                receptores = await getAllUsers(prisma);
 
                 const tipoNotificacao = result.tipo === 'PRAZO_PROCESSUAL' ? 'PRAZO' : 'EVENTO';
 
@@ -249,7 +245,7 @@ export const prisma = new PrismaClient().$extends({
                 const receptores = colaboradores.filter(id => id !== userId);
 
                 // Se não há colaboradores, notificar todos
-                const receptoresFinais = receptores.length > 0 ? receptores : await getAllUsersExcept(prisma, userId);
+                const receptoresFinais = await getAllUsers(prisma);
 
                 const tipoNotificacao = result.tipo === 'PRAZO_PROCESSUAL' ? 'PRAZO' : 'EVENTO';
 
@@ -282,7 +278,7 @@ export const prisma = new PrismaClient().$extends({
                     },
                 });
 
-                const receptores = await getAllUsersExcept(prisma, userId);
+                const receptores = await getAllUsers(prisma);
                 await createNotification(
                     prisma,
                     'Nova Dívida Registrada',
@@ -310,7 +306,7 @@ export const prisma = new PrismaClient().$extends({
                 const statusTexto = result.pago ? 'foi marcada como paga' : 'foi atualizada';
                 const tipoNotificacao = result.pago ? 'FINANCEIRO' : 'SISTEMA';
 
-                const receptores = await getAllUsersExcept(prisma, userId);
+                const receptores = await getAllUsers(prisma);
                 await createNotification(
                     prisma,
                     result.pago ? 'Dívida Paga' : 'Dívida Atualizada',

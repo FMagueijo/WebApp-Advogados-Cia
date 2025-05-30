@@ -11,6 +11,7 @@ export async function fetchNotificacoes(
         // Primeiro buscamos os casos
         const nots = await prisma.notificacaoRecebida.findMany({
             select: {
+                id: true,
                 lida: true,
                 notificacao: true
             },

@@ -1087,16 +1087,21 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate = new Date(), onDateCh
 interface NotificationProps extends BaseProps {
     notificacao?: Notificacao;
     lida?: boolean;
+    onClick?: () => void;
 }
 
-const Notification: React.FC<NotificationProps> = ({ notificacao = null, lida = false, className = "" }) => {
+const Notification: React.FC<NotificationProps> = ({ notificacao = null, lida = false, className = "", onClick = null }) => {
     if (notificacao == null) return null;
-    
+
     return (
         <a
             href={""}
             className={`min-h-14 max-h-32 content-center group flex flex-col items-center rounded-lg border-2 border-[var(--primary-color)] no-underline font-semibold hover:bg-[var(--primary-color)] gap-2 hover:text-[var(--secondary-color)] p-4 overflow-hidden ${className}`}
             style={{ maxWidth: '100%' }}
+            onClick={onClick ? (e) => {
+                e.preventDefault();
+                onClick();
+            } : undefined}
         >
             <div className="flex flex-row w-full items-center gap-2 ">
                 {!lida && (

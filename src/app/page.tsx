@@ -6,6 +6,7 @@ import { sys_users, UserRoles } from "@/types/roles";
 import { fetchNotificacoes } from "./(notificacoes)/notificacoes/actions";
 import { NotificacaoRecebida } from "@prisma/client";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
+import NotificacaoDetalhe from "./(notificacoes)/(notificacao)/notificacao";
 
 const Casos: FunctionComponent = () => {
   return (
@@ -68,6 +69,7 @@ const Notificacoes: FunctionComponent = () => {
 
   const { data: session } = useSession();
   const [notificacoes, setNotificacoes] = useState<any[]>([]);
+  const [currentNot, setNotif] = useState<any>(null);
 
   const loadData = async () => {
     try {
@@ -89,17 +91,22 @@ const Notificacoes: FunctionComponent = () => {
 
   if (notificacoes == undefined) return <SimpleSkeleton></SimpleSkeleton>;
 
+  
   return (
     <X.Container className="w-full">
       <X.HeaderLink no_padding href="/notificacoes">Notificações</X.HeaderLink>
       <X.Divider></X.Divider>
       {notificacoes.map((noti) => (
-        <X.Notification key={noti.id} className="w-full" notificacao={noti.notificacao} lida={noti.lida} >
+        <X.Notification key={noti.id} className="w-full" notificacao={noti.notificacao} lida={noti.lida} onClick={() => { setNotif(noti); }} >
         </X.Notification>
       ))}
+      <X.Popup isOpen={currentNot} title="Notificação" onClose={() => { setNotif(null); loadData(); }}>
+        <NotificacaoDetalhe notif={currentNot} ></NotificacaoDetalhe>
+      </X.Popup>
     </X.Container>
   );
 }
+
 
 export default function Home() {
 
