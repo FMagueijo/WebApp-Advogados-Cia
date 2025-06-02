@@ -1,9 +1,10 @@
 "use client";
 
 import * as X from "@/components/xcomponents";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchCasos } from "./actions";
 import RegistrarHorasForm from "../caso/registar-horas/page";
+import { useSession } from "next-auth/react";
 
 export default function ListarCasos() {
   const [registarHoras, setRegistarHoras] = useState(false);
@@ -11,19 +12,34 @@ export default function ListarCasos() {
   const [casos, setCasos] = useState<any[]>([]);
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [order, setOrder] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
+  const { data: session, status } = useSession();
+  
+  const user = session?.user;
+
+  const loadData = useCallback(async () => {
     try {
       const data = await fetchCasos(filters, order);
       setCasos(data);
     } catch (err) {
       console.error("Erro ao carregar casos:", err);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [filters, order]);
 
   useEffect(() => {
+    // Initial load
     loadData();
-  }, [filters, order]);
+
+    // Set up interval for auto-refresh
+    const intervalId = setInterval(loadData, 30000); // 30 seconds
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [loadData]);
+
 
   return (
     <div className="w-full">
@@ -33,19 +49,33 @@ export default function ListarCasos() {
             <p className="text-lg font-semibold">Lista Casos</p>
           </div>
           <X.Divider />
-          <X.ButtonLink className="w-max" href="/criar-caso">Criar Caso</X.ButtonLink>
-
-          {/* Filtros e Ordenação */}
-          <div className="flex gap-4 flex-wrap">
-            <X.Dropdown
-              label="Filtrar Por Estado"
-              options={["Aberto", "Fechado", "Terminado"]}
-              onSelect={(estado) => setFilters({ estado })}
-            />
+          {user?.role == 2 && <X.ButtonLink className="w-max" href="/criar-caso">Criar Caso</X.ButtonLink>}
+          <div className="flex flex-row gap-4 flex-wrap w-full overflow-x-auto">
+            <X.Button onClick={loadData} className="w-max group">
+              <img
+                src="/images/icons/sync.svg"
+                alt="Refresh"
+                className="w-6 h-6 group-hover:animate-spin"
+              />
+            </X.Button>
             <X.SortBox
-              label="Ordenar Por"
-              options={["ID", "Processo", "Assunto"]}
-              onSortChange={(campo, inverso) => setOrder({ [campo]: inverso })}
+              label="Ordenar"
+              options={["ID", "Processo", "Resumo", "Estado"]}
+              onSortChange={(selectedOption, isInverted) => {
+                setTimeout(() => setOrder({ [selectedOption]: isInverted }), 0);
+              }}
+            />
+            <X.FilterBox
+              filters={[
+                { label: "ID", value: "ID", type: "number" },
+                { label: "Processo", value: "Processo", type: "text" },
+                { label: "Resumo", value: "Resumo", type: "text" },
+                { label: "Estado", value: "Estado", type: "combobox", options: ["Aberto", "Fechado", "Terminado"] },
+              ]}
+              onFilterChange={(newFilters) => {
+                setTimeout(() => setFilters(newFilters), 0);
+              }}
+              label="Filtros"
             />
           </div>
           <X.Divider />
@@ -113,7 +143,7 @@ export default function ListarCasos() {
                 ))}
               </tbody>
             </table>
-            <X.Popup isOpen={registarHoras}>
+            <X.Popup title="Registar Horas" isOpen={registarHoras} onClose={() => setRegistarHoras(false)}>
               <RegistrarHorasForm
                 casoId={casoAtual}
                 onClose={() => setRegistarHoras(false)}

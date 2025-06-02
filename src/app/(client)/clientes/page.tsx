@@ -1,9 +1,10 @@
 "use client";
 
 import * as X from "@/components/xcomponents";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { fetchClientes } from "./action";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
+import { useSession } from "next-auth/react";
 
 export default function ListarClientes() {
   const [clientes, setClientes] = useState<any[]>([]);
@@ -11,7 +12,12 @@ export default function ListarClientes() {
   const [order, setOrder] = useState<Record<string, boolean>>({ "id": false });
   const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
+  const { data: session, status } = useSession();
+  
+  const user = session?.user;
+  console.log("User:", user);
+
+  const loadData = useCallback(async () => {
     try {
       const data = await fetchClientes(filters, order);
       setClientes(data);
@@ -20,11 +26,18 @@ export default function ListarClientes() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, order]);
 
   useEffect(() => {
+    // Initial load
     loadData();
-  }, [filters, order]);
+
+    // Set up interval for auto-refresh
+    const intervalId = setInterval(loadData, 30000); // 30 seconds
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [loadData]);
 
   if (loading) return <SimpleSkeleton />;
 
@@ -36,9 +49,7 @@ export default function ListarClientes() {
             <p className="text-lg font-semibold">Listar Clientes</p>
           </div>
           <X.Divider />
-          <X.ButtonLink className="w-max" href="/criar-cliente">
-            Criar Cliente
-          </X.ButtonLink>
+          {user?.role == 2 && <X.ButtonLink className="w-max" href="/criar-cliente"> Criar Cliente</X.ButtonLink>}
 
           <div className="flex flex-row gap-4 flex-wrap w-full overflow-x-auto">
             <X.Button onClick={loadData} className="w-max group">
@@ -67,7 +78,7 @@ export default function ListarClientes() {
               label="Filtros"
             />
           </div>
-          <X.Divider/>
+          <X.Divider />
 
           <div className="overflow-x-auto w-full">
             {clientes.length <= 0 ? (
@@ -85,43 +96,43 @@ export default function ListarClientes() {
                     <th className="w-[100px] px-2">{" "}</th>
                   </tr>
                 </thead>
-<tbody>
-  {clientes.map((cliente) => (
-    <tr key={cliente.id} className="border-b border-[var(--secondary-color)]">
-      <td className="px-2">
-        <X.Link className="group inline-flex" href={`/cliente/${cliente.id}`}>
-          <img className="w-6 h-6 group-hover:invert" src="/images/icons/profile.svg" alt="Profile" />
-        </X.Link>
-      </td>
-      <td className="px-2 whitespace-nowrap">
-        <X.DataField>{cliente.id}</X.DataField>
-      </td>
-      <td className="px-2">
-        <X.DataField className="truncate">{cliente.nome}</X.DataField>
-      </td>
-      <td className="px-2">
-        <X.Link href={`mailto:${cliente.email}`} className="truncate block">
-          {cliente.email}
-        </X.Link>
-      </td>
-      <td className="px-2 whitespace-nowrap">
-        <X.DataField>{cliente.casosCount}</X.DataField>
-      </td>
-      <td className="px-2 whitespace-nowrap">
-        <X.DataField colorOverride={cliente.dividaTotal > 0 ? "--error-color" : "--submit-color"}>
-          € {cliente.dividaTotal.toFixed(2)}
-        </X.DataField>
-      </td>
-      <td className="px-2 whitespace-nowrap">
-        <X.Link className="group" href={`/criar-caso?clienteId=${cliente.id}`}>
-          <span className="text-sm text-[var(--primary-color)] group-hover:text-[var(--secondary-color)] transition-colors">
-            Novo Caso
-          </span>
-        </X.Link>
-      </td>
-    </tr>
-  ))}
-</tbody>
+                <tbody>
+                  {clientes.map((cliente) => (
+                    <tr key={cliente.id} className="border-b border-[var(--secondary-color)]">
+                      <td className="px-2">
+                        <X.Link className="group inline-flex" href={`/cliente/${cliente.id}`}>
+                          <img className="w-6 h-6 group-hover:invert" src="/images/icons/profile.svg" alt="Profile" />
+                        </X.Link>
+                      </td>
+                      <td className="px-2 whitespace-nowrap">
+                        <X.DataField>{cliente.id}</X.DataField>
+                      </td>
+                      <td className="px-2">
+                        <X.DataField className="truncate">{cliente.nome}</X.DataField>
+                      </td>
+                      <td className="px-2">
+                        <X.Link href={`mailto:${cliente.email}`} className="truncate block">
+                          {cliente.email}
+                        </X.Link>
+                      </td>
+                      <td className="px-2 whitespace-nowrap">
+                        <X.DataField>{cliente.casosCount}</X.DataField>
+                      </td>
+                      <td className="px-2 whitespace-nowrap">
+                        <X.DataField colorOverride={cliente.dividaTotal > 0 ? "--error-color" : "--submit-color"}>
+                          € {cliente.dividaTotal.toFixed(2)}
+                        </X.DataField>
+                      </td>
+                      <td className="px-2 whitespace-nowrap">
+                        <X.Link className="group" href={`/criar-caso?clienteId=${cliente.id}`}>
+                          <span className="text-sm text-[var(--primary-color)] group-hover:text-[var(--secondary-color)] transition-colors">
+                            Novo Caso
+                          </span>
+                        </X.Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             )}
           </div>

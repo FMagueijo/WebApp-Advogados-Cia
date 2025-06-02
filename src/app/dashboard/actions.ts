@@ -26,8 +26,7 @@ export type TopCliente = {
 
 export type MaiorDivida = {
   caso_id: number;
-  cliente_id: number;
-  cliente_nome: string;
+  clientes: any;
   valor_divida: number;
   titulo_caso: string;
 };
@@ -118,16 +117,31 @@ export async function getTopColaborador(): Promise<TopColaborador> {
 
 export async function getTopCliente(): Promise<TopCliente> {
   try {
-    const result = await prisma.$queryRaw`
-      SELECT cl.id as cliente_id, cl.nome, COUNT(c.id) as count
-      FROM cliente cl
-      JOIN caso c ON cl.id = c.cliente_id
-      GROUP BY cl.id, cl.nome
-      ORDER BY count DESC
-      LIMIT 1
-    `;
+
+    const res = await prisma.cliente.findFirst({
+      select: {
+        id: true,
+        nome: true,
+        _count: {
+          select: {
+            casos: true
+          }
+        }
+      },
+      orderBy: {
+        casos: {
+          _count: 'desc'
+        }
+      },
+    });
     
-    return result[0] || { cliente_id: 0, nome: "Nenhum", count: 0 };
+    const topCliente: TopCliente = {
+      cliente_id: res?.id || 0, // Provide a default value if result is null
+      nome: res?.nome || '',    // Provide a default value if result is null
+      count: res?._count.casos || 0
+    };
+
+    return topCliente || { cliente_id: 0, nome: "Nenhum", count: 0 };
   } catch (error) {
     console.error("Erro ao buscar top cliente:", error);
     throw new Error("Erro ao buscar top cliente");
@@ -138,7 +152,7 @@ export async function getMaiorDivida(): Promise<MaiorDivida | null> {
   try {
     const casosComDividas = await prisma.caso.findMany({
       include: {
-        cliente: true,
+        clientes: true,
         dividas: {
           where: {
             pago: false
@@ -149,9 +163,8 @@ export async function getMaiorDivida(): Promise<MaiorDivida | null> {
 
     const casosComTotalDivida = casosComDividas.map(caso => ({
       caso_id: caso.id,
-      cliente_id: caso.cliente.id,
-      cliente_nome: caso.cliente.nome,
-      titulo_caso: caso.titulo,
+      clientes: caso.clientes,
+      titulo_caso: caso.resumo,
       valor_divida: caso.dividas.reduce((sum, divida) => sum + divida.valor, 0)
     })).filter(caso => caso.valor_divida > 0);
 

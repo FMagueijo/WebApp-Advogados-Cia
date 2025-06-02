@@ -33,12 +33,13 @@ export async function fetchCasos(
   try {
     const where: Prisma.CasoWhereInput = {};
 
-    if (filters.estado) {
-      where.estado = {
-        nome_estado: filters.estado
-      };
-    }
+    console.log("Fetching casos with filters:", filters);
+    if (filters.ID) where.id = Number(filters.ID);
+    if (filters.Processo) where.processo = { contains: filters.Processo };
+    if (filters.Resumo) where.resumo = { contains: filters.Resumo };
+    if (filters.Estado) where.estado = { nome_estado: filters.Estado };
 
+    console.log("Where clause:", where);
     const orderBy: Prisma.CasoOrderByWithRelationInput[] = [];
     for (const [key, value] of Object.entries(order)) {
       const prismaKey = {

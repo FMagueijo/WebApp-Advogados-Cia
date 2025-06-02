@@ -138,7 +138,7 @@ export default function ListarColab() {
                             </X.Link>
                           </td>
                           <td className="px-2 whitespace-nowrap">
-                            <X.DataField>{"0"}</X.DataField>
+                            <X.DataField>{colab._count.casos}</X.DataField>
                           </td>
                           {user?.role == 1 &&
                             <>

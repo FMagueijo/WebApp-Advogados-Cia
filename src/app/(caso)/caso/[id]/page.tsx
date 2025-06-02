@@ -3,7 +3,7 @@
 import * as X from "@/components/xcomponents";
 import { useSession } from "next-auth/react";
 import { notFound, useParams, useRouter } from "next/navigation";
-import { useEffect, useState, type FunctionComponent } from "react";
+import { useEffect, useMemo, useState, type FunctionComponent } from "react";
 import {
   fetchCasoProfile,
   updateCasoEstado,
@@ -103,14 +103,11 @@ const PerfilCaso: FunctionComponent = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [assuntoHonorario, setAssuntoHonorario] = useState("");
+  const [profileData, setProfileData] = useState<any>(null);
 
-  const [profileData, setProfileData] = useState({
-    id: "",
-    processo: "",
-    resumo: "",
-    descricao: "",
-    estado: "",
-  });
+
+  const user = session?.user;
+
 
   useEffect(() => {
     const carregarDadosIniciais = async () => {
@@ -151,6 +148,8 @@ const PerfilCaso: FunctionComponent = () => {
         setRegistros(registrosCaso);
         const dividasCaso = await fetchDividasDoCaso(casoId);
         setDividas(dividasCaso);
+
+        
       } catch (error) {
         console.error("Failed to load profile:", error);
       } finally {
@@ -171,6 +170,18 @@ const PerfilCaso: FunctionComponent = () => {
       setIsLoading(false);
     }
   };
+
+  const estaAutorizado = useMemo(() => {
+    // If we don't have session or profile data yet, return false
+    if (!session?.user || !profileData || !profileData.user) return false;
+
+    // Allow admins (role 2) or case owner or assigned collaborators
+    return (
+      session.user.role == 2 &&(
+      profileData.user.id == session.user.id ||
+      colaboradoresDoCaso.some(c => c.id == session.user.id))
+    );
+  }, [session, profileData, colaboradoresDoCaso]);
 
   const toggleEditMode = async () => {
     if (isEditing) {
@@ -423,27 +434,7 @@ const PerfilCaso: FunctionComponent = () => {
     notFound();
   }
 
-  // Funções para colaboradores
-  const handleAdicionarColaborador = async () => {
-    if (!colaboradorSelecionado) return;
-
-    try {
-      setIsLoading(true);
-      const success = await adicionarColaboradorAoCaso(Number(id), colaboradorSelecionado.id);
-
-      if (success) {
-        const updatedColaboradores = await fetchColaboradoresDoCaso(Number(id));
-        setColaboradoresDoCaso(updatedColaboradores);
-        setMostrarModalColaborador(false);
-        setColaboradorSelecionado(null);
-      }
-    } catch (error) {
-      console.error('Erro ao adicionar colaborador:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  
   const handleRemoverColaborador = async (colaboradorId: number) => {
     try {
       setIsLoading(true);
@@ -455,27 +446,6 @@ const PerfilCaso: FunctionComponent = () => {
       }
     } catch (error) {
       console.error('Erro ao remover colaborador:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Funções para clientes
-  const handleAdicionarCliente = async () => {
-    if (!clienteSelecionado) return;
-
-    try {
-      setIsLoading(true);
-      const success = await adicionarClienteAoCaso(Number(id), clienteSelecionado.id);
-
-      if (success) {
-        const updatedClientes = await fetchClientesDoCaso(Number(id));
-        setClientesDoCaso(updatedClientes);
-        setMostrarModalCliente(false);
-        setClienteSelecionado(null);
-      }
-    } catch (error) {
-      console.error('Erro ao adicionar cliente:', error);
     } finally {
       setIsLoading(false);
     }
@@ -497,6 +467,11 @@ const PerfilCaso: FunctionComponent = () => {
     }
   };
 
+
+  if (isLoading && !profileData) {
+    return <SimpleSkeleton />;
+  }
+
   if (isLoading && !profileData.processo) {
     return <SimpleSkeleton />;
   }
@@ -507,6 +482,15 @@ const PerfilCaso: FunctionComponent = () => {
         Caso não encontrado.
       </X.ErrorBox>
     );
+  }
+
+  if (!estaAutorizado) {
+    return (
+      <X.ErrorBox visible hideCloseButton>
+        Não Autorizado.
+      </X.ErrorBox>
+    );
+
   }
 
   return (

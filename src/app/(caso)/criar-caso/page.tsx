@@ -3,6 +3,9 @@ import * as X from "@/components/xcomponents";
 import { criarCaso, listarClientes, criarCliente } from "./actions";
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import ListarClientes from "@/app/(client)/clientes/page";
+import { ClienteList } from "@/components/lists/listar_clientes";
+import FormCriarCliente from "@/components/forms/criar-cliente/page";
 
 interface Cliente {
   id: number;
@@ -16,11 +19,9 @@ interface Cliente {
 export default function CriarCaso() {
   const { data: session } = useSession();
   const user = session?.user;
-  
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+
+  const [clientes, setClientes] = useState<any[]>([]);
   const [clientesSelecionados, setClientesSelecionados] = useState<Cliente[]>([]);
-  const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState('');
   const [mostrarModalSelecao, setMostrarModalSelecao] = useState(false);
   const [mostrarModalCriacao, setMostrarModalCriacao] = useState(false);
   const [novoCliente, setNovoCliente] = useState<Omit<Cliente, 'id'>>({
@@ -60,7 +61,7 @@ export default function CriarCaso() {
     clientesSelecionados.forEach(cliente => {
       form.append('clientesIds', cliente.id.toString());
     });
-    
+
     try {
       await criarCaso(form, user.id.toString());
       alert('Caso criado com sucesso com ' + clientesSelecionados.length + ' clientes associados!');
@@ -74,6 +75,13 @@ export default function CriarCaso() {
   const handleSubmitCliente = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
+      setNovoCliente({
+        nome: e.currentTarget.nome.value,
+        email: e.currentTarget.email.value,
+        telefone: e.currentTarget.telefone.value,
+        codigoPostal: e.currentTarget.codigoPostal.value,
+        endereco: e.currentTarget.endereco.value
+      });
       const clienteCriado = await criarCliente(novoCliente);
       setClientes([...clientes, clienteCriado]);
       setClientesSelecionados([...clientesSelecionados, clienteCriado]);
@@ -89,25 +97,6 @@ export default function CriarCaso() {
       setErro('Erro ao criar cliente');
       console.error(error);
     }
-  };
-
-  const handleAdicionarCliente = (cliente: Cliente) => {
-    if (!clientesSelecionados.some(c => c.id === cliente.id)) {
-      setClientesSelecionados([...clientesSelecionados, cliente]);
-    }
-    setMostrarModalSelecao(false);
-  };
-
-  const handleRemoverCliente = (clienteId: number) => {
-    setClientesSelecionados(clientesSelecionados.filter(c => c.id !== clienteId));
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNovoCliente(prev => ({
-      ...prev,
-      [name]: value
-    }));
   };
 
   return (
@@ -133,11 +122,11 @@ export default function CriarCaso() {
           <X.Divider />
 
           <div className="flex flex-col gap-2 mb-4">
-            <X.Button  onClick={() => setMostrarModalSelecao(true)}>
+            <X.Button onClick={() => setMostrarModalSelecao(true)}>
               Adicionar Cliente Existente
             </X.Button>
 
-            <X.Button  onClick={() => setMostrarModalCriacao(true)}>
+            <X.Button onClick={() => setMostrarModalCriacao(true)}>
               Criar Novo Cliente
             </X.Button>
           </div>
@@ -149,127 +138,41 @@ export default function CriarCaso() {
               <p className="text-sm text-gray-500">Nenhum cliente selecionado</p>
             ) : (
               clientesSelecionados.map(cliente => (
-                <div key={cliente.id} className="p-3 border rounded-lg relative">
-                  <button
-                    className="absolute top-1 right-1 text-red-500 hover:text-red-700"
-                    onClick={() => handleRemoverCliente(cliente.id)}
+
+                <div key={cliente.id} className="flex items-center gap-4">
+                  <X.Button
+                    onClick={() =>
+                      setClientesSelecionados((prevCases) =>
+                        prevCases.filter((c) => c.id !== cliente.id)
+                      )
+                    }
                   >
-                    &times;
-                  </button>
-                  <div className="font-medium">{cliente.nome}</div>
-                  <div className="text-xs text-gray-600">
-                    <div>Email: {cliente.email}</div>
-                    <div>Telefone: {cliente.telefone}</div>
-                    <div>CEP: {cliente.codigoPostal}</div>
-                    <div>Endereço: {cliente.endereco}</div>
-                  </div>
+                    <img
+                      className={"min-w-6 flex-shrink-0"}
+                      src={"/images/icons/close.svg"}
+                      alt={cliente.nome}
+                    />
+                  </X.Button>
+                  <X.Link href={`/caso/${cliente.id}`} className="w-full">
+                    [{cliente.id}] #{cliente.nome}
+                  </X.Link>
                 </div>
               ))
             )}
           </div>
         </X.Container>
       </div>
-
-      {/* Modal de Seleção */}
-      {mostrarModalSelecao && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-lg font-semibold">Selecionar Cliente</p>
-              <button onClick={() => setMostrarModalSelecao(false)} className="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
-            </div>
-            <X.Divider />
-
-            {carregando && <p>Carregando clientes...</p>}
-            {erro && <p className="text-red-500">{erro}</p>}
-
-            <div className="space-y-2 mt-4">
-              {clientes
-                .filter(cliente => !clientesSelecionados.some(c => c.id === cliente.id))
-                .map(cliente => (
-                  <div
-                    key={cliente.id}
-                    className="p-2 rounded cursor-pointer hover:bg-blue-100"
-                    onClick={() => handleAdicionarCliente(cliente)}
-                  >
-                    <div>
-                      <div className="font-medium">{cliente.nome}</div>
-                      <div className="text-xs text-gray-500">
-                        {cliente.email} | {cliente.telefone}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {cliente.codigoPostal} - {cliente.endereco}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-
-            {!carregando && clientes.length === 0 && (
-              <p className="text-sm text-gray-500 mt-4">Nenhum cliente encontrado.</p>
-            )}
-          </X.Container>
-        </div>
-      )}
-
-      {/* Modal de Criação */}
-      {mostrarModalCriacao && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <X.Container className="w-full max-w-lg relative">
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-lg font-semibold">Criar Novo Cliente</p>
-              <button onClick={() => setMostrarModalCriacao(false)} className="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
-            </div>
-            <X.Divider />
-
-            <form onSubmit={handleSubmitCliente} className="space-y-4">
-              <X.Field
-                required
-                type="text"
-                placeholder="Nome Completo"
-                name="nome"
-                value={novoCliente.nome}
-                onChange={handleInputChange}
-              />
-              <X.Field
-                required
-                type="email"
-                placeholder="Email"
-                name="email"
-                value={novoCliente.email}
-                onChange={handleInputChange}
-              />
-              <X.Field
-                required
-                type="tel"
-                placeholder="Telefone"
-                name="telefone"
-                value={novoCliente.telefone}
-                onChange={handleInputChange}
-              />
-              <X.Field
-                required
-                type="text"
-                placeholder="Código Postal"
-                name="codigoPostal"
-                value={novoCliente.codigoPostal}
-                onChange={handleInputChange}
-              />
-              <X.Field
-                required
-                type="text"
-                placeholder="Endereço Completo"
-                name="endereco"
-                value={novoCliente.endereco}
-                onChange={handleInputChange}
-              />
-              <X.Submit>
-                Criar e Associar
-              </X.Submit>
-            </form>
-          </X.Container>
-        </div>
-      )}
+      <X.Popup title="Selecionar Clientes" isOpen={mostrarModalSelecao} onClose={() => setMostrarModalSelecao(false)}>
+        <ClienteList
+          selectedCaseIds={clientesSelecionados.map(cliente => cliente.id)}
+          onSelect={(clientes) => { setClientesSelecionados(clientes); console.log(clientes); }}
+          mode="select"
+        ></ClienteList>
+      </X.Popup>
+      <X.Popup title="Criar Novo Cliente" isOpen={mostrarModalCriacao} onClose={() => setMostrarModalCriacao(false)}>
+        <FormCriarCliente onClose={() => {setMostrarModalCriacao(false);}} onSubmit={handleSubmitCliente}></FormCriarCliente>
+      </X.Popup>
+      
     </div>
   );
 } 

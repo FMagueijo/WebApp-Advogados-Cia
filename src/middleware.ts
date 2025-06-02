@@ -8,7 +8,7 @@ const access_config = {
         '/criar-colaborador': 1,  // COLAB 
         '/criar-cliente': 2,  // COLAB 
         '/criar-caso': 2,  // COLAB 
-        '/criar-evento': 2,  // COLAB x
+        '/criar-evento': 2,  // COLAB
     }
 };
 

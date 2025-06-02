@@ -9,6 +9,7 @@ interface CasoProfile {
   resumo: string;
   estado: string;
   descricao?: string;
+  user: any;
 }
 
 export async function fetchCasoProfile(casoId: number): Promise<CasoProfile | null> {
@@ -23,6 +24,7 @@ export async function fetchCasoProfile(casoId: number): Promise<CasoProfile | nu
             nome_estado: true
           }
         },
+        user: true,
         resumo: true,
         descricao: true,
       }
@@ -38,6 +40,7 @@ export async function fetchCasoProfile(casoId: number): Promise<CasoProfile | nu
       estado: caso.estado.nome_estado,
       resumo: caso.resumo,
       descricao: caso.descricao as string,
+      user: caso.user
     };
   } catch (error) {
     console.error('Database error:', error);

@@ -72,7 +72,6 @@ export default function LoginForm() {
                     </X.Submit>
                 </X.Container>
             </form>
-            <X.Link href="" className="w-full">Esqueceu-se da Password?</X.Link>
         </div>
     );
 }
