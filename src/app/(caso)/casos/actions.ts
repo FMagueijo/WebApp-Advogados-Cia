@@ -59,15 +59,20 @@ export async function fetchCasos(
     const usuarioMap = new Map(usuarios.map(u => [u.id, u.nome]));
 
     // Transformamos os resultados
-    const transformados = casos.map(c => ({
-      id: c.id,
-      processo: c.processo,
-      assunto: c.resumo,
-      criadoPor: usuarioMap.get(c.user_id) || 'Desconhecido',
-      cliente: c.cliente?.nome || 'Desconhecido',
-      estado: c.estado.nome_estado,
-      dataCriacao: c.criado_em
-    }));
+   const transformados = casos.map(c => ({
+  id: c.id,
+  processo: c.processo,
+  assunto: c.resumo,
+  cliente: c.cliente?.nome || 'Desconhecido',
+  descricao: c.descricao,
+  estado: { nome_estado: c.estado?.nome_estado || 'Desconhecido' },
+  dataCriacao: c.criado_em,
+  user: {
+    id: c.user_id,
+    nome: usuarioMap.get(c.user_id) || 'Desconhecido'
+  }
+}));
+
 
     return transformados;
   } catch (error) {

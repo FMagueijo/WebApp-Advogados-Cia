@@ -79,9 +79,11 @@ export default function ListarCasos() {
                       </X.DataField>
                     </td>
                     <td className="p-4">
-                      <X.Link className="hover:text-[var(--primary-color)]">
-                        {caso.criadoPor}
+                      <X.Link href={`/perfil-terceiro/${caso.user.id}`}>
+                        {caso.user.nome}
                       </X.Link>
+
+
                     </td>
                     <td className="p-4">
                       <X.DataField
