@@ -160,7 +160,8 @@ enum TipoEvento {
 
 model Divida {
   id            Int      @id @default(autoincrement())
-  valor         Float    @default(0) @db.Float
+  valor         Float    @db.Float @default(0)
+  assunto       String   @db.VarChar(255)  // Campo adicionado para descrever o motivo da dívida
   criado_em     DateTime @default(now())
   atualizado_em DateTime @updatedAt
   pago          Boolean  @default(false)

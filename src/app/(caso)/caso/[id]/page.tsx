@@ -12,9 +12,13 @@ import {
   updateCasoDescricao,
   listarColaboradores,
   fetchRegistrosDoCaso,
+  fetchDividasDoCaso,
+  registrarHonorario,
+  pagarDivida,
+  pagarDividaTotal,
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
-import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page"; // Corrected the path
+import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page";
 
 const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
@@ -119,15 +123,10 @@ const DadosField: React.FC<DadosFieldProps> = ({
 );
 
 const PerfilCaso: FunctionComponent = () => {
+  const { data: session } = useSession();
   const params = useParams();
   const id = params?.id;
-  const [isRegistroHorasOpen, setIsRegistroHorasOpen] = useState(false); // Estado movido para cá
-
-  if (!id || isNaN(Number(id))) {
-    notFound();
-  }
-
-  const { data: session } = useSession();
+  const [isRegistroHorasOpen, setIsRegistroHorasOpen] = useState(false);
   const [estado, setEstado] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -136,6 +135,15 @@ const PerfilCaso: FunctionComponent = () => {
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState<any | null>(null);
   const [colaboradoresDoCaso, setColaboradoresDoCaso] = useState<any[]>([]);
   const [registros, setRegistros] = useState<any[]>([]);
+  const [dividas, setDividas] = useState<any[]>([]);
+  const [mostrarModalHonorario, setMostrarModalHonorario] = useState(false);
+  const [mostrarModalPagamento, setMostrarModalPagamento] = useState(false);
+  const [dividaSelecionada, setDividaSelecionada] = useState<number | null>(null);
+  const [valorHonorario, setValorHonorario] = useState("");
+  const [valorPagamento, setValorPagamento] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [assuntoHonorario, setAssuntoHonorario] = useState("");
 
   const [profileData, setProfileData] = useState({
     id: "",
@@ -172,6 +180,8 @@ const PerfilCaso: FunctionComponent = () => {
         setColaboradoresDoCaso(colaboradoresCaso);
         const registrosCaso = await fetchRegistrosDoCaso(casoId);
         setRegistros(registrosCaso);
+        const dividasCaso = await fetchDividasDoCaso(casoId);
+        setDividas(dividasCaso);
       } catch (error) {
         console.error("Failed to load profile:", error);
       } finally {
@@ -230,6 +240,130 @@ const PerfilCaso: FunctionComponent = () => {
     }
   };
 
+  const handleAdicionarColaborador = async () => {
+    // Implementação existente
+  };
+
+  const handleRegistrarHonorario = async () => {
+    if (!assuntoHonorario.trim()) {
+      setErrorMessage('Por favor insira um assunto');
+      return;
+    }
+
+    const valorNumerico = parseFloat(valorHonorario);
+    if (isNaN(valorNumerico)) {
+      setErrorMessage('Por favor insira um valor numérico válido');
+      return;
+    }
+
+    if (valorNumerico <= 0) {
+      setErrorMessage('O valor deve ser maior que zero');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      const resultado = await registrarHonorario(
+        Number(id),
+        valorNumerico,
+        assuntoHonorario
+      );
+
+      if (resultado.success) {
+        setSuccessMessage(resultado.message);
+        setAssuntoHonorario('');
+        setValorHonorario('');
+        setMostrarModalHonorario(false);
+        // Atualiza a lista de dívidas
+        const dividasCaso = await fetchDividasDoCaso(Number(id));
+        setDividas(dividasCaso);
+      } else {
+        setErrorMessage(resultado.message);
+      }
+    } catch (error) {
+      setErrorMessage('Erro ao registrar honorário');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setErrorMessage(null);
+      }, 5000);
+    }
+  };
+
+  const handlePagarDivida = async () => {
+    if (!dividaSelecionada) return;
+
+    const valorNumerico = parseFloat(valorPagamento);
+    if (isNaN(valorNumerico)) {
+      setErrorMessage('Por favor insira um valor numérico válido');
+      return;
+    }
+
+    if (valorNumerico <= 0) {
+      setErrorMessage('O valor deve ser maior que zero');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      const resultado = await pagarDivida(dividaSelecionada, valorNumerico);
+
+      if (resultado.success) {
+        setSuccessMessage(resultado.message);
+        setValorPagamento('');
+        setMostrarModalPagamento(false);
+        // Atualiza a lista de dívidas
+        const dividasCaso = await fetchDividasDoCaso(Number(id));
+        setDividas(dividasCaso);
+      } else {
+        setErrorMessage(resultado.message);
+      }
+    } catch (error) {
+      setErrorMessage('Erro ao processar pagamento');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setErrorMessage(null);
+      }, 5000);
+    }
+  };
+
+  const handlePagarDividaTotal = async (dividaId: number) => {
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      const resultado = await pagarDividaTotal(dividaId);
+
+      if (resultado.success) {
+        setSuccessMessage(resultado.message);
+        // Atualiza a lista de dívidas
+        const dividasCaso = await fetchDividasDoCaso(Number(id));
+        setDividas(dividasCaso);
+      } else {
+        setErrorMessage(resultado.message);
+      }
+    } catch (error) {
+      setErrorMessage('Erro ao processar pagamento total');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setErrorMessage(null);
+      }, 5000);
+    }
+  };
+
+  if (!id || isNaN(Number(id))) {
+    notFound();
+  }
+
   if (isLoading && !profileData.processo) {
     return <SimpleSkeleton />;
   }
@@ -242,16 +376,10 @@ const PerfilCaso: FunctionComponent = () => {
     );
   }
 
-  if(isLoading) {
-    return <SimpleSkeleton></SimpleSkeleton>;
-  }
-  if(!profileData) {
-    return <X.ErrorBox visible hideCloseButton>Caso não encontrado.</X.ErrorBox>;
-  }
-
   return (
     <div className="flex flex-row gap-8">
       <div className="flex flex-col gap-8 w-2/3">
+        {/* Seção principal do perfil do caso */}
         <X.Container className="w-full">
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-bold">Perfil do Caso</h1>
@@ -304,6 +432,8 @@ const PerfilCaso: FunctionComponent = () => {
             tipo="textarea"
           />
         </X.Container>
+
+        {/* Seção de informações gerais */}
         <X.Container className="w-full">
           <div className="flex justify-between items-center">
             <p className="text-lg font-semibold">Info geral</p>
@@ -341,7 +471,7 @@ const PerfilCaso: FunctionComponent = () => {
             <X.Dropdown
               label="Ordenar"
               options={["Data Descendente", "Data Ascendente"]}
-              onSelect={(selectedOption) => 
+              onSelect={(selectedOption) =>
                 handleSortRegistros(selectedOption === "Data Ascendente" ? 'asc' : 'desc')
               }
             />
@@ -400,7 +530,7 @@ const PerfilCaso: FunctionComponent = () => {
           <p className="font-semibold">Colaboradores Associados</p>
           <X.Divider />
           <div className="flex flex-row gap-4">
-            <X.Button  onClick={() => setMostrarModalColaborador(true)}>
+            <X.Button onClick={() => setMostrarModalColaborador(true)}>
               Associar Colaborador
             </X.Button>
           </div>
@@ -424,17 +554,177 @@ const PerfilCaso: FunctionComponent = () => {
           )}
         </X.Container>
 
-        {/* Modal de Seleção de Colaborador */}
+        {/* Seção de Dívidas */}
+        <X.Container className="w-full">
+          <p className="font-semibold">Honorários</p>
+          <X.Divider />
+          <div className="flex flex-row gap-4">
+            <X.Button
+              onClick={() => {
+                setMostrarModalHonorario(true);
+                setErrorMessage(null);
+                setSuccessMessage(null);
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Registar Honorário
+            </X.Button>
+          </div>
+          <X.Divider />
+          {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
+          {successMessage && <p className="text-green-500 text-sm">{successMessage}</p>}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-3">Assunto</th>
+                  <th className="p-3">Valor</th>
+                  <th className="p-3">Data</th>
+                  <th className="p-3">Estado</th>
+                  <th className="p-3">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dividas.length > 0 ? (
+                  dividas.map((divida) => (
+                    <tr key={divida.id} className="border-b border-[var(--secondary-color)]">
+                      <td className="p-2">{divida.assunto || "Sem assunto"}</td> {/* Adicionado fallback */}
+                      <td className="p-2">{divida.valor.toFixed(2)}€</td>
+                      <td className="p-2">{new Date(divida.criado_em).toLocaleDateString('pt-PT')}</td>
+                      <td className="p-2">
+                        {divida.pago ? (
+                          <span className="text-green-500">Pago</span>
+                        ) : (
+                          <span className="text-red-500">Por pagar</span>
+                        )}
+                      </td>
+                      <td className="p-2 flex gap-2">
+                        {!divida.pago && (
+                          <>
+                            <X.Button
+                              size="sm"
+                              onClick={() => {
+                                setDividaSelecionada(divida.id);
+                                setMostrarModalPagamento(true);
+                              }}
+                            >
+                              Pagar
+                            </X.Button>
+                            <X.Button
+                              size="sm"
+                              onClick={() => handlePagarDividaTotal(divida.id)}
+                              disabled={isLoading}
+                            >
+                              Pagar Tudo
+                            </X.Button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-gray-500">
+                      Nenhuma dívida registada
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </X.Container>
+
+        {mostrarModalHonorario && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <X.Container className="w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold">Registar Honorário</p>
+                <button
+                  onClick={() => {
+                    setMostrarModalHonorario(false);
+                    setErrorMessage(null);
+                    setAssuntoHonorario("");
+                    setValorHonorario("");
+                  }}
+                  className="text-gray-500 hover:text-gray-800 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+              <X.Divider />
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
+                placeholder="Assunto"
+                value={assuntoHonorario}
+                onChange={(e) => setAssuntoHonorario(e.target.value)}
+              />
+              <input
+                type="number"
+                step="0.01"
+                className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
+                placeholder="Valor em €"
+                value={valorHonorario}
+                onChange={(e) => setValorHonorario(e.target.value)}
+              />
+              {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
+              <div className="mt-4 flex justify-end">
+                <X.Button onClick={handleRegistrarHonorario} disabled={isLoading}>
+                  {isLoading ? <LoadingSpinner /> : "Confirmar"}
+                </X.Button>
+              </div>
+            </X.Container>
+          </div>
+        )}
+
+        {/* Modal Pagar Dívida */}
+        {mostrarModalPagamento && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <X.Container className="w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold">Pagar Dívida</p>
+                <button
+                  onClick={() => {
+                    setMostrarModalPagamento(false);
+                    setErrorMessage(null);
+                    setDividaSelecionada(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-800 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+              <X.Divider />
+              <input
+                type="number"
+                step="0.01"
+                className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
+                placeholder="Valor em €"
+                value={valorPagamento}
+                onChange={(e) => setValorPagamento(e.target.value)}
+              />
+              {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
+              {successMessage && <p className="text-green-500 text-sm mt-2">{successMessage}</p>}
+              <div className="mt-4 flex justify-end">
+                <X.Button onClick={handlePagarDivida} disabled={isLoading}>
+                  {isLoading ? <LoadingSpinner /> : "Confirmar"}
+                </X.Button>
+              </div>
+            </X.Container>
+          </div>
+        )}
+
+        {/* Modal Colaborador */}
         {mostrarModalColaborador && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
               <div className="flex justify-between items-center mb-4">
                 <p className="text-lg font-semibold">Selecionar Colaborador</p>
-                <button 
+                <button
                   onClick={() => {
                     setMostrarModalColaborador(false);
                     setColaboradorSelecionado(null);
-                  }} 
+                  }}
                   className="text-gray-500 hover:text-gray-800 text-2xl"
                 >
                   &times;
@@ -449,9 +739,8 @@ const PerfilCaso: FunctionComponent = () => {
                     {colaboradores.map(colaborador => (
                       <div
                         key={colaborador.id}
-                        className={`p-2 rounded cursor-pointer hover:bg-green-100 ${
-                          colaboradorSelecionado?.id === colaborador.id ? 'bg-green-100' : ''
-                        }`}
+                        className={`p-2 rounded cursor-pointer hover:bg-green-100 ${colaboradorSelecionado?.id === colaborador.id ? 'bg-green-100' : ''
+                          }`}
                         onClick={() => setColaboradorSelecionado(colaborador)}
                       >
                         <div className="font-medium">{colaborador.nome}</div>
@@ -460,7 +749,7 @@ const PerfilCaso: FunctionComponent = () => {
                     ))}
                   </div>
                   <div className="mt-4 flex justify-end">
-                    <X.Button 
+                    <X.Button
                       onClick={handleAdicionarColaborador}
                       disabled={!colaboradorSelecionado || isLoading}
                     >
@@ -478,7 +767,6 @@ const PerfilCaso: FunctionComponent = () => {
         isOpen={isRegistroHorasOpen}
         onClose={() => setIsRegistroHorasOpen(false)}
         casoId={Number(id)}
-      
       />
     </div>
   );

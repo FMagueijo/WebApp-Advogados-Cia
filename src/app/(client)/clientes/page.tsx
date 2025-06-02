@@ -85,43 +85,43 @@ export default function ListarClientes() {
                     <th className="w-[100px] px-2">{" "}</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {clientes.map((cliente) => (
-                    <tr key={cliente.id} className="border-b border-[var(--secondary-color)]">
-                      <td className="px-2">
-                        <X.Link className="group inline-flex" href={`/cliente/${cliente.id}`}>
-                          <img className="w-6 h-6 group-hover:invert" src="/images/icons/profile.svg" alt="Profile" />
-                        </X.Link>
-                      </td>
-                      <td className="px-2 whitespace-nowrap">
-                        <X.DataField>{cliente.id}</X.DataField>
-                      </td>
-                      <td className="px-2">
-                        <X.DataField className="truncate">{cliente.nome}</X.DataField>
-                      </td>
-                      <td className="px-2">
-                        <X.Link href={`mailto:${cliente.email}`} className="truncate block">
-                          {cliente.email}
-                        </X.Link>
-                      </td>
-                      <td className="px-2 whitespace-nowrap">
-                        <X.DataField>{cliente.casosCount}</X.DataField>
-                      </td>
-                      <td className="px-2 whitespace-nowrap">
-                        <X.DataField colorOverride="--submit-color">
-                          € {cliente.dividaTotal.toFixed(2)}
-                       </X.DataField>
-                      </td>
-                      <td className="px-2 whitespace-nowrap">
-                        <X.Link className="group" href={`/criar-caso?clienteId=${cliente.id}`}>
-                          <span className="text-sm text-[var(--primary-color)] group-hover:text-[var(--secondary-color)] transition-colors">
-                            Novo Caso
-                          </span>
-                        </X.Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+<tbody>
+  {clientes.map((cliente) => (
+    <tr key={cliente.id} className="border-b border-[var(--secondary-color)]">
+      <td className="px-2">
+        <X.Link className="group inline-flex" href={`/cliente/${cliente.id}`}>
+          <img className="w-6 h-6 group-hover:invert" src="/images/icons/profile.svg" alt="Profile" />
+        </X.Link>
+      </td>
+      <td className="px-2 whitespace-nowrap">
+        <X.DataField>{cliente.id}</X.DataField>
+      </td>
+      <td className="px-2">
+        <X.DataField className="truncate">{cliente.nome}</X.DataField>
+      </td>
+      <td className="px-2">
+        <X.Link href={`mailto:${cliente.email}`} className="truncate block">
+          {cliente.email}
+        </X.Link>
+      </td>
+      <td className="px-2 whitespace-nowrap">
+        <X.DataField>{cliente.casosCount}</X.DataField>
+      </td>
+      <td className="px-2 whitespace-nowrap">
+        <X.DataField colorOverride={cliente.dividaTotal > 0 ? "--error-color" : "--submit-color"}>
+          € {cliente.dividaTotal.toFixed(2)}
+        </X.DataField>
+      </td>
+      <td className="px-2 whitespace-nowrap">
+        <X.Link className="group" href={`/criar-caso?clienteId=${cliente.id}`}>
+          <span className="text-sm text-[var(--primary-color)] group-hover:text-[var(--secondary-color)] transition-colors">
+            Novo Caso
+          </span>
+        </X.Link>
+      </td>
+    </tr>
+  ))}
+</tbody>
               </table>
             )}
           </div>
