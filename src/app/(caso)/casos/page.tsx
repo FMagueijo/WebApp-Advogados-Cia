@@ -8,7 +8,6 @@ import RegistrarHorasForm from "../caso/registar-horas/page";
 export default function ListarCasos() {
   const [registarHoras, setRegistarHoras] = useState(false);
   const [casoAtual, setCasoAtual] = useState(-1);
-
   const [casos, setCasos] = useState<any[]>([]);
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [order, setOrder] = useState<Record<string, boolean>>({});
@@ -41,12 +40,12 @@ export default function ListarCasos() {
             <X.Dropdown
               label="Filtrar Por Estado"
               options={["Aberto", "Fechado", "Terminado"]}
-              onSelect={(estado) => setTimeout(() => setFilters({ estado }), 0)}
+              onSelect={(estado) => setFilters({ estado })}
             />
             <X.SortBox
               label="Ordenar Por"
               options={["ID", "Processo", "Assunto"]}
-              onSortChange={(campo, inverso) => setTimeout(() => setOrder({ [campo]: inverso }), 0)}
+              onSortChange={(campo, inverso) => setOrder({ [campo]: inverso })}
             />
           </div>
           <X.Divider />
@@ -59,8 +58,9 @@ export default function ListarCasos() {
                   <th className="p-4">ID / Processo</th>
                   <th className="p-4">Assunto</th>
                   <th className="p-4">Criado por</th>
+                  <th className="p-4">Cliente</th>
                   <th className="p-4">Estado</th>
-                  <th className="w-[100px] px-2">{" "}</th> {/* Novo Registo Horas */}
+                  <th className="w-[100px] px-2">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -85,22 +85,29 @@ export default function ListarCasos() {
 
 
                     </td>
+                    <td className="p-4">{caso.assunto}</td>
+                    <td className="p-4">{caso.criadoPor}</td>
+                    <td className="p-4">{caso.cliente}</td>
                     <td className="p-4">
                       <X.DataField
                         className="rounded-lg p-2"
                         colorOverride={
-                          caso.estado === "Aberto"
-                            ? "--open-color"
-                            : caso.estado === "Fechado"
-                              ? "--error-color"
-                              : "--success-color"
+                          caso.estado === "Aberto" ? "--open-color" :
+                            caso.estado === "Fechado" ? "--error-color" :
+                              "--success-color"
                         }
                       >
                         {caso.estado}
                       </X.DataField>
                     </td>
                     <td className="px-2 whitespace-nowrap">
-                      <X.Button className="group h-full" onClick={() => { setRegistarHoras(true); setCasoAtual(caso.id); } }>
+                      <X.Button
+                        className="group h-full"
+                        onClick={() => {
+                          setRegistarHoras(true);
+                          setCasoAtual(caso.id);
+                        }}
+                      >
                         <span className="text-sm text-[var(--primary-color)] group-hover:text-[var(--secondary-color)] transition-colors">
                           Registar Horas
                         </span>
@@ -110,10 +117,16 @@ export default function ListarCasos() {
                 ))}
               </tbody>
             </table>
+
             {registarHoras && (
-              <RegistrarHorasForm casoId={casoAtual} isOpen={registarHoras} onClose={() => setRegistarHoras(false)}/>
+              <RegistrarHorasForm
+                casoId={casoAtual}
+                isOpen={registarHoras}
+                onClose={() => setRegistarHoras(false)}
+              />
             )}
-            {casos.length === 0 && <p className="p-4">0 resultados</p>}
+
+            {casos.length === 0 && <p className="p-4">Nenhum caso encontrado</p>}
           </div>
         </X.Container>
       </div>

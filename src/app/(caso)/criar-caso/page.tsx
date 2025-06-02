@@ -4,17 +4,26 @@ import { criarCaso, listarClientes, criarCliente } from "./actions";
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
+interface Cliente {
+  id: number;
+  nome: string;
+  email: string;
+  telefone: string;
+  codigoPostal: string;
+  endereco: string;
+}
+
 export default function CriarCaso() {
   const { data: session } = useSession();
   const user = session?.user;
-
-  const [clientes, setClientes] = useState<Array<{ id: number, nome: string, email: string, telefone: string, codigoPostal: string, endereco: string }>>([]);
-  const [clienteSelecionado, setClienteSelecionado] = useState<{ id: number, nome: string, email: string, telefone: string, codigoPostal: string, endereco: string } | null>(null);
+  
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientesSelecionados, setClientesSelecionados] = useState<Cliente[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
   const [mostrarModalSelecao, setMostrarModalSelecao] = useState(false);
   const [mostrarModalCriacao, setMostrarModalCriacao] = useState(false);
-  const [novoCliente, setNovoCliente] = useState({
+  const [novoCliente, setNovoCliente] = useState<Omit<Cliente, 'id'>>({
     nome: '',
     email: '',
     telefone: '',
@@ -48,15 +57,16 @@ export default function CriarCaso() {
     }
 
     const form = new FormData(e.currentTarget);
-    if (clienteSelecionado) {
-      form.append('clienteId', clienteSelecionado.id.toString());
-    }
-
+    clientesSelecionados.forEach(cliente => {
+      form.append('clientesIds', cliente.id.toString());
+    });
+    
     try {
-      // Garantir que o user.id seja passado como string (será convertido para número na ação)
       await criarCaso(form, user.id.toString());
+      alert('Caso criado com sucesso com ' + clientesSelecionados.length + ' clientes associados!');
+      // Reset form or redirect if needed
     } catch (error) {
-      setErro('Erro ao criar caso');
+      setErro('Erro ao criar caso: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
       console.error(error);
     }
   };
@@ -66,7 +76,7 @@ export default function CriarCaso() {
     try {
       const clienteCriado = await criarCliente(novoCliente);
       setClientes([...clientes, clienteCriado]);
-      setClienteSelecionado(clienteCriado);
+      setClientesSelecionados([...clientesSelecionados, clienteCriado]);
       setMostrarModalCriacao(false);
       setNovoCliente({
         nome: '',
@@ -81,18 +91,15 @@ export default function CriarCaso() {
     }
   };
 
-  const handleRemoverCliente = () => {
-    setClienteSelecionado(null);
-  };
-
-  const handleClienteSelecionado = (cliente: { id: number, nome: string, email: string, telefone: string, codigoPostal: string, endereco: string }) => {
-    setClienteSelecionado(cliente);
+  const handleAdicionarCliente = (cliente: Cliente) => {
+    if (!clientesSelecionados.some(c => c.id === cliente.id)) {
+      setClientesSelecionados([...clientesSelecionados, cliente]);
+    }
     setMostrarModalSelecao(false);
   };
 
-  const handleModalClick = (e: React.MouseEvent, cliente: { id: number, nome: string, email: string, telefone: string, codigoPostal: string, endereco: string }) => {
-    e.preventDefault();
-    handleClienteSelecionado(cliente);
+  const handleRemoverCliente = (clienteId: number) => {
+    setClientesSelecionados(clientesSelecionados.filter(c => c.id !== clienteId));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,7 +121,7 @@ export default function CriarCaso() {
             <X.Field required type="text" placeholder="Processo" name="Processo" />
             <X.Field required type="text" placeholder="Resumo" name="Resumo" />
             <X.Textarea maxLength={256} placeholder="Descrição Detalhada" name="Descrição Detalhada" />
-            <X.Submit disabled={!clienteSelecionado}>
+            <X.Submit disabled={clientesSelecionados.length === 0}>
               Criar Caso
             </X.Submit>
           </form>
@@ -122,42 +129,43 @@ export default function CriarCaso() {
 
         {/* Lado direito */}
         <X.Container className="xl:w-1/3 h-max">
-          <p className="font-semibold">Clientes Associados</p>
+          <p className="font-semibold">Clientes Associados ({clientesSelecionados.length})</p>
           <X.Divider />
 
           <div className="flex flex-col gap-2 mb-4">
-            <X.Button type="button" onClick={() => setMostrarModalSelecao(true)}>
-              Associar Cliente
+            <X.Button  onClick={() => setMostrarModalSelecao(true)}>
+              Adicionar Cliente Existente
             </X.Button>
 
-            <X.Button type="button" onClick={() => setMostrarModalCriacao(true)}>
-              Criar e Associar Cliente
+            <X.Button  onClick={() => setMostrarModalCriacao(true)}>
+              Criar Novo Cliente
             </X.Button>
           </div>
 
           <X.Divider />
 
-          <div className="text-sm">
-            Cliente selecionado:{" "}
-            {clienteSelecionado ? (
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{clienteSelecionado.nome}</span>
+          <div className="space-y-3">
+            {clientesSelecionados.length === 0 ? (
+              <p className="text-sm text-gray-500">Nenhum cliente selecionado</p>
+            ) : (
+              clientesSelecionados.map(cliente => (
+                <div key={cliente.id} className="p-3 border rounded-lg relative">
                   <button
-                    className="text-red-500 hover:text-red-700"
-                    onClick={handleRemoverCliente}
+                    className="absolute top-1 right-1 text-red-500 hover:text-red-700"
+                    onClick={() => handleRemoverCliente(cliente.id)}
                   >
                     &times;
                   </button>
+                  <div className="font-medium">{cliente.nome}</div>
+                  <div className="text-xs text-gray-600">
+                    <div>Email: {cliente.email}</div>
+                    <div>Telefone: {cliente.telefone}</div>
+                    <div>CEP: {cliente.codigoPostal}</div>
+                    <div>Endereço: {cliente.endereco}</div>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-600">
-                  <div>Email: {clienteSelecionado.email}</div>
-                  <div>Telefone: {clienteSelecionado.telefone}</div>
-                  <div>CEP: {clienteSelecionado.codigoPostal}</div>
-                  <div>Endereço: {clienteSelecionado.endereco}</div>
-                </div>
-              </div>
-            ) : "Nenhum"}
+              ))
+            )}
           </div>
         </X.Container>
       </div>
@@ -176,24 +184,25 @@ export default function CriarCaso() {
             {erro && <p className="text-red-500">{erro}</p>}
 
             <div className="space-y-2 mt-4">
-              {clientes.map(cliente => (
-                <div
-                  key={cliente.id}
-                  className={`p-2 rounded cursor-pointer hover:bg-blue-100 ${clienteSelecionado?.id === cliente.id ? 'bg-blue-100' : ''
-                    }`}
-                  onClick={(e) => handleModalClick(e, cliente)}
-                >
-                  <div>
-                    <div className="font-medium">{cliente.nome}</div>
-                    <div className="text-xs text-gray-500">
-                      {cliente.email} | {cliente.telefone}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {cliente.codigoPostal} - {cliente.endereco}
+              {clientes
+                .filter(cliente => !clientesSelecionados.some(c => c.id === cliente.id))
+                .map(cliente => (
+                  <div
+                    key={cliente.id}
+                    className="p-2 rounded cursor-pointer hover:bg-blue-100"
+                    onClick={() => handleAdicionarCliente(cliente)}
+                  >
+                    <div>
+                      <div className="font-medium">{cliente.nome}</div>
+                      <div className="text-xs text-gray-500">
+                        {cliente.email} | {cliente.telefone}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {cliente.codigoPostal} - {cliente.endereco}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
 
             {!carregando && clientes.length === 0 && (
@@ -263,4 +272,4 @@ export default function CriarCaso() {
       )}
     </div>
   );
-}
+} 

@@ -9,7 +9,11 @@ export async function fetchCasos(
   try {
     const where: any = {};
 
-    if (filters.estado) where.estado = filters.estado;
+    if (filters.estado) {
+      where.estado = {
+        nome_estado: filters.estado
+      };
+    }
 
     const orderBy: any = [];
     for (const [key, value] of Object.entries(order)) {
@@ -21,23 +25,28 @@ export async function fetchCasos(
       orderBy.push({ [prismaKey]: value ? "desc" : "asc" });
     }
 
-    // Primeiro buscamos os casos
+    // Buscar casos com clientes e usuários
     const casos = await prisma.caso.findMany({
       where,
       orderBy,
-      select: {
-        id: true,
-        processo: true,
-        resumo: true,
-        criado_em: true,
-        estado:true,
-        user_id: true,  // Mantemos o user_id para buscar depois
-        cliente: {
+      include: {
+        estado: true,
+        user: {
           select: {
+            id: true,
             nome: true
           }
         },
-        descricao: true
+        clientes: {
+          include: {
+            cliente: {
+              select: {
+                id: true,
+                nome: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -58,21 +67,20 @@ export async function fetchCasos(
     // Criamos um mapa de id -> nome
     const usuarioMap = new Map(usuarios.map(u => [u.id, u.nome]));
 
-    // Transformamos os resultados
-   const transformados = casos.map(c => ({
-  id: c.id,
-  processo: c.processo,
-  assunto: c.resumo,
-  cliente: c.cliente?.nome || 'Desconhecido',
-  descricao: c.descricao,
-  estado: { nome_estado: c.estado?.nome_estado || 'Desconhecido' },
-  dataCriacao: c.criado_em,
-  user: {
-    id: c.user_id,
-    nome: usuarioMap.get(c.user_id) || 'Desconhecido'
-  }
-}));
 
+    // Transformar os resultados
+    const transformados = casos.map(c => ({
+      id: c.id,
+      processo: c.processo,
+      assunto: c.resumo,
+      criadoPor: c.user.nome,
+      // Pegar o primeiro cliente associado (ou 'Desconhecido' se não houver)
+      cliente: c.clientes[0]?.cliente.nome || 'Desconhecido',
+      estado: c.estado.nome_estado,
+      dataCriacao: c.criado_em,
+      // Manter todos os clientes caso precise
+      todosClientes: c.clientes.map(cc => cc.cliente)
+    }));
 
     return transformados;
   } catch (error) {

@@ -11,29 +11,33 @@ interface CasoProfile {
   descricao?: string;
 }
 
-export async function fetchCasoProfile(casoId: number): Promise<CasoProfile | null>  {
+export async function fetchCasoProfile(casoId: number): Promise<CasoProfile | null> {
   try {
-    const user = await prisma.caso.findUnique({
+    const caso = await prisma.caso.findUnique({
       where: { id: casoId },
       select: {
         id: true,
         processo: true,
-        estado: true,
-        resumo: true, 
+        estado: {
+          select: {
+            nome_estado: true
+          }
+        },
+        resumo: true,
         descricao: true,
       }
     });
 
-    if (!user) {
+    if (!caso) {
       throw new Error('Caso não encontrado');
     }
 
     return {
-        id: user.id,
-        processo: user.processo,
-        estado: user.estado.nome_estado,
-        resumo: user.resumo,
-        descricao: user.descricao as string,
+      id: caso.id,
+      processo: caso.processo,
+      estado: caso.estado.nome_estado,
+      resumo: caso.resumo,
+      descricao: caso.descricao as string,
     };
   } catch (error) {
     console.error('Database error:', error);
@@ -69,15 +73,72 @@ export async function fetchColaboradoresDoCaso(casoId: number) {
           select: {
             id: true,
             nome: true,
-            email: true
+            email: true,
+            role: {
+              select: {
+                nome_role: true
+              }
+            }
+          }
+        },
+        colaboradores: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                role: {
+                  select: {
+                    nome_role: true
+                  }
+                }
+              }
+            }
           }
         }
       }
     });
-    
-    return caso ? [caso.user] : [];
+
+    if (!caso) return [];
+
+    const colaboradoresAdicionais = caso.colaboradores.map(c => c.user);
+    const todosColaboradores = [caso.user, ...colaboradoresAdicionais];
+
+    return todosColaboradores.filter((colab, index, self) =>
+      index === self.findIndex((t) => t.id === colab.id)
+    );
   } catch (error) {
     console.error("Erro ao buscar colaboradores do caso:", error);
+    throw error;
+  }
+}
+
+export async function fetchClientesDoCaso(casoId: number) {
+  try {
+    const caso = await prisma.caso.findUnique({
+      where: { id: casoId },
+      include: {
+        clientes: {
+          include: {
+            cliente: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                telefone: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!caso) return [];
+
+    return caso.clientes.map(c => c.cliente);
+  } catch (error) {
+    console.error("Erro ao buscar clientes do caso:", error);
     throw error;
   }
 }
@@ -116,7 +177,7 @@ export async function listarColaboradores() {
   try {
     const colaboradores = await prisma.user.findMany({
       where: {
-        role_id: 2 // Filtra apenas usuários com role_id = 2
+        role_id: 2 // Filtra apenas usuários com role_id = 2 (colaboradores)
       },
       select: {
         id: true,
@@ -139,6 +200,8 @@ export async function listarColaboradores() {
 export async function registrarHonorario(casoId: number, valor: number, assunto: string) {
   try {
     // Primeiro, buscar o caso para obter o ID do cliente associado
+    //TODO: FIX
+    /*
     const caso = await prisma.caso.findUnique({
       where: { id: casoId },
       select: {
@@ -153,7 +216,7 @@ export async function registrarHonorario(casoId: number, valor: number, assunto:
     if (!caso.cliente_id) {
       return { success: false, message: 'Nenhum cliente associado a este caso' };
     }
-
+    
     // Cria uma nova dívida com os dados fornecidos
     const novaDivida = await prisma.divida.create({
       data: {
@@ -164,11 +227,11 @@ export async function registrarHonorario(casoId: number, valor: number, assunto:
           connect: { id: casoId }
         },
         cliente: {
-          connect: { id: caso.cliente_id } // Usa o ID do cliente obtido dinamicamente
+          connect: { id: caso. } // Usa o ID do cliente obtido dinamicamente
         }
       }
     });
-    
+*/
     revalidatePath(`/caso/${casoId}`);
     return { success: true, message: 'Novo honorário registrado com sucesso' };
   } catch (error) {
@@ -184,23 +247,23 @@ export async function pagarDivida(dividaId: number, valorPagamento: number) {
     });
 
     if (!divida) {
-      return { 
-        success: false, 
-        message: 'Dívida não encontrada' 
+      return {
+        success: false,
+        message: 'Dívida não encontrada'
       };
     }
 
     if (divida.pago) {
-      return { 
-        success: false, 
-        message: 'Esta dívida já foi paga' 
+      return {
+        success: false,
+        message: 'Esta dívida já foi paga'
       };
     }
 
     if (valorPagamento > divida.valor) {
-      return { 
-        success: false, 
-        message: 'Valor de pagamento excede o valor da dívida' 
+      return {
+        success: false,
+        message: 'Valor de pagamento excede o valor da dívida'
       };
     }
 
@@ -221,17 +284,17 @@ export async function pagarDivida(dividaId: number, valorPagamento: number) {
           cliente: { connect: { id: divida.cliente_id } }
         }
       });
-      
+
       // Atualiza a dívida original com o valor pago e marca como paga
       await prisma.divida.update({
         where: { id: dividaId },
-        data: { 
+        data: {
           pago: true,
-          valor: valorPagamento 
+          valor: valorPagamento
         }
       });
     }
-    
+
     return { success: true, message: 'Pagamento realizado com sucesso' };
   } catch (error) {
     console.error('Erro ao processar pagamento:', error);
@@ -246,16 +309,16 @@ export async function pagarDividaTotal(dividaId: number) {
     });
 
     if (!divida) {
-      return { 
-        success: false, 
-        message: 'Dívida não encontrada' 
+      return {
+        success: false,
+        message: 'Dívida não encontrada'
       };
     }
 
     if (divida.pago) {
-      return { 
-        success: false, 
-        message: 'Esta dívida já foi paga' 
+      return {
+        success: false,
+        message: 'Esta dívida já foi paga'
       };
     }
 
@@ -271,13 +334,30 @@ export async function pagarDividaTotal(dividaId: number) {
     return { success: false, message: 'Erro ao pagar dívida' };
   }
 }
+export async function listarClientes() {
+  try {
+    const clientes = await prisma.cliente.findMany({
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        telefone: true
+      }
+    });
+    return clientes;
+  } catch (error) {
+    console.error("Erro ao listar clientes:", error);
+    throw error;
+  }
+}
+
 
 export async function fetchRegistrosDoCaso(casoId: number, order: 'asc' | 'desc' = 'desc') {
   try {
     const registros = await prisma.registro.findMany({
       where: { caso_id: casoId },
       select: {
-        idRegisto: true,
+        id: true,
         resumo: true,
         criado_em: true,
         tipo: true
@@ -318,5 +398,77 @@ export async function fetchDividasDoCaso(casoId: number) {
   } catch (error) {
     console.error("Erro ao buscar dívidas do caso:", error);
     throw error;
+  }
+}
+
+export async function adicionarColaboradorAoCaso(casoId: number, colaboradorId: number): Promise<boolean> {
+  try {
+    await prisma.colaboradorDoCaso.create({
+      data: {
+        user_id: colaboradorId,
+        caso_id: casoId
+      }
+    });
+
+    revalidatePath(`/caso/${casoId}`);
+    return true;
+  } catch (error) {
+    console.error('Erro ao adicionar colaborador:', error);
+    return false;
+  }
+}
+
+export async function removerColaboradorDoCaso(casoId: number, colaboradorId: number): Promise<boolean> {
+  try {
+    await prisma.colaboradorDoCaso.delete({
+      where: {
+        user_id_caso_id: {
+          user_id: colaboradorId,
+          caso_id: casoId
+        }
+      }
+    });
+
+    revalidatePath(`/caso/${casoId}`);
+    return true;
+  } catch (error) {
+    console.error('Erro ao remover colaborador:', error);
+    return false;
+  }
+}
+
+export async function adicionarClienteAoCaso(casoId: number, clienteId: number): Promise<boolean> {
+  try {
+    await prisma.clienteDoCaso.create({
+      data: {
+        cliente_id: clienteId,
+        caso_id: casoId
+      }
+    });
+
+    revalidatePath(`/caso/${casoId}`);
+    return true;
+  } catch (error) {
+    console.error('Erro ao adicionar cliente:', error);
+    return false;
+  }
+}
+
+export async function removerClienteDoCaso(casoId: number, clienteId: number): Promise<boolean> {
+  try {
+    await prisma.clienteDoCaso.delete({
+      where: {
+        cliente_id_caso_id: {
+          cliente_id: clienteId,
+          caso_id: casoId
+        }
+      }
+    });
+
+    revalidatePath(`/caso/${casoId}`);
+    return true;
+  } catch (error) {
+    console.error('Erro ao remover cliente:', error);
+    return false;
   }
 }

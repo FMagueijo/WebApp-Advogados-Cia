@@ -1,47 +1,61 @@
+// src/app/(caso)/criar-caso/actions.ts
 'use server';
 
-import prisma from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import  prisma  from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
-export async function criarCaso(formData: FormData, userId: string | number) {
+export async function criarCaso(formData: FormData, userId: string) {
   try {
-    const processo = formData.get('Processo') as string;
-    const resumo = formData.get('Resumo') as string;
-    const descricao = formData.get('Descrição Detalhada') as string;
-    const clienteId = formData.get('clienteId') as string;
+    const processo = formData.get("Processo") as string;
+    const resumo = formData.get("Resumo") as string;
+    const descricao = formData.get("Descrição Detalhada") as string;
+    const clientesIds = formData.getAll("clientesIds") as string[];
 
-    if (!processo || !resumo || !clienteId || !userId) {
-      throw new Error('Processo, Resumo, Cliente e Utilizador são obrigatórios');
+    if (!processo || !resumo || !userId || clientesIds.length === 0) {
+      throw new Error("Campos obrigatórios faltando");
     }
 
     // Converter userId para número
     const userIdNumber = typeof userId === 'string' ? parseInt(userId) : userId;
-    const clienteIdNumber = parseInt(clienteId);
 
-    // Criar apenas o caso
-    await prisma.caso.create({
+    // Criar o caso com múltiplos clientes
+    const novoCaso = await prisma.caso.create({
       data: {
         processo,
         resumo,
         descricao: descricao || null,
-        cliente_id: clienteIdNumber,
         user_id: userIdNumber,
-        estado_id: 1 // Assumindo que 1 é o estado padrão (por exemplo, "Aberto")
+        estado_id: 1 ,
+        user: {
+          connect: { id: parseInt(userId) }
+        },
+        estado: {
+          connect: { id: 1 } // Estado padrão
+        },
+        clientes: {
+          create: clientesIds.map(clienteId => ({
+            cliente: {
+              connect: { id: parseInt(clienteId) }
+            }
+          }))
+        }
+      },
+      include: {
+        clientes: {
+          include: {
+            cliente: true
+          }
+        }
       }
     });
 
+    revalidatePath("/casos");
+    return novoCaso;
   } catch (error) {
-    console.error('Erro ao criar caso:', error);
-    return { 
-      error: error instanceof Error ? error.message : 'Ocorreu um erro ao criar o caso' 
-    };
+    console.error("Erro ao criar caso:", error);
+    throw error;
   }
-
-  revalidatePath('/casos');
-  redirect('/casos');
 }
-
 export async function listarClientes() {
   try {
     const clientes = await prisma.cliente.findMany({
@@ -72,7 +86,6 @@ export async function criarCliente(clienteData: {
   endereco: string;
 }) {
   try {
-    // Verifica se o email já existe
     const clienteExistente = await prisma.cliente.findUnique({
       where: {
         email: clienteData.email
