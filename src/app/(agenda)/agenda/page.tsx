@@ -4,7 +4,7 @@ import * as X from "@/components/xcomponents";
 import { fetchEventos } from './actions';
 import { useSession } from 'next-auth/react';
 import SimpleSkeleton from '@/components/loading/simple_skeleton';
-export function CalHeader({
+function CalHeader({
     sem = "Sábado",
     dia = "2",
     current = false,
@@ -60,7 +60,8 @@ export function CalHeader({
         </div>
     );
 }
-export function CalLink({
+
+function CalLink({
     hora = "14:30",
     id = "",
     title = "#AA444",

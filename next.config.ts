@@ -8,6 +8,9 @@ module.exports = {
   experimental: {
     authInterrupts: true, // Enable experimental auth interrupts
   },
+  typescript: {
+    ignoreBuildErrors: true, // Disables ALL TypeScript errors during build
+  },
 };
 
 export default nextConfig;

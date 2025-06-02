@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import ListarClientes from "@/app/(client)/clientes/page";
 import { ClienteList } from "@/components/lists/listar_clientes";
 import FormCriarCliente from "@/components/forms/criar-cliente/page";
+import { redirect } from "next/navigation";
 
 interface Cliente {
   id: number;
@@ -34,26 +35,23 @@ export default function CriarCaso() {
 
   useEffect(() => {
     const carregarClientes = async () => {
-      setCarregando(true);
       try {
         const resultado = await listarClientes();
         setClientes(resultado);
       } catch (error) {
-        setErro('Erro ao carregar clientes');
         console.error(error);
       } finally {
-        setCarregando(false);
       }
     };
 
     carregarClientes();
   }, []);
 
+
   const handleSubmitCaso = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!user?.id) {
-      setErro('Utilizador não autenticado');
       return;
     }
 
@@ -64,10 +62,9 @@ export default function CriarCaso() {
 
     try {
       await criarCaso(form, user.id.toString());
-      alert('Caso criado com sucesso com ' + clientesSelecionados.length + ' clientes associados!');
       // Reset form or redirect if needed
+      //redirect('/casos');
     } catch (error) {
-      setErro('Erro ao criar caso: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
       console.error(error);
     }
   };
@@ -75,14 +72,14 @@ export default function CriarCaso() {
   const handleSubmitCliente = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      setNovoCliente({
+
+      const clienteCriado = await criarCliente({
         nome: e.currentTarget.nome.value,
         email: e.currentTarget.email.value,
         telefone: e.currentTarget.telefone.value,
         codigoPostal: e.currentTarget.codigoPostal.value,
         endereco: e.currentTarget.endereco.value
       });
-      const clienteCriado = await criarCliente(novoCliente);
       setClientes([...clientes, clienteCriado]);
       setClientesSelecionados([...clientesSelecionados, clienteCriado]);
       setMostrarModalCriacao(false);
@@ -170,9 +167,9 @@ export default function CriarCaso() {
         ></ClienteList>
       </X.Popup>
       <X.Popup title="Criar Novo Cliente" isOpen={mostrarModalCriacao} onClose={() => setMostrarModalCriacao(false)}>
-        <FormCriarCliente onClose={() => {setMostrarModalCriacao(false);}} onSubmit={handleSubmitCliente}></FormCriarCliente>
+        <FormCriarCliente onClose={() => { setMostrarModalCriacao(false); }} onSubmit={handleSubmitCliente}></FormCriarCliente>
       </X.Popup>
-      
+
     </div>
   );
 } 

@@ -9,7 +9,8 @@
     "lint": "next lint",
     "fast-dev": "npm install && npm run db:reset && npm run dev",
     "make-schema-edit": "prisma generate && prisma migrate dev --name schema_update",
-    "db:reset": "prisma migrate reset --force && prisma generate"
+    "db:reset": "prisma migrate reset --force && prisma generate",
+    "fast-build": "npm install && npm run db:reset && npm run build && npm run start"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",

@@ -29,7 +29,6 @@ const RegistrarHorasForm: FunctionComponent<RegistrarHorasFormProps> = ({
     e.preventDefault();
 
     if (!session?.user?.id) {
-      alert("Sessão inválida. Por favor, faça login novamente.");
       return;
     }
 
@@ -45,15 +44,12 @@ const RegistrarHorasForm: FunctionComponent<RegistrarHorasFormProps> = ({
       });
 
       if (result.error) {
-        alert(`Erro: ${result.error}`);
         return;
       }
 
-      alert(result.message);
       onClose();
     } catch (error) {
       console.error("Erro ao registrar horas:", error);
-      alert("Ocorreu um erro ao registrar as horas");
     } finally {
       setIsSubmitting(false);
     }

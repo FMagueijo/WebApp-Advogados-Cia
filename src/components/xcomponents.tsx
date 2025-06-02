@@ -1128,7 +1128,7 @@ const Notification: React.FC<NotificationProps> = ({ notificacao = null, lida = 
     );
 };
 
-export function timeAgo(dateTime: Date): string {
+function timeAgo(dateTime: Date): string {
     const now = new Date();
     const seconds = Math.floor((now.getTime() - dateTime.getTime()) / 1000);
 

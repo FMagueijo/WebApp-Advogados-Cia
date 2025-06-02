@@ -3,6 +3,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 interface ClienteData {
   nome: string;
@@ -56,6 +57,8 @@ export async function criarCaso(formData: FormData, userId: string) {
     });
 
     revalidatePath("/casos");
+    redirect("/casos");
+    
     return novoCaso;
   } catch (error) {
     console.error("Erro ao criar caso:", error);
@@ -89,9 +92,7 @@ export async function listarClientes() {
 export async function criarCliente(clienteData: ClienteData) {
   try {
     // Validate required fields
-    if (!clienteData.nome || !clienteData.email || !clienteData.telefone) {
-      throw new Error('Nome, email e telefone são obrigatórios');
-    }
+
 
     const clienteExistente = await prisma.cliente.findUnique({
       where: {

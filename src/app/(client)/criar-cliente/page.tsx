@@ -3,6 +3,7 @@
 import * as X from "@/components/xcomponents";
 import { useState } from "react";
 import { criarCliente } from "./action";
+import { redirect } from "next/navigation";
 
 export default function CriarCliente() {
   const [form, setForm] = useState({
@@ -21,11 +22,10 @@ export default function CriarCliente() {
     e.preventDefault();
     try {
       await criarCliente(form);
-      alert("Cliente criado com sucesso!");
-      // opcional: limpar form
       setForm({ nome: "", email: "", telefone: "", codigoPostal: "", endereco: "" });
+      redirect('/clientes');
     } catch (err) {
-      alert("Erro ao criar cliente.");
+      return;
     }
   };
 

@@ -882,7 +882,7 @@ const PerfilCaso: FunctionComponent = () => {
                   </X.Button>
                   <X.Link href={`/cliente/${cliente.id}`} className="w-full">
                     <p>[{cliente.id}] #{cliente.nome} </p>
-                    <p>Divida {cliente.totalDivida.toFixed(2)}€</p>
+                    {cliente.totalDivida && (<p>Divida {cliente.totalDivida.toFixed(2) ?? ""}€</p>)}
                   </X.Link>
                 </div>
               ))}

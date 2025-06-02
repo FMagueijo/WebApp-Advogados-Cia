@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache"; // se quiser atualizar algum caminho
+import { redirect } from "next/navigation";
 
 interface ClienteData {
   nome: string;
@@ -26,8 +27,13 @@ export async function criarCliente(data: ClienteData) {
     // Se quiser revalidar uma rota, ex: "/clientes"
     // revalidatePath("/clientes");
 
+
+    revalidatePath("/casos");
+    redirect("/casos");
+
     return cliente;
   } catch (error) {
     console.error("Erro ao criar cliente:", error);
     throw new Error("Erro ao criar cliente.");
-  }}
+  }
+}
