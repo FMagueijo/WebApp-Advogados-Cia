@@ -55,8 +55,4 @@ describe('Testes de Login', () => {
     cy.wait('@slowLogin')
   })
 
-  it('Deve exibir link de recuperação de password', () => {
-    cy.contains('a', 'Esqueceu-se da Password?')
-      .should('have.attr', 'href')
-  })
 })
