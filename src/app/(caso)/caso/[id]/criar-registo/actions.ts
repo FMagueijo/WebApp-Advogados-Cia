@@ -89,14 +89,18 @@ export async function criarRegistro(formData: FormData): Promise<void> {
           const { url, public_id } = await uploadToCloudinary(file);
 
           // Salvar metadados no banco de dados
-          await prisma.documento.create({
+           await prisma.documento.create({
             data: {
               nome: file.name,
-              caminho: url, // Agora armazenamos a URL do Cloudinary
+              caminho: url,
               tipo: file.type,
               tamanho: file.size,
-              registro_id: registro.id,
-              public_id: public_id // Armazenamos o public_id para possível gerenciamento futuro
+              registro: {
+                connect: {
+                  idRegisto: registro.idRegisto
+                }
+              },
+              public_id: public_id
             }
           });
         } catch (error) {
