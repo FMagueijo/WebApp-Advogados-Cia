@@ -21,11 +21,6 @@ export async function submitRegistroHoras(data: {
       return { error: 'ID do colaborador inválido' };
     }
 
-    // Validar formato HH:MM
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
-    if (!data.tempo || !timeRegex.test(data.tempo)) {
-      return { error: 'Formato de tempo inválido (use HH:MM)' };
-    }
 
     // Converter tempo para float (horas decimais)
     const [hours, minutes] = data.tempo.split(':').map(Number);

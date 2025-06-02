@@ -1,13 +1,37 @@
 'use server';
-
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+
+interface CasoFilters {
+  estado?: string;
+  [key: string]: any;
+}
+
+interface OrderOptions {
+  [key: string]: boolean;
+}
+
+interface TransformedCaso {
+  id: number;
+  processo: string;
+  assunto: string;
+  criadoPor: string;
+  criadoPorId: number;
+  cliente: string;
+  estado: string;
+  dataCriacao: Date;
+  todosClientes: {
+    id: number;
+    nome: string;
+  }[];
+}
 
 export async function fetchCasos(
-  filters: Record<string, any> = {},
-  order: Record<string, boolean> = {}
-) {
+  filters: CasoFilters = {},
+  order: OrderOptions = {}
+): Promise<TransformedCaso[]> {
   try {
-    const where: any = {};
+    const where: Prisma.CasoWhereInput = {};
 
     if (filters.estado) {
       where.estado = {
@@ -15,7 +39,7 @@ export async function fetchCasos(
       };
     }
 
-    const orderBy: any = [];
+    const orderBy: Prisma.CasoOrderByWithRelationInput[] = [];
     for (const [key, value] of Object.entries(order)) {
       const prismaKey = {
         "ID": "id",
@@ -25,7 +49,7 @@ export async function fetchCasos(
       orderBy.push({ [prismaKey]: value ? "desc" : "asc" });
     }
 
-    // Buscar casos com clientes e usuários
+    // Get casos with all needed relations
     const casos = await prisma.caso.findMany({
       where,
       orderBy,
@@ -38,51 +62,29 @@ export async function fetchCasos(
           }
         },
         clientes: {
-          include: {
-            cliente: {
-              select: {
-                id: true,
-                nome: true
-              }
-            }
+          select: {
+            id: true,
+            nome: true
           }
         }
       }
     });
 
-    // Pegamos todos os user_ids distintos
-    const userIds = [...new Set(casos.map(c => c.user_id))];
-
-    // Buscamos os usuários correspondentes
-    const usuarios = await prisma.user.findMany({
-      where: {
-        id: { in: userIds }
-      },
-      select: {
-        id: true,
-        nome: true
-      }
-    });
-
-    // Criamos um mapa de id -> nome
-    const usuarioMap = new Map(usuarios.map(u => [u.id, u.nome]));
-
-
-    // Transformar os resultados
-    const transformados = casos.map(c => ({
-      id: c.id,
-      processo: c.processo,
-      assunto: c.resumo,
-      criadoPor: c.user.nome,
-      // Pegar o primeiro cliente associado (ou 'Desconhecido' se não houver)
-      cliente: c.clientes[0]?.cliente.nome || 'Desconhecido',
-      estado: c.estado.nome_estado,
-      dataCriacao: c.criado_em,
-      // Manter todos os clientes caso precise
-      todosClientes: c.clientes.map(cc => cc.cliente)
+    // Transform results
+    return casos.map(caso => ({
+      id: caso.id,
+      processo: caso.processo,
+      assunto: caso.resumo,
+      criadoPor: caso.user?.nome || 'Desconhecido',
+      criadoPorId: caso.user?.id || 0,
+      cliente: caso.clientes[0]?.nome || 'Desconhecido',
+      estado: caso.estado?.nome_estado || 'Desconhecido',
+      dataCriacao: caso.criado_em,
+      todosClientes: caso.clientes.map(c => ({
+        id: c.id,
+        nome: c.nome
+      }))
     }));
-
-    return transformados;
   } catch (error) {
     console.error("Erro ao buscar casos:", error);
     throw new Error("Falha ao buscar casos");

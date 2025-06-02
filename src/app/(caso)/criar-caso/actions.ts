@@ -1,51 +1,57 @@
 // src/app/(caso)/criar-caso/actions.ts
 'use server';
 
-import  prisma  from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+
+interface ClienteData {
+  nome: string;
+  email: string;
+  telefone: string;
+  codigoPostal: string;
+  endereco: string;
+}
 
 export async function criarCaso(formData: FormData, userId: string) {
   try {
     const processo = formData.get("Processo") as string;
     const resumo = formData.get("Resumo") as string;
-    const descricao = formData.get("Descrição Detalhada") as string;
+    const descricao = formData.get("Descrição Detalhada") as string | null;
     const clientesIds = formData.getAll("clientesIds") as string[];
 
     if (!processo || !resumo || !userId || clientesIds.length === 0) {
       throw new Error("Campos obrigatórios faltando");
     }
 
-    // Converter userId para número
-    const userIdNumber = typeof userId === 'string' ? parseInt(userId) : userId;
+    // Convert userId to number
+    const userIdNumber = parseInt(userId);
+    if (isNaN(userIdNumber)) {
+      throw new Error("ID de usuário inválido");
+    }
 
-    // Criar o caso com múltiplos clientes
+    // Convert clientesIds to numbers
+    const clientesIdsNumbers = clientesIds.map(id => {
+      const num = parseInt(id);
+      if (isNaN(num)) throw new Error("ID de cliente inválido");
+      return num;
+    });
+
+    // Create the case with multiple clients
     const novoCaso = await prisma.caso.create({
       data: {
         processo,
         resumo,
         descricao: descricao || null,
         user_id: userIdNumber,
-        estado_id: 1 ,
-        user: {
-          connect: { id: parseInt(userId) }
-        },
-        estado: {
-          connect: { id: 1 } // Estado padrão
-        },
+        estado_id: 1,
         clientes: {
-          create: clientesIds.map(clienteId => ({
-            cliente: {
-              connect: { id: parseInt(clienteId) }
-            }
-          }))
+          connect: clientesIdsNumbers.map(id => ({ id }))
         }
       },
       include: {
-        clientes: {
-          include: {
-            cliente: true
-          }
-        }
+        clientes: true, // This will include the clientes relation
+        estado: true,   // Include estado if needed
+        user: true     // Include user if needed
       }
     });
 
@@ -53,9 +59,11 @@ export async function criarCaso(formData: FormData, userId: string) {
     return novoCaso;
   } catch (error) {
     console.error("Erro ao criar caso:", error);
-    throw error;
+    throw error instanceof Error ? error : new Error("Ocorreu um erro ao criar o caso");
   }
 }
+
+
 export async function listarClientes() {
   try {
     const clientes = await prisma.cliente.findMany({
@@ -74,18 +82,17 @@ export async function listarClientes() {
     return clientes;
   } catch (error) {
     console.error('Erro ao listar clientes:', error);
-    return [];
+    throw error instanceof Error ? error : new Error("Ocorreu um erro ao listar clientes");
   }
 }
 
-export async function criarCliente(clienteData: {
-  nome: string;
-  email: string;
-  telefone: string;
-  codigoPostal: string;
-  endereco: string;
-}) {
+export async function criarCliente(clienteData: ClienteData) {
   try {
+    // Validate required fields
+    if (!clienteData.nome || !clienteData.email || !clienteData.telefone) {
+      throw new Error('Nome, email e telefone são obrigatórios');
+    }
+
     const clienteExistente = await prisma.cliente.findUnique({
       where: {
         email: clienteData.email
@@ -101,8 +108,8 @@ export async function criarCliente(clienteData: {
         nome: clienteData.nome,
         email: clienteData.email,
         telefone: clienteData.telefone,
-        codigoPostal: clienteData.codigoPostal,
-        endereco: clienteData.endereco
+        codigoPostal: clienteData.codigoPostal || '',
+        endereco: clienteData.endereco || ''
       }
     });
 

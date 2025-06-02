@@ -97,7 +97,7 @@ export async function criarRegistro(formData: FormData): Promise<void> {
               tamanho: file.size,
               registro: {
                 connect: {
-                  idRegisto: registro.idRegisto
+                  id: registro.id
                 }
               },
               public_id: public_id

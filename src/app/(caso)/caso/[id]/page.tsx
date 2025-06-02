@@ -25,6 +25,8 @@ import {
 } from "./actions";
 import SimpleSkeleton from "@/components/loading/simple_skeleton";
 import RegistrarHorasForm from "@/app/(caso)/caso/registar-horas/page";
+import { ColabList } from "@/components/lists/listar_colab";
+import { ClienteList } from "@/components/lists/listar_clientes";
 
 const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
@@ -78,19 +80,19 @@ const PerfilCaso: FunctionComponent = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Estados para colaboradores
   const [mostrarModalColaborador, setMostrarModalColaborador] = useState(false);
   const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState<any | null>(null);
   const [colaboradoresDoCaso, setColaboradoresDoCaso] = useState<any[]>([]);
-  
+
   // Estados para clientes
   const [mostrarModalCliente, setMostrarModalCliente] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
   const [clienteSelecionado, setClienteSelecionado] = useState<any | null>(null);
   const [clientesDoCaso, setClientesDoCaso] = useState<any[]>([]);
-  
+  const [selectedClienteHonorario, setSelectedClienteHonorario] = useState<number | null>(null);
   const [registros, setRegistros] = useState<any[]>([]);
   const [dividas, setDividas] = useState<any[]>([]);
   const [mostrarModalHonorario, setMostrarModalHonorario] = useState(false);
@@ -137,13 +139,13 @@ const PerfilCaso: FunctionComponent = () => {
         if (data) {
           setProfileData(data);
         }
-        
+
         const [colaboradoresCaso, clientesCaso, registrosCaso] = await Promise.all([
           fetchColaboradoresDoCaso(casoId),
           fetchClientesDoCaso(casoId),
           fetchRegistrosDoCaso(casoId)
         ]);
-        
+
         setColaboradoresDoCaso(colaboradoresCaso);
         setClientesDoCaso(clientesCaso);
         setRegistros(registrosCaso);
@@ -216,6 +218,11 @@ const PerfilCaso: FunctionComponent = () => {
       return;
     }
 
+    if (!selectedClienteHonorario) {
+      setErrorMessage('Por favor selecione um cliente');
+      return;
+    }
+
     const valorNumerico = parseFloat(valorHonorario);
     if (isNaN(valorNumerico)) {
       setErrorMessage('Por favor insira um valor numérico válido');
@@ -233,13 +240,15 @@ const PerfilCaso: FunctionComponent = () => {
       const resultado = await registrarHonorario(
         Number(id),
         valorNumerico,
-        assuntoHonorario
+        assuntoHonorario,
+        selectedClienteHonorario // Pass the selected client ID
       );
 
       if (resultado.success) {
         setSuccessMessage(resultado.message);
         setAssuntoHonorario('');
         setValorHonorario('');
+        setSelectedClienteHonorario(null);
         setMostrarModalHonorario(false);
         // Atualiza a lista de dívidas
         const dividasCaso = await fetchDividasDoCaso(Number(id));
@@ -300,6 +309,90 @@ const PerfilCaso: FunctionComponent = () => {
     }
   };
 
+  const handleAtualizarColaboradores = async () => {
+    try {
+      setIsLoading(true);
+      const casoId = Number(id);
+
+      // Primeiro, obtenha os colaboradores atuais do banco de dados
+      const colaboradoresAtuais = await fetchColaboradoresDoCaso(casoId);
+
+      // Identifique os colaboradores que foram adicionados
+      const novosColaboradores = colaboradoresDoCaso.filter(
+        novoColab => !colaboradoresAtuais.some(colabAtual => colabAtual.id === novoColab.id)
+      );
+
+      // Identifique os colaboradores que foram removidos
+      const colaboradoresRemovidos = colaboradoresAtuais.filter(
+        colabAtual => !colaboradoresDoCaso.some(novoColab => novoColab.id === colabAtual.id)
+      );
+
+      // Adicione os novos colaboradores
+      for (const novoColab of novosColaboradores) {
+        await adicionarColaboradorAoCaso(casoId, novoColab.id);
+      }
+
+      // Remova os colaboradores que foram desmarcados
+      for (const colabRemovido of colaboradoresRemovidos) {
+        await removerColaboradorDoCaso(casoId, colabRemovido.id);
+      }
+
+      // Atualize a lista de colaboradores do caso
+      const updatedColaboradores = await fetchColaboradoresDoCaso(casoId);
+      setColaboradoresDoCaso(updatedColaboradores);
+
+    } catch (error) {
+      console.error('Erro ao atualizar colaboradores:', error);
+      // Recarregue os colaboradores do banco de dados em caso de erro
+      const updatedColaboradores = await fetchColaboradoresDoCaso(Number(id));
+      setColaboradoresDoCaso(updatedColaboradores);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const handleAtualizarClientes = async () => {
+    try {
+      setIsLoading(true);
+      const casoId = Number(id);
+
+      // Primeiro, obtenha os clientes atuais do banco de dados
+      const clientesAtuais = await fetchClientesDoCaso(casoId);
+
+      // Identifique os clientes que foram adicionados
+      const novosClientes = clientesDoCaso.filter(
+        novoCliente => !clientesAtuais.some(clienteAtual => clienteAtual.id === novoCliente.id)
+      );
+
+      // Identifique os clientes que foram removidos
+      const clientesRemovidos = clientesAtuais.filter(
+        clienteAtual => !clientesDoCaso.some(novoCliente => novoCliente.id === clienteAtual.id)
+      );
+
+      // Adicione os novos clientes
+      for (const novoCliente of novosClientes) {
+        await adicionarClienteAoCaso(casoId, novoCliente.id);
+      }
+
+      // Remova os clientes que foram desmarcados
+      for (const clienteRemovido of clientesRemovidos) {
+        await removerClienteDoCaso(casoId, clienteRemovido.id);
+      }
+
+      // Atualize a lista de clientes do caso
+      const updatedClientes = await fetchClientesDoCaso(casoId);
+      setClientesDoCaso(updatedClientes);
+
+    } catch (error) {
+      console.error('Erro ao atualizar clientes:', error);
+      // Recarregue os clientes do banco de dados em caso de erro
+      const updatedClientes = await fetchClientesDoCaso(Number(id));
+      setClientesDoCaso(updatedClientes);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   const handlePagarDividaTotal = async (dividaId: number) => {
     try {
       setIsLoading(true);
@@ -337,7 +430,7 @@ const PerfilCaso: FunctionComponent = () => {
     try {
       setIsLoading(true);
       const success = await adicionarColaboradorAoCaso(Number(id), colaboradorSelecionado.id);
-      
+
       if (success) {
         const updatedColaboradores = await fetchColaboradoresDoCaso(Number(id));
         setColaboradoresDoCaso(updatedColaboradores);
@@ -355,7 +448,7 @@ const PerfilCaso: FunctionComponent = () => {
     try {
       setIsLoading(true);
       const success = await removerColaboradorDoCaso(Number(id), colaboradorId);
-      
+
       if (success) {
         const updatedColaboradores = await fetchColaboradoresDoCaso(Number(id));
         setColaboradoresDoCaso(updatedColaboradores);
@@ -374,7 +467,7 @@ const PerfilCaso: FunctionComponent = () => {
     try {
       setIsLoading(true);
       const success = await adicionarClienteAoCaso(Number(id), clienteSelecionado.id);
-      
+
       if (success) {
         const updatedClientes = await fetchClientesDoCaso(Number(id));
         setClientesDoCaso(updatedClientes);
@@ -392,7 +485,7 @@ const PerfilCaso: FunctionComponent = () => {
     try {
       setIsLoading(true);
       const success = await removerClienteDoCaso(Number(id), clienteId);
-      
+
       if (success) {
         const updatedClientes = await fetchClientesDoCaso(Number(id));
         setClientesDoCaso(updatedClientes);
@@ -473,27 +566,89 @@ const PerfilCaso: FunctionComponent = () => {
           />
         </X.Container>
 
-        {/* Seção de informações gerais */}
         <X.Container className="w-full">
-          <div className="flex justify-between items-center">
-            <p className="text-lg font-semibold">Info geral</p>
+          <p className="font-semibold">Honorários</p>
+          <X.Divider />
+          <div className="flex flex-row gap-4">
+            <X.Button
+              onClick={() => {
+                setMostrarModalHonorario(true);
+                setErrorMessage(null);
+                setSuccessMessage(null);
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Registar Honorário
+            </X.Button>
           </div>
-          <X.Divider></X.Divider>
-          <X.Button onClick={() => setIsRegistroHorasOpen(true)} className="w-max">
-            Registar Horas
-          </X.Button>
-          <X.Container className="w-full">
-            <p className="text-lg font-semibold"> [ID] Processo </p>
-            <p> [{id}] #{profileData.processo}</p>
-          </X.Container>
-          <X.Container className="w-full">
-            <p className="text-lg font-semibold"> Resumo </p>
-            <p> {profileData.resumo}</p>
-          </X.Container>
-          <X.Container className="w-full">
-            <p className="text-lg font-semibold"> Descrição detalhada </p>
-            {profileData.descricao}
-          </X.Container>
+          <X.Divider />
+          {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
+          {successMessage && <p className="text-green-500 text-sm">{successMessage}</p>}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-3">Estado</th>
+                  <th className="p-3">Cliente</th>
+                  <th className="p-3">Assunto</th>
+                  <th className="p-3">Valor</th>
+                  <th className="p-3">Data</th>
+                  <th className="p-3">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dividas.length > 0 ? (
+                  dividas.map((divida) => (
+                    <tr key={divida.id} className="border-b border-[var(--secondary-color)]">
+                      <td className="p-2">
+                        <X.DataField colorOverride={divida.pago ? "--success-color" : "--error-color"} className="min-w-max">
+                          <p>
+                            {divida.pago ? (
+                              "Pago"
+                            ) : (
+                              "Por Pagar"
+                            )}
+                          </p>
+                        </X.DataField>
+
+                      </td>
+                      <td className="p-2"><X.Link href={`/cliente/${divida.cliente.id}`}>{divida.cliente.nome || "Sem nome"}</X.Link></td> {/* Adicionado fallback */}
+                      <td className="p-2"><X.DataField>{divida.assunto || "Sem assunto"}</X.DataField></td> {/* Adicionado fallback */}
+                      <td className="p-2"><X.DataField >{divida.valor.toFixed(2)}€</X.DataField></td>
+                      <td className="p-2"><X.DataField >{new Date(divida.criado_em).toLocaleDateString('pt-PT')}</X.DataField></td>
+                      <td className="p-2 flex gap-2">
+                        {!divida.pago && (
+                          <>
+                            <X.Button
+                              onClick={() => {
+                                setDividaSelecionada(divida.id);
+                                setMostrarModalPagamento(true);
+                              }}
+                              className="min-w-max"
+                            >
+                              Pagar
+                            </X.Button>
+                            <X.Button
+                              onClick={() => handlePagarDividaTotal(divida.id)}
+                              className="min-w-max"
+                            >
+                              Pagar Tudo
+                            </X.Button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-gray-500">
+                      Nenhuma dívida registada
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </X.Container>
       </div>
 
@@ -530,7 +685,7 @@ const PerfilCaso: FunctionComponent = () => {
                   registros.map((registro) => (
                     <tr key={registro.idRegisto} className="border-b border-[var(--secondary-color)]">
                       <td className="p-2">
-                        <X.Link href={`/caso/${id}/registo/${registro.idRegisto}`} className="group">
+                        <X.Link href={`/caso/${id}/registo/${registro.id}`} className="group">
                           <div>{registro.resumo}</div>
                         </X.Link>
                       </td>
@@ -571,29 +726,46 @@ const PerfilCaso: FunctionComponent = () => {
             <X.Button onClick={() => setMostrarModalColaborador(true)}>
               Associar Colaborador
             </X.Button>
+            <X.Button onClick={() => setIsRegistroHorasOpen(true)} className="w-max">
+              Registar Horas
+            </X.Button>
           </div>
+          <X.Popup isOpen={mostrarModalColaborador} title="Selecionar Colaboradores" onClose={() => { setMostrarModalColaborador(false); handleAtualizarColaboradores(); }} className="w-full h-full">
+            <ColabList
+              mode="select"
+              selectedCaseIds={colaboradoresDoCaso.map((caseItem) => caseItem.id)}
+              onSelect={(selectedCases) => {
+                setColaboradoresDoCaso(selectedCases);
+
+              }}
+            />
+          </X.Popup>
           <X.Divider />
           {isLoading ? (
             <SimpleSkeleton />
           ) : colaboradoresDoCaso.length > 0 ? (
             <div className="flex flex-col gap-2">
-              {colaboradoresDoCaso.map((colaborador) => (
-                <div key={colaborador.id} className="flex justify-between items-center">
-                  <X.Link
-                    href={`/perfil-terceiro/${colaborador.id}`}
-                    className="hover:text-[var(--primary-color)]"
+              {colaboradoresDoCaso.map((colabItem) => (
+                <div key={colabItem.id} className="flex items-center gap-4">
+                  <X.Button
+                    onClick={() => {
+                      handleRemoverColaborador(Number(colabItem.id));
+                    }
+
+                    }
                   >
-                    [{colaborador.id}] {colaborador.nome} ({colaborador.role?.nome_role})
+                    <img
+                      className={"min-w-6 flex-shrink-0"}
+                      src={"/images/icons/close.svg"}
+                      alt={colabItem.nome}
+                    />
+                  </X.Button>
+                  <X.Link href={`/perfil-terceiro/${colabItem.id}`} className="w-full">
+                    <div className="w-full flex flex-col gap-2">
+                      <p>[{colabItem.id}] #{colabItem.nome}</p>
+                      <p className="font-light">{Number(colabItem.totalHoras).toFixed(2)}h Trabalhadas</p>
+                    </div>
                   </X.Link>
-                  {colaborador.id !== session?.user?.id && (
-                    <button 
-                      onClick={() => handleRemoverColaborador(colaborador.id)}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                      disabled={isLoading}
-                    >
-                      Remover
-                    </button>
-                  )}
                 </div>
               ))}
             </div>
@@ -602,125 +774,51 @@ const PerfilCaso: FunctionComponent = () => {
           )}
         </X.Container>
 
-        {/* Seção de Dívidas */}
-        <X.Container className="w-full">
-          <p className="font-semibold">Honorários</p>
-          <X.Divider />
-          <div className="flex flex-row gap-4">
-            <X.Button
-              onClick={() => {
-                setMostrarModalHonorario(true);
-                setErrorMessage(null);
-                setSuccessMessage(null);
-              }}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Registar Honorário
-            </X.Button>
-          </div>
-          <X.Divider />
-          {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
-          {successMessage && <p className="text-green-500 text-sm">{successMessage}</p>}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left">
-                  <th className="p-3">Assunto</th>
-                  <th className="p-3">Valor</th>
-                  <th className="p-3">Data</th>
-                  <th className="p-3">Estado</th>
-                  <th className="p-3">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dividas.length > 0 ? (
-                  dividas.map((divida) => (
-                    <tr key={divida.id} className="border-b border-[var(--secondary-color)]">
-                      <td className="p-2">{divida.assunto || "Sem assunto"}</td> {/* Adicionado fallback */}
-                      <td className="p-2">{divida.valor.toFixed(2)}€</td>
-                      <td className="p-2">{new Date(divida.criado_em).toLocaleDateString('pt-PT')}</td>
-                      <td className="p-2">
-                        {divida.pago ? (
-                          <span className="text-green-500">Pago</span>
-                        ) : (
-                          <span className="text-red-500">Por pagar</span>
-                        )}
-                      </td>
-                      <td className="p-2 flex gap-2">
-                        {!divida.pago && (
-                          <>
-                            <X.Button
-                              onClick={() => {
-                                setDividaSelecionada(divida.id);
-                                setMostrarModalPagamento(true);
-                              }}
-                            >
-                              Pagar
-                            </X.Button>
-                            <X.Button
-                              onClick={() => handlePagarDividaTotal(divida.id)}
-                            >
-                              Pagar Tudo
-                            </X.Button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="p-4 text-center text-gray-500">
-                      Nenhuma dívida registada
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </X.Container>
 
-        {mostrarModalHonorario && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <X.Container className="w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-lg font-semibold">Registar Honorário</p>
-                <button
-                  onClick={() => {
-                    setMostrarModalHonorario(false);
-                    setErrorMessage(null);
-                    setAssuntoHonorario("");
-                    setValorHonorario("");
-                  }}
-                  className="text-gray-500 hover:text-gray-800 text-2xl"
-                >
-                  &times;
-                </button>
-              </div>
-              <X.Divider />
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
-                placeholder="Assunto"
-                value={assuntoHonorario}
-                onChange={(e) => setAssuntoHonorario(e.target.value)}
-              />
-              <input
-                type="number"
-                step="0.01"
-                className="w-full p-2 border border-gray-400 rounded mt-4 bg-gray-800 text-white"
-                placeholder="Valor em €"
-                value={valorHonorario}
-                onChange={(e) => setValorHonorario(e.target.value)}
-              />
-              {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
-              <div className="mt-4 flex justify-end">
-                <X.Button onClick={handleRegistrarHonorario} >
-                  {isLoading ? <LoadingSpinner /> : "Confirmar"}
-                </X.Button>
-              </div>
-            </X.Container>
+        <X.Popup
+          isOpen={mostrarModalHonorario}
+          title="Registar Honorário"
+          onClose={() => {
+            setMostrarModalHonorario(false);
+            setErrorMessage(null);
+            setAssuntoHonorario("");
+            setValorHonorario("");
+            setSelectedClienteHonorario(null);
+          }}
+          className="w-full h-full"
+        >
+          <div className="flex flex-col gap-4">
+            <X.Dropdown
+              label="Selecione um cliente"
+              options={clientesDoCaso.map(cliente => (cliente.nome))}
+              defaultIndex={selectedClienteHonorario ? clientesDoCaso.findIndex(cliente => cliente.nome === selectedClienteHonorario) : -1}
+              onSelect={(value) => setSelectedClienteHonorario(clientesDoCaso.find(cliente => cliente.nome === value)?.id || null)}
+            ></X.Dropdown>
+            <X.Field
+              name="assunto"
+              value={assuntoHonorario}
+              placeholder="Assunto"
+              className="w-full"
+              onChange={(e) => setAssuntoHonorario(e.target.value)}
+            />
+            <X.Field
+              type="number"
+              step="0.01"
+              name="valor"
+              min={0}
+              value={valorHonorario}
+              placeholder="Valor em €"
+              className="w-full"
+              onChange={(e) => setValorHonorario(e.target.value)}
+            />
+            {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
+            <div className="mt-4 flex justify-end">
+              <X.Button onClick={handleRegistrarHonorario}>
+                {isLoading ? <LoadingSpinner /> : "Confirmar"}
+              </X.Button>
+            </div>
           </div>
-        )}
+        </X.Popup>
 
         {/* Modal Pagar Dívida */}
         {mostrarModalPagamento && (
@@ -768,26 +866,40 @@ const PerfilCaso: FunctionComponent = () => {
               Associar Cliente
             </X.Button>
           </div>
+          <X.Popup isOpen={mostrarModalCliente} title="Selecionar Clientes" onClose={() => { setMostrarModalCliente(false); handleAtualizarClientes(); }} className="w-full h-full">
+            <ClienteList
+              mode="select"
+              selectedCaseIds={clientesDoCaso.map((caseItem) => caseItem.id)}
+              onSelect={(selectedCases) => {
+                setClientesDoCaso(selectedCases);
+
+              }}
+            />
+          </X.Popup>
           <X.Divider />
           {isLoading ? (
             <SimpleSkeleton />
           ) : clientesDoCaso.length > 0 ? (
             <div className="flex flex-col gap-2">
               {clientesDoCaso.map((cliente) => (
-                <div key={cliente.id} className="flex justify-between items-center">
-                  <X.Link
-                    href={`/perfil-cliente/${cliente.id}`}
-                    className="hover:text-[var(--primary-color)]"
+                <div key={cliente.id} className="flex items-center gap-4">
+                  <X.Button
+                    onClick={() => {
+                      handleRemoverCliente(Number(cliente.id));
+                    }
+
+                    }
                   >
-                    [{cliente.id}] {cliente.nome} ({cliente.email})
+                    <img
+                      className={"min-w-6 flex-shrink-0"}
+                      src={"/images/icons/close.svg"}
+                      alt={cliente.nome}
+                    />
+                  </X.Button>
+                  <X.Link href={`/cliente/${cliente.id}`} className="w-full">
+                    <p>[{cliente.id}] #{cliente.nome} </p>
+                    <p>Divida {cliente.totalDivida.toFixed(2)}€</p>
                   </X.Link>
-                  <button 
-                    onClick={() => handleRemoverCliente(cliente.id)}
-                    className="text-red-500 hover:text-red-700 text-sm"
-                    disabled={isLoading}
-                  >
-                    Remover
-                  </button>
                 </div>
               ))}
             </div>
@@ -796,142 +908,15 @@ const PerfilCaso: FunctionComponent = () => {
           )}
         </X.Container>
 
-        {/* Modal para selecionar colaborador */}
-        {mostrarModalColaborador && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-lg font-semibold">Selecionar Colaborador</p>
-                <button
-                  onClick={() => {
-                    setMostrarModalColaborador(false);
-                    setColaboradorSelecionado(null);
-                  }}
-                  className="text-gray-500 hover:text-gray-800 text-2xl"
-                >
-                  &times;
-                </button>
-              </div>
-              <X.Divider />
-              {colaboradores.length === 0 ? (
-                <p className="text-sm text-gray-500 mt-4">Nenhum colaborador encontrado.</p>
-              ) : (
-                <>
-                  <div className="space-y-2 mt-4">
-                    {colaboradores.map(colaborador => (
-                      <div
-                        key={colaborador.id}
-                        className={`p-2 rounded cursor-pointer hover:bg-green-100 ${colaboradorSelecionado?.id === colaborador.id ? 'bg-green-100' : ''
-                          }`}
-                        onClick={() => setColaboradorSelecionado(colaborador)}
-                      >
-                        <div className="font-medium">{colaborador.nome}</div>
-                        <div className="text-xs text-gray-500">{colaborador.email}</div>
-                      </div>
-                    ))}
-                    {colaboradores.map(colaborador => {
-                      const jaAssociado = colaboradoresDoCaso.some(c => c.id === colaborador.id);
-                      
-                      return (
-                        <div
-                          key={colaborador.id}
-                          className={`p-2 rounded cursor-pointer ${
-                            colaboradorSelecionado?.id === colaborador.id 
-                              ? 'bg-green-100' 
-                              : jaAssociado 
-                                ? 'bg-gray-100 cursor-not-allowed' 
-                                : 'hover:bg-green-100'
-                          }`}
-                          onClick={!jaAssociado ? () => setColaboradorSelecionado(colaborador) : undefined}
-                        >
-                          <div className="font-medium">
-                            {colaborador.nome} 
-                            {jaAssociado && <span className="text-xs text-gray-500 ml-2">(já associado)</span>}
-                          </div>
-                          <div className="text-xs text-gray-500">{colaborador.email} ({colaborador.role?.nome_role})</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-4 flex justify-end">
-                    <X.Button
-                      onClick={handleAdicionarColaborador}
-                    >
-                      {isLoading ? <LoadingSpinner /> : "Confirmar"}
-                    </X.Button>
-                  </div>
-                </>
-              )}
-            </X.Container>
-          </div>
-        )}
 
-        {/* Modal para selecionar cliente */}
-        {mostrarModalCliente && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <X.Container className="w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-lg font-semibold">Selecionar Cliente</p>
-                <button 
-                  onClick={() => {
-                    setMostrarModalCliente(false);
-                    setClienteSelecionado(null);
-                  }} 
-                  className="text-gray-500 hover:text-gray-800 text-2xl"
-                >
-                  &times;
-                </button>
-              </div>
-              <X.Divider />
-              {clientes.length === 0 ? (
-                <p className="text-sm text-gray-500 mt-4">Nenhum cliente encontrado.</p>
-              ) : (
-                <>
-                  <div className="space-y-2 mt-4">
-                    {clientes.map(cliente => {
-                      const jaAssociado = clientesDoCaso.some(c => c.id === cliente.id);
-                      
-                      return (
-                        <div
-                          key={cliente.id}
-                          className={`p-2 rounded cursor-pointer ${
-                            clienteSelecionado?.id === cliente.id 
-                              ? 'bg-green-100' 
-                              : jaAssociado 
-                                ? 'bg-gray-100 cursor-not-allowed' 
-                                : 'hover:bg-green-100'
-                          }`}
-                          onClick={!jaAssociado ? () => setClienteSelecionado(cliente) : undefined}
-                        >
-                          <div className="font-medium">
-                            {cliente.nome} 
-                            {jaAssociado && <span className="text-xs text-gray-500 ml-2">(já associado)</span>}
-                          </div>
-                          <div className="text-xs text-gray-500">{cliente.email} ({cliente.telefone})</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-4 flex justify-end">
-                    <X.Button 
-                      onClick={handleAdicionarCliente}
-                      
-                    >
-                      {isLoading ? <LoadingSpinner /> : "Confirmar"}
-                    </X.Button>
-                  </div>
-                </>
-              )}
-            </X.Container>
-          </div>
-        )}
       </div>
-
-      <RegistrarHorasForm
+      <X.Popup
         isOpen={isRegistroHorasOpen}
+        title="Registar Horas"
         onClose={() => setIsRegistroHorasOpen(false)}
-        casoId={Number(id)}
-      />
+      >
+        <RegistrarHorasForm onClose={() => setIsRegistroHorasOpen(false)} casoId={Number(id)}></RegistrarHorasForm>
+      </X.Popup>
     </div>
   );
 };

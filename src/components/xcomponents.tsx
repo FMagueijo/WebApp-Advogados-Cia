@@ -154,6 +154,7 @@ interface FieldProps extends BaseProps {
     pattern?: RegExp;
     min?: number;
     max?: number;
+    step?: number | string;
 }
 const Field: React.FC<FieldProps> = ({
     className = "",
@@ -168,6 +169,7 @@ const Field: React.FC<FieldProps> = ({
     pattern,
     min,
     max,
+    step,
 }) => {
     const [internalValue, setInternalValue] = useState<string>(value);
     const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
@@ -214,7 +216,7 @@ const Field: React.FC<FieldProps> = ({
                 className="text-lg w-full select-none focus:ring-0 focus:outline-none bg-transparent"
                 min={type === "number" ? min : undefined}
                 max={type === "number" ? max : undefined}
-                step={type === "number" ? "any" : undefined}
+                step={type === "number" ? step : undefined}
             />
             {showHideToggle && (
                 <ToggleBox

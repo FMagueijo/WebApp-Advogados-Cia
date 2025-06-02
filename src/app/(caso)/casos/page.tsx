@@ -58,7 +58,6 @@ export default function ListarCasos() {
                   <th className="p-4">ID / Processo</th>
                   <th className="p-4">Assunto</th>
                   <th className="p-4">Criado por</th>
-                  <th className="p-4">Cliente</th>
                   <th className="p-4">Estado</th>
                   <th className="w-[100px] px-2">Ações</th>
                 </tr>
@@ -79,15 +78,12 @@ export default function ListarCasos() {
                       </X.DataField>
                     </td>
                     <td className="p-4">
-                      <X.Link href={`/perfil-terceiro/${caso.user.id}`}>
-                        {caso.user.nome}
+                      <X.Link href={`/perfil-terceiro/${caso.criadoPorId}`}>
+                        {caso.criadoPor}
                       </X.Link>
 
 
                     </td>
-                    <td className="p-4">{caso.assunto}</td>
-                    <td className="p-4">{caso.criadoPor}</td>
-                    <td className="p-4">{caso.cliente}</td>
                     <td className="p-4">
                       <X.DataField
                         className="rounded-lg p-2"
@@ -117,14 +113,13 @@ export default function ListarCasos() {
                 ))}
               </tbody>
             </table>
-
-            {registarHoras && (
+            <X.Popup isOpen={registarHoras}>
               <RegistrarHorasForm
                 casoId={casoAtual}
-                isOpen={registarHoras}
                 onClose={() => setRegistarHoras(false)}
               />
-            )}
+
+            </X.Popup>
 
             {casos.length === 0 && <p className="p-4">Nenhum caso encontrado</p>}
           </div>

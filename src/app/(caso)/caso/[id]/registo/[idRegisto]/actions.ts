@@ -28,9 +28,9 @@ interface UpdateRegistroData {
 export async function fetchRegistroProfile(registroId: number): Promise<RegistroProfile> {
   try {
     const registro = await prisma.registro.findUnique({
-      where: { idRegisto: registroId },
+      where: { id: registroId },
       select: {
-        idRegisto: true,
+        id: true,
         tipo: true,
         resumo: true,
         descricao: true,
@@ -50,7 +50,7 @@ export async function fetchRegistroProfile(registroId: number): Promise<Registro
     if (!registro) throw new Error('Registro não encontrado');
 
     return {
-      id: registro.idRegisto,
+      id: registro.id,
       tipo: registro.tipo,
       resumo: registro.resumo,
       descricao: registro.descricao || '',
@@ -65,7 +65,7 @@ export async function fetchRegistroProfile(registroId: number): Promise<Registro
 export async function updateRegistroProfile(registroId: number, data: UpdateRegistroData) {
   try {
     const updated = await prisma.registro.update({
-      where: { idRegisto: registroId },
+      where: { id: registroId },
       data: {
         resumo: data.resumo,
         descricao: data.descricao,

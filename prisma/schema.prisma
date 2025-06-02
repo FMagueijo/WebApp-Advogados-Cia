@@ -28,9 +28,9 @@ model User {
   role             Role?              @relation(fields: [role_id], references: [role_id], onDelete: SetNull, onUpdate: Cascade)
   tokens           TokenPass[]
   registros        Registro[]
-  casos            Caso[]
+  casos            Caso[]  @relation(name: "CasosColaborador")
   HorasTrabalhadas HorasTrabalhadas[]
-  casos_colaborando ColaboradorDoCaso[]
+  casos_colaborando Caso[]
 
   Evento                 Evento[] @relation("EventoColaboradores")
   Eventos                Evento[]             
@@ -48,7 +48,7 @@ model Cliente {
   telefone     String         @db.VarChar(20)
   codigoPostal String         @db.VarChar(10)
   endereco     String         @db.VarChar(255)
-  casos        ClienteDoCaso[] // Relação através da tabela de junção
+  casos        Caso[] // Relação através da tabela de junção
   dividas      Divida[]
 
   @@map("cliente")
@@ -87,6 +87,7 @@ model CasoEstado {
 model HorasTrabalhadas {
   id      Int      @id @default(autoincrement())
   horas   Float    @db.Float
+  descricao String? @db.Text
   data    DateTime @default(now())
   caso_id Int
   caso    Caso     @relation(fields: [caso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -104,7 +105,7 @@ model Caso {
   criado_em         DateTime           @default(now())
   
   user_id           Int
-  user              User               @relation(fields: [user_id], references: [id])
+  user              User               @relation(name: "CasosColaborador", fields: [user_id], references: [id])
 
   estado_id         Int                @default(1)
   estado            CasoEstado         @relation(fields: [estado_id], references: [id])
@@ -113,8 +114,8 @@ model Caso {
   Evento           Evento[]           @relation("EventoCasos")
   dividas          Divida[]
   HorasTrabalhadas HorasTrabalhadas[]
-  colaboradores     ColaboradorDoCaso[]
-  clientes          ClienteDoCaso[]    // Relação muitos-para-muitos
+  colaboradores     User[]
+  clientes          Cliente[]    // Relação muitos-para-muitos
 
   @@map("caso")
 }
@@ -135,29 +136,6 @@ model Documento {
   @@map("documento")
 }
 
-model ClienteDoCaso {
-  cliente_id    Int
-  caso_id       Int
-  data_associado DateTime @default(now())
-
-  cliente       Cliente   @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
-  caso          Caso      @relation(fields: [caso_id], references: [id], onDelete: Cascade)
-
-  @@id([cliente_id, caso_id])
-  @@map("cliente_do_caso")
-}
-
-model ColaboradorDoCaso {
-  user_id     Int
-  caso_id     Int
-  data_entrou DateTime @default(now())
-
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  caso Caso @relation(fields: [caso_id], references: [id], onDelete: Cascade)
-
-  @@id([user_id, caso_id])
-  @@map("colaborador_do_caso")
-}
 
 model Evento {
   id            String     @id @default(cuid())

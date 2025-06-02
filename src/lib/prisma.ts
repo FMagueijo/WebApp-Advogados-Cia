@@ -112,17 +112,12 @@ export const prisma = new PrismaClient().$extends({
                 const userId = await getCurrentUserId();
                 if (!userId) return result;
 
-                // Buscar informações do cliente para a notificação
-                const casoCompleto = await prisma.caso.findUnique({
-                    where: { id: result.id },
-                    include: { cliente: true },
-                });
 
                 const receptores = await getAllUsers(prisma);
                 await createNotification(
                     prisma,
                     'Novo Caso Criado',
-                    `Um novo caso "${result.processo}" foi criado para o cliente "${casoCompleto?.cliente.nome}".`,
+                    `Um novo caso "${result.processo}" foi criado ".`,
                     'SISTEMA',
                     userId,
                     receptores
@@ -135,16 +130,11 @@ export const prisma = new PrismaClient().$extends({
                 const userId = await getCurrentUserId();
                 if (!userId) return result;
 
-                const casoCompleto = await prisma.caso.findUnique({
-                    where: { id: result.id },
-                    include: { cliente: true, estado: true },
-                });
-
                 const receptores = await getAllUsers(prisma);
                 await createNotification(
                     prisma,
                     'Caso Atualizado',
-                    `O caso "${result.processo}" do cliente "${casoCompleto?.cliente.nome}" foi atualizado.`,
+                    `O caso "${result.processo}" foi atualizado.`,
                     'SISTEMA',
                     userId,
                     receptores
@@ -166,7 +156,7 @@ export const prisma = new PrismaClient().$extends({
                     where: { id: result.id },
                     include: {
                         caso: {
-                            include: { cliente: true },
+                            include: { clientes: true },
                         },
                     },
                 });
@@ -175,7 +165,7 @@ export const prisma = new PrismaClient().$extends({
                 await createNotification(
                     prisma,
                     'Novo Registro Adicionado',
-                    `Um novo registro "${result.resumo}" foi adicionado ao caso "${registroCompleto?.caso.processo}" do cliente "${registroCompleto?.caso.cliente.nome}".`,
+                    `Um novo registro "${result.resumo}" foi adicionado ao caso "${registroCompleto?.caso.processo}".`,
                     'SISTEMA',
                     userId,
                     receptores
@@ -192,7 +182,7 @@ export const prisma = new PrismaClient().$extends({
                     where: { id: result.id },
                     include: {
                         caso: {
-                            include: { cliente: true },
+                            include: { clientes: true },
                         },
                     },
                 });

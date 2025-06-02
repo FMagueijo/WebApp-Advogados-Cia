@@ -63,12 +63,12 @@ export async function updateCasoEstado(casoId: number, novoEstado: string): Prom
     return false;
   }
 }
-
 export async function fetchColaboradoresDoCaso(casoId: number) {
   try {
+    // First get the case with user and collaborators
     const caso = await prisma.caso.findUnique({
       where: { id: casoId },
-      include: {
+      select: {
         user: {
           select: {
             id: true,
@@ -82,17 +82,13 @@ export async function fetchColaboradoresDoCaso(casoId: number) {
           }
         },
         colaboradores: {
-          include: {
-            user: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            role: {
               select: {
-                id: true,
-                nome: true,
-                email: true,
-                role: {
-                  select: {
-                    nome_role: true
-                  }
-                }
+                nome_role: true
               }
             }
           }
@@ -102,32 +98,62 @@ export async function fetchColaboradoresDoCaso(casoId: number) {
 
     if (!caso) return [];
 
-    const colaboradoresAdicionais = caso.colaboradores.map(c => c.user);
-    const todosColaboradores = [caso.user, ...colaboradoresAdicionais];
+    // Then get all worked hours for this case in a separate query
+    const horasTrabalhadas = await prisma.horasTrabalhadas.findMany({
+      where: { caso_id: casoId },
+      select: {
+        horas: true,
+        user_id: true
+      }
+    });
 
-    return todosColaboradores.filter((colab, index, self) =>
-      index === self.findIndex((t) => t.id === colab.id)
-    );
+    // Create a map of user_id to total hours
+    const horasPorColaborador = horasTrabalhadas.reduce((acc, ht) => {
+      acc[ht.user_id] = (acc[ht.user_id] || 0) + ht.horas;
+      return acc;
+    }, {} as Record<number, number>);
+
+    // Combine the main user and collaborators, removing duplicates
+    const todosColaboradores = [caso.user, ...caso.colaboradores];
+
+    // Remove duplicates and add hours information
+    const uniqueColaboradores = todosColaboradores
+      .filter((colab, index, self) =>
+        index === self.findIndex((t) => t.id === colab.id)
+      )
+      .map(colab => ({
+        ...colab,
+        totalHoras: horasPorColaborador[colab.id] || 0,
+        HorasTrabalhadas: horasTrabalhadas
+          .filter(ht => ht.user_id === colab.id)
+          .map(ht => ({ horas: ht.horas }))
+      }));
+
+    return uniqueColaboradores;
   } catch (error) {
     console.error("Erro ao buscar colaboradores do caso:", error);
     throw error;
   }
 }
-
 export async function fetchClientesDoCaso(casoId: number) {
   try {
     const caso = await prisma.caso.findUnique({
       where: { id: casoId },
       include: {
         clientes: {
-          include: {
-            cliente: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            telefone: true,
+            dividas: {
               select: {
-                id: true,
-                nome: true,
-                email: true,
-                telefone: true
-              }
+                valor: true,
+              },
+              where: {
+                pago: false,
+                caso_id: casoId
+              },
             }
           }
         }
@@ -136,7 +162,12 @@ export async function fetchClientesDoCaso(casoId: number) {
 
     if (!caso) return [];
 
-    return caso.clientes.map(c => c.cliente);
+    // Transform each client to include calculated total debt
+    return caso.clientes.map(cliente => ({
+      ...cliente,
+      totalDivida: cliente.dividas.reduce((total, divida) => total + divida.valor, 0)
+    }));
+
   } catch (error) {
     console.error("Erro ao buscar clientes do caso:", error);
     throw error;
@@ -197,41 +228,23 @@ export async function listarColaboradores() {
   }
 }
 
-export async function registrarHonorario(casoId: number, valor: number, assunto: string) {
+export async function registrarHonorario(casoId: number, valor: number, assunto: string, clienteId: number) {
   try {
-    // Primeiro, buscar o caso para obter o ID do cliente associado
-    //TODO: FIX
-    /*
-    const caso = await prisma.caso.findUnique({
-      where: { id: casoId },
-      select: {
-        cliente_id: true
-      }
-    });
-
-    if (!caso) {
-      return { success: false, message: 'Caso não encontrado' };
-    }
-
-    if (!caso.cliente_id) {
-      return { success: false, message: 'Nenhum cliente associado a este caso' };
-    }
-    
     // Cria uma nova dívida com os dados fornecidos
     const novaDivida = await prisma.divida.create({
       data: {
         valor: valor,
-        assunto: assunto, // Adiciona o campo assunto
+        assunto: assunto,
         pago: false,
         caso: {
           connect: { id: casoId }
         },
         cliente: {
-          connect: { id: caso. } // Usa o ID do cliente obtido dinamicamente
+          connect: { id: clienteId }
         }
       }
     });
-*/
+
     revalidatePath(`/caso/${casoId}`);
     return { success: true, message: 'Novo honorário registrado com sucesso' };
   } catch (error) {
@@ -334,6 +347,7 @@ export async function pagarDividaTotal(dividaId: number) {
     return { success: false, message: 'Erro ao pagar dívida' };
   }
 }
+
 export async function listarClientes() {
   try {
     const clientes = await prisma.cliente.findMany({
@@ -350,7 +364,6 @@ export async function listarClientes() {
     throw error;
   }
 }
-
 
 export async function fetchRegistrosDoCaso(casoId: number, order: 'asc' | 'desc' = 'desc') {
   try {
@@ -380,7 +393,7 @@ export async function fetchDividasDoCaso(casoId: number) {
       select: {
         id: true,
         valor: true,
-        assunto: true, // Adicione esta linha
+        assunto: true,
         criado_em: true,
         pago: true,
         cliente: {
@@ -390,9 +403,14 @@ export async function fetchDividasDoCaso(casoId: number) {
           }
         }
       },
-      orderBy: {
-        criado_em: 'desc'
-      }
+      orderBy: [
+        {
+          pago: 'asc' // This will put unpaid debts (false) first, then paid (true)
+        },
+        {
+          criado_em: 'desc' // Then sort by creation date, newest first
+        }
+      ],
     });
     return dividas;
   } catch (error) {
@@ -403,10 +421,12 @@ export async function fetchDividasDoCaso(casoId: number) {
 
 export async function adicionarColaboradorAoCaso(casoId: number, colaboradorId: number): Promise<boolean> {
   try {
-    await prisma.colaboradorDoCaso.create({
+    await prisma.caso.update({
+      where: { id: casoId },
       data: {
-        user_id: colaboradorId,
-        caso_id: casoId
+        colaboradores: {
+          connect: { id: colaboradorId }
+        }
       }
     });
 
@@ -420,11 +440,11 @@ export async function adicionarColaboradorAoCaso(casoId: number, colaboradorId: 
 
 export async function removerColaboradorDoCaso(casoId: number, colaboradorId: number): Promise<boolean> {
   try {
-    await prisma.colaboradorDoCaso.delete({
-      where: {
-        user_id_caso_id: {
-          user_id: colaboradorId,
-          caso_id: casoId
+    await prisma.caso.update({
+      where: { id: casoId },
+      data: {
+        colaboradores: {
+          disconnect: { id: colaboradorId }
         }
       }
     });
@@ -439,10 +459,12 @@ export async function removerColaboradorDoCaso(casoId: number, colaboradorId: nu
 
 export async function adicionarClienteAoCaso(casoId: number, clienteId: number): Promise<boolean> {
   try {
-    await prisma.clienteDoCaso.create({
+    await prisma.caso.update({
+      where: { id: casoId },
       data: {
-        cliente_id: clienteId,
-        caso_id: casoId
+        clientes: {
+          connect: { id: clienteId }
+        }
       }
     });
 
@@ -456,11 +478,11 @@ export async function adicionarClienteAoCaso(casoId: number, clienteId: number):
 
 export async function removerClienteDoCaso(casoId: number, clienteId: number): Promise<boolean> {
   try {
-    await prisma.clienteDoCaso.delete({
-      where: {
-        cliente_id_caso_id: {
-          cliente_id: clienteId,
-          caso_id: casoId
+    await prisma.caso.update({
+      where: { id: casoId },
+      data: {
+        clientes: {
+          disconnect: { id: clienteId }
         }
       }
     });
